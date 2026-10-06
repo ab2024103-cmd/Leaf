@@ -1,5 +1,3 @@
-import org.gradle.api.tasks.testing.Test
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -106,10 +104,4 @@ dependencies {
 roborazzi {
     // Reference images live in git; `recordRoborazziDebug` regenerates them here.
     outputDir.set(file("$projectDir/src/test/snapshots"))
-}
-
-// Screenshot tests run only via the record/verify tasks. The plain unit-test task
-// skips them so `./gradlew testDebugUnitTest` stays green before baselines exist.
-tasks.matching { it.name == "testDebugUnitTest" || it.name == "testReleaseUnitTest" }.configureEach {
-    (this as Test).exclude("**/screenshots/**")
 }

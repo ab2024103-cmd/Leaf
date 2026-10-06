@@ -33,6 +33,18 @@ jobs:
           set +e
           ./gradlew lint testDebugUnitTest assembleDebug --stacktrace > ci-logs/build.txt 2>&1
           ./gradlew recordRoborazziDebug --stacktrace >> ci-logs/build.txt 2>&1
+          {
+            echo "--- src/test/snapshots ---"
+            ls -la app/src/test/snapshots || true
+            echo "--- build/outputs/roborazzi ---"
+            find app/build/outputs/roborazzi -type f 2>/dev/null | head -40 || true
+            echo "--- any recent png under app ---"
+            find app -name '*.png' -newermt '-45 minutes' 2>/dev/null | head -40 || true
+          } >> ci-logs/snapshots.txt
+          if [ -z "$(ls -A app/src/test/snapshots 2>/dev/null)" ]; then
+            mkdir -p app/src/test/snapshots
+            find app/build/outputs/roborazzi -name '*.png' -exec cp {} app/src/test/snapshots/ \; 2>/dev/null || true
+          fi
           echo "gradle-exit=$?" >> ci-logs/summary.txt
           set -e
           tail -c 200000 ci-logs/build.txt > ci-logs/tail.txt
