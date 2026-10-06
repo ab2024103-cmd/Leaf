@@ -1,0 +1,21 @@
+name: Probe
+on: push
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: write
+env:
+  GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false -Dfile.encoding=UTF-8"
+  JAVA_VERSION: '17'
+jobs:
+  build:
+    name: Build, lint & unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo build
+  screenshots:
+    name: Screenshot parity
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo screenshots
