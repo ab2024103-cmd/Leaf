@@ -9,6 +9,7 @@ import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -44,8 +45,7 @@ fun LeafShell(windowSizeClass: WindowSizeClass) {
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
             // Keeps chrome clear of the status bar and the gesture/navigation bar (§5).
-            // systemBars is the equivalent available in this Compose version.
-            .windowInsetsPadding(WindowInsets.systemBars)
+            .windowInsetsPadding(WindowInsets.safeDrawing)
     ) {
         Row(modifier = Modifier.weight(1f)) {
             if (useRail) {
