@@ -29,13 +29,13 @@ class CanaryActivityTest {
     @Config(qualifiers = "w360dp-h760dp-normal-long-notround-any-320dpi-keyshidden-nonav")
     fun canary_activity_360() {
         val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
-        activity.captureRoboImage("canary_activity_360.png")
+        activity.window.decorView.captureRoboImage("canary_activity_360.png")
     }
 
     @Test
     @Config(qualifiers = "w700dp-h900dp-normal-long-notround-any-320dpi-keyshidden-nonav")
     fun canary_activity_700() {
         val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
-        activity.captureRoboImage("canary_activity_700.png")
+        activity.window.decorView.captureRoboImage("canary_activity_700.png")
     }
 }
