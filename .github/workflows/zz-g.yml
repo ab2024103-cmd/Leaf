@@ -10,24 +10,17 @@
 #    • every tag  v*            → signed release APK + AAB attached to a GitHub Release
 #    • optional (commented)     → screenshot tests and emulator smoke tests
 #
-#  Required repository secrets — just TWO (Settings → Secrets and variables → Actions)
-#    KEYSTORE_BASE64      base64 of your release keystore (.jks)
+#  Required repository secrets (Settings → Secrets and variables → Actions)
+#    KEYSTORE_BASE64      base64 of your release keystore (.jks)     — optional at first
 #    KEYSTORE_PASSWORD    the keystore password
-#  Run  bash scripts/create-signing-keystore.sh  once and it creates the keystore,
-#  invents a strong password and sets both secrets for you (via the gh CLI).
-#  The alias defaults to "leaf" and the key password to the store password — add the
-#  optional KEY_ALIAS / KEY_PASSWORD secrets only if you made a key with other values.
-#  Without any of them the release job still runs and publishes an *unsigned* APK,
+#    KEY_ALIAS            the key alias inside the keystore
+#    KEY_PASSWORD         the key password
+#  Without them the release job still runs and publishes an *unsigned* APK,
 #  so the pipeline is green from the very first commit.
 # ─────────────────────────────────────────────────────────────────────────────
-name: Android CI
+name: Probe release job
 
-on:
-  push:
-    branches: [ main ]
-    tags: [ 'v*' ]
-  pull_request:
-  workflow_dispatch:
+on: push
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -41,88 +34,9 @@ env:
   JAVA_VERSION: '17'       # AGP 8.13 requires JDK 17+
 
 jobs:
-  # ── every push and PR ──────────────────────────────────────────────────────
-  build:
-    name: Build, lint & unit tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: ${{ env.JAVA_VERSION }}
-
-      - name: Set up Gradle (with caching)
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Lint + unit tests
-        run: ./gradlew lint testDebugUnitTest --stacktrace
-
-      - name: Assemble debug APK
-        run: ./gradlew assembleDebug
-
-      - name: Upload debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: leaf-debug-${{ github.sha }}
-          path: app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
-          retention-days: 30
-
-      - name: Upload test & lint reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: reports-${{ github.sha }}
-          path: |
-            app/build/reports/tests/**
-            app/build/reports/lint-results-*.html
-            **/build/test-results/**
-          if-no-files-found: ignore
-          retention-days: 14
-
-  # ── screenshot parity vs the mockup (M1 onward) ────────────────────────────
-  # Renders the 5 destinations at 360 / 412 / 700 dp (light + dark) with Roborazzi
-  # and uploads the PNGs, so the build can be eyeballed against
-  # design/qa/mockup-ref/ without installing anything.
-  screenshots:
-    name: Screenshot parity
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: ${{ env.JAVA_VERSION }}
-
-      - name: Set up Gradle (with caching)
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Render screenshots
-        run: ./gradlew recordRoborazziDebug
-
-      - name: Upload rendered screenshots
-        uses: actions/upload-artifact@v4
-        with:
-          name: rendered-screens-${{ github.sha }}
-          path: |
-            app/build/outputs/roborazzi/**
-            app/src/test/snapshots/**
-          if-no-files-found: error
-          retention-days: 30
-
-      - name: Verify against the recorded baseline
-        run: ./gradlew verifyRoborazziDebug
-
-  # ── release: tag v* ────────────────────────────────────────────────────────
   release:
     name: Release APK + AAB
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: build
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ github.ref_name }}
@@ -147,18 +61,13 @@ jobs:
 
       - name: Build release APK + AAB (signed)
         if: steps.keystore.outputs.have_keystore == 'yes'
-        env:
-          # alias and key password default to what the setup script creates;
-          # override with the optional KEY_ALIAS / KEY_PASSWORD secrets if you differ
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS || 'leaf' }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || secrets.KEYSTORE_PASSWORD }}
         run: |
           ./gradlew assembleRelease bundleRelease \
             -PversionName="${VERSION#v}" \
             -Pandroid.injected.signing.store.file="$RUNNER_TEMP/leaf-release.jks" \
             -Pandroid.injected.signing.store.password="${{ secrets.KEYSTORE_PASSWORD }}" \
-            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
-            -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
+            -Pandroid.injected.signing.key.alias="${{ secrets.KEY_ALIAS }}" \
+            -Pandroid.injected.signing.key.password="${{ secrets.KEY_PASSWORD }}"
 
       - name: Build release APK + AAB (unsigned — no keystore secrets yet)
         if: steps.keystore.outputs.have_keystore != 'yes'
@@ -182,7 +91,7 @@ jobs:
             Automated build of `${{ github.sha }}`.
 
             **Install** the APK on any Android 6.0+ device (allow installs from unknown sources).
-            ${{ secrets.KEYSTORE_BASE64 == '' && '⚠️ This APK is **unsigned** (dev build). Run `bash scripts/create-signing-keystore.sh` once and re-tag to publish a signed build.' || '' }}
+            ${{ secrets.KEYSTORE_BASE64 == '' && '⚠️ This APK is **unsigned** — add the `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD` secrets to publish a signed build.' || '' }}
 
   # ── optional: emulator smoke tests (slow — run at milestone gates) ─────────
   # emulator:

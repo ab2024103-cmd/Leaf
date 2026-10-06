@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Launch theme only; all UI is Compose. Edge-to-edge is enabled in MainActivity. -->
+    <style name="Theme.Leaf" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/leaf_window</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

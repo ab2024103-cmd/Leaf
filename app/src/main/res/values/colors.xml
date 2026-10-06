@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Window background = M3 surface (light). Compose theme owns all other colours. -->
+    <color name="leaf_window">#F5FBF5</color>
+    <!-- Brand seed, also the app icon base. -->
+    <color name="leaf_icon_bg">#2B7A5B</color>
+</resources>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Leaf copy deck (LEAF-MASTER-PROMPT.md §11 + the mockup). M1 subset: only strings
+     the M1 scaffolds use. M2–M7 extend this file; translations land in M7. -->
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <string name="app_name">Leaf</string>
+
+    <!-- Destinations -->
+    <string name="nav_library">Library</string>
+    <string name="nav_recents">Recents</string>
+    <string name="nav_favorites">Favorites</string>
+    <string name="nav_search">Search</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- App-bar subtitles. The count-driven variants are wired in M2 with the list rows. -->
+    <plurals name="library_subtitle_all" tools:ignore="UnusedResources">
+        <item quantity="one">All %d document</item>
+        <item quantity="other">All %d documents</item>
+    </plurals>
+    <string name="library_subtitle_empty">Your library</string>
+    <plurals name="recents_subtitle" tools:ignore="UnusedResources">
+        <item quantity="one">%d document opened recently</item>
+        <item quantity="other">%d documents opened recently</item>
+    </plurals>
+    <string name="recents_subtitle_empty">Your reading history</string>
+    <plurals name="favorites_subtitle" tools:ignore="UnusedResources">
+        <item quantity="one">%d starred document</item>
+        <item quantity="other">%d starred documents</item>
+    </plurals>
+    <string name="favorites_subtitle_empty">Starred documents</string>
+    <!-- The Search destination has no subtitle in the mockup. -->
+    <string name="settings_subtitle">Reading &amp; app preferences</string>
+
+    <!-- Empty states (exact mockup copy) -->
+    <string name="empty_library_title">Nothing here yet</string>
+    <string name="empty_library_message">Change the folder, collection or tag filter — or clear your filters to see the whole library.</string>
+    <string name="empty_recents_title">No recents yet</string>
+    <string name="empty_recents_message">Documents you open appear here automatically — tap one to jump straight back to the exact page you left.</string>
+    <string name="empty_favorites_title">No favorites yet</string>
+    <string name="empty_favorites_message">Tap the star on any document, or long-press a document and choose “Add to favorites”.</string>
+    <string name="empty_search_title">Search your library</string>
+    <string name="empty_search_message">Find documents by name, tag or folder — or search for a word <i>inside</i> your files. Combine filters to narrow it further.</string>
+
+    <!-- Settings → About (§6.5) -->
+    <string name="settings_group_about">About</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_version_value">1.0.0</string>
+    <string name="settings_footer">Leaf · Material 3 · v1.0.0</string>
+    <string name="settings_about_seed">Seed #2B7A5B · targets Android 6.0 (API 23) → latest · phone, foldable &amp; tablet layouts</string>
+</resources>
