@@ -106,6 +106,23 @@ by running it.
 | 26 | Excel `.xlsx` — sheet-per-page grid rendering, text, find, highlights, reflow | §7.3 | ☐ |
 | 27 | PowerPoint `.pptx` — slide-per-page card rendering, text, find, highlights, reflow | §7.3 | ☐ |
 
+## Verification
+
+`./gradlew lint testDebugUnitTest assembleDebug` and `./gradlew recordRoborazziDebug
+verifyRoborazziDebug` are both green in CI on the working branch:
+
+| Job | Result |
+|---|---|
+| Build, lint & unit tests | ✅ |
+| Screenshot parity (record + verify against the committed baselines) | ✅ |
+| Release APK + AAB | skipped — runs on `v*` tags only |
+
+CI uploads `leaf-debug-<sha>` (~14.9 MB installable debug APK), `rendered-screens-<sha>`
+(the 30 screenshots) and `reports-<sha>`.
+
+Coverage: 14 unit tests over the seed, the repositories and the settings store, plus 30
+screenshot baselines (5 screens × 360/412/700 dp × light/dark).
+
 ## Deviations from the mockup and the spec
 
 Every deviation is a decision, not an accident.
@@ -121,17 +138,35 @@ Every deviation is a decision, not an accident.
    `main` as well as on branches. The secrets are now surfaced as env vars and the signed/unsigned
    decision is taken in the shell. Behaviour is unchanged: signed when the keystore secrets exist,
    unsigned with a warning in the release notes when they do not.
-3. **XLSX / PPTX dark file-icon tones.** §4.6 gives the light values as hexes but states the dark
+3. **The working branch was added to the push trigger.** This repository never fires
+   `pull_request` events — no check appeared on the PR even after it left draft — so no run, and no
+   APK artifact, could be produced for a feature branch. `on.push.branches` is now
+   `[ main, 'arena/**' ]`.
+4. **XLSX / PPTX dark file-icon tones.** §4.6 gives the light values as hexes but states the dark
    rule only in words ("containers at 30 % tone, labels at 90 %"). The dark values are taken from
    the mockup's own CSS for those two types; the other four types match both sources.
-4. **Dynamic colour.** §1.4 requires an optional "Match system colours (Android 12+)" switch, which
+5. **Screenshots are captured through the view hierarchy, not the Compose one.** Roborazzi's
+   Compose bridge (`onRoot().captureRoboImage()`) renders **blank** with this toolchain — a plain
+   full-screen red box came out uniformly `#FAFAFA` at SDK 30, 33 and 35 — while its native view
+   path renders correctly. Each screenshot test therefore launches a `ComponentActivity`, composes
+   the whole shell with an explicit theme and window size class, and captures the decor view. The
+   images are real renders of the real shell: light surface `#F5FBF5`, dark `#0F1511`, the
+   navigation bar and rail on `surfaceContainer`, and the active pill on `secondaryContainer`.
+6. **Roborazzi is pinned to 1.60.0 and Robolectric to 4.14.1.** Roborazzi 1.61.0+ is compiled with
+   Kotlin 2.3.21, whose metadata (2.3.0) the pinned Kotlin 2.1.20 compiler cannot read, and
+   Roborazzi depends on Robolectric as `compileOnly`, so it is aligned with the version Roborazzi
+   1.60.0 was built against (4.14.1).
+7. **`WindowInsets.safeDrawing` needed its own import.** The inset values are extension properties
+   on `WindowInsets.Companion` in the Android source set, so they are not in scope from the class
+   import alone.
+8. **Dynamic colour.** §1.4 requires an optional "Match system colours (Android 12+)" switch, which
    the mockup does not have. It exists in settings as `matchSystemColors`, default **off**, and is
    wired to `LeafTheme`; the Settings row that flips it lands in M7.
-5. **Demo documents use a `leaf-demo://` URI.** They are content, not files on disk, so their text
+9. **Demo documents use a `leaf-demo://` URI.** They are content, not files on disk, so their text
    lives in the `extracted_text` cache. Real documents will arrive through the file picker and the
    open-with intents in M2/M6.
-6. **No `design/leaf_tokens.json` in this repo.** The token set was re-derived from the mockup's CSS
-   and compared against §4; the two agree everywhere except deviation 3.
+10. **No `design/leaf_tokens.json` in this repo.** The token set was re-derived from the mockup's CSS
+    and compared against §4; the two agree everywhere except deviation 4.
 
 ## What's next — M2 · Library & organisation
 
