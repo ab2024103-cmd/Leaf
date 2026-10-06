@@ -2,10 +2,14 @@
 #
 # The sandbox that drives this repository cannot reach
 # results-receiver.actions.githubusercontent.com, so Actions logs cannot be read
-# from here. This workflow commits the Gradle output to the branch instead, where
-# it can be read through api.github.com.
+# from here. This workflow commits the Gradle output to the branch and posts its
+# tail as a PR comment, both of which are readable through api.github.com.
 name: CI logs
 on: push
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   build-log:
@@ -26,16 +30,35 @@ jobs:
       - name: Run the Gradle build
         run: |
           mkdir -p ci-logs
+          set +e
           ./gradlew lint testDebugUnitTest assembleDebug --stacktrace > ci-logs/build.txt 2>&1
           echo "gradle-exit=$?" >> ci-logs/summary.txt
-          tail -c 300000 ci-logs/build.txt > ci-logs/build-tail.txt
-          mv ci-logs/build-tail.txt ci-logs/build.txt
+          set -e
+          tail -c 200000 ci-logs/build.txt > ci-logs/tail.txt
+          mv ci-logs/tail.txt ci-logs/build.txt
 
-      - name: Commit the log
+      - name: Publish the log
         if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set +e
           git config user.name "Leaf build agent"
           git config user.email "agent@arena.ai"
+          git pull --rebase origin arena/ceade348-leaf
           git add -f ci-logs
           git diff --cached --quiet || git commit -m "ci: build log [skip ci]"
-          git push origin HEAD:arena/ceade348-leaf || true
+          git push origin HEAD:arena/ceade348-leaf
+          echo "push-exit=$?" >> ci-logs/summary.txt
+
+          {
+            echo '```'
+            echo "gradle $(cat ci-logs/summary.txt)"
+            echo '```'
+            echo
+            echo '```text'
+            tail -n 250 ci-logs/build.txt
+            echo '```'
+          } > ci-logs/comment.md
+          gh pr comment 1 --body-file ci-logs/comment.md
+          echo "comment-exit=$?" >> ci-logs/summary.txt
