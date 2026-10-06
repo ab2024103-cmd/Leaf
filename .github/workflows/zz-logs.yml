@@ -36,6 +36,6 @@ jobs:
         run: |
           git config user.name "Leaf build agent"
           git config user.email "agent@arena.ai"
-          git add ci-logs
+          git add -f ci-logs
           git diff --cached --quiet || git commit -m "ci: build log [skip ci]"
           git push origin HEAD:arena/ceade348-leaf || true
