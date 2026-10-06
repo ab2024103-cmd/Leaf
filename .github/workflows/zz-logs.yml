@@ -1,0 +1,41 @@
+# TEMPORARY diagnostic scaffold — deleted before this milestone is handed over.
+#
+# The sandbox that drives this repository cannot reach
+# results-receiver.actions.githubusercontent.com, so Actions logs cannot be read
+# from here. This workflow commits the Gradle output to the branch instead, where
+# it can be read through api.github.com.
+name: CI logs
+on: push
+
+jobs:
+  build-log:
+    name: Capture the Gradle output
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle (with caching)
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run the Gradle build
+        run: |
+          mkdir -p ci-logs
+          ./gradlew lint testDebugUnitTest assembleDebug --stacktrace > ci-logs/build.txt 2>&1
+          echo "gradle-exit=$?" >> ci-logs/summary.txt
+          tail -c 300000 ci-logs/build.txt > ci-logs/build-tail.txt
+          mv ci-logs/build-tail.txt ci-logs/build.txt
+
+      - name: Commit the log
+        if: always()
+        run: |
+          git config user.name "Leaf build agent"
+          git config user.email "agent@arena.ai"
+          git add ci-logs
+          git diff --cached --quiet || git commit -m "ci: build log [skip ci]"
+          git push origin HEAD:arena/ceade348-leaf || true

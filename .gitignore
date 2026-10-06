@@ -5,3 +5,4 @@ keystore.properties
 .gradle/
 build/
 .idea/
+ci-logs/
