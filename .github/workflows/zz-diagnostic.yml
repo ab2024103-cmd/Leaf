@@ -1,8 +1,0 @@
-name: Diagnostic
-on: push
-jobs:
-  hello:
-    name: Hello
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "actions are alive"
