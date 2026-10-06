@@ -21,7 +21,7 @@ androidxTestCore = "1.6.1"
 desugar = "2.1.5"
 junit = "4.13.2"
 robolectric = "4.17"
-roborazzi = "1.76.0"
+roborazzi = "1.60.0"
 
 [libraries]
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
