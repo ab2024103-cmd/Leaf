@@ -229,3 +229,84 @@ app/build/intermediates/packaged_res/debug/packageDebugResources/mipmap-mdpi-v4/
 app/build/intermediates/packaged_res/debug/packageDebugResources/mipmap-xxhdpi-v4/ic_launcher.png
 app/src/test/snapshots/search_700_dark.png
 app/src/test/snapshots/settings_360_dark.png
+--- src/test/snapshots ---
+total 1084
+drwxr-xr-x 2 runner runner  4096 Oct  6 21:49 .
+drwxr-xr-x 4 runner runner  4096 Oct  6 21:43 ..
+-rw-r--r-- 1 runner runner  7495 Oct  6 21:49 canary_sdk30.png
+-rw-r--r-- 1 runner runner  7495 Oct  6 21:49 canary_sdk33.png
+-rw-r--r-- 1 runner runner  7495 Oct  6 21:49 canary_sdk35.png
+-rw-r--r-- 1 runner runner 16517 Oct  6 21:49 canary_view_default.png
+-rw-r--r-- 1 runner runner  2113 Oct  6 21:49 canary_view_native.png
+-rw-r--r-- 1 runner runner 27026 Oct  6 21:49 favorites_360_dark.png
+-rw-r--r-- 1 runner runner 29952 Oct  6 21:49 favorites_360_light.png
+-rw-r--r-- 1 runner runner 29349 Oct  6 21:49 favorites_412_dark.png
+-rw-r--r-- 1 runner runner 32659 Oct  6 21:49 favorites_412_light.png
+-rw-r--r-- 1 runner runner 34320 Oct  6 21:49 favorites_700_dark.png
+-rw-r--r-- 1 runner runner 37787 Oct  6 21:49 favorites_700_light.png
+-rw-r--r-- 1 runner runner 24407 Oct  6 21:49 library_360_dark.png
+-rw-r--r-- 1 runner runner 26503 Oct  6 21:49 library_360_light.png
+-rw-r--r-- 1 runner runner 26714 Oct  6 21:49 library_412_dark.png
+-rw-r--r-- 1 runner runner 28825 Oct  6 21:49 library_412_light.png
+-rw-r--r-- 1 runner runner 31535 Oct  6 21:49 library_700_dark.png
+-rw-r--r-- 1 runner runner 34087 Oct  6 21:49 library_700_light.png
+-rw-r--r-- 1 runner runner 28874 Oct  6 21:49 recents_360_dark.png
+-rw-r--r-- 1 runner runner 32287 Oct  6 21:49 recents_360_light.png
+-rw-r--r-- 1 runner runner 31496 Oct  6 21:49 recents_412_dark.png
+-rw-r--r-- 1 runner runner 34981 Oct  6 21:49 recents_412_light.png
+-rw-r--r-- 1 runner runner 36412 Oct  6 21:49 recents_700_dark.png
+-rw-r--r-- 1 runner runner 40038 Oct  6 21:49 recents_700_light.png
+-rw-r--r-- 1 runner runner 27122 Oct  6 21:49 search_360_dark.png
+-rw-r--r-- 1 runner runner 30219 Oct  6 21:49 search_360_light.png
+-rw-r--r-- 1 runner runner 29447 Oct  6 21:49 search_412_dark.png
+-rw-r--r-- 1 runner runner 32946 Oct  6 21:49 search_412_light.png
+-rw-r--r-- 1 runner runner 34452 Oct  6 21:49 search_700_dark.png
+-rw-r--r-- 1 runner runner 38073 Oct  6 21:49 search_700_light.png
+-rw-r--r-- 1 runner runner 34143 Oct  6 21:49 settings_360_dark.png
+-rw-r--r-- 1 runner runner 35663 Oct  6 21:49 settings_360_light.png
+-rw-r--r-- 1 runner runner 36910 Oct  6 21:49 settings_412_dark.png
+-rw-r--r-- 1 runner runner 38432 Oct  6 21:49 settings_412_light.png
+-rw-r--r-- 1 runner runner 40939 Oct  6 21:49 settings_700_dark.png
+-rw-r--r-- 1 runner runner 42217 Oct  6 21:49 settings_700_light.png
+--- build/outputs/roborazzi ---
+--- any recent png under app ---
+app/build/intermediates/roborazzi/search_700_dark.png
+app/build/intermediates/roborazzi/settings_360_dark.png
+app/build/intermediates/roborazzi/library_412_dark.png
+app/build/intermediates/roborazzi/favorites_700_light.png
+app/build/intermediates/roborazzi/canary_sdk35.png
+app/build/intermediates/roborazzi/settings_700_dark.png
+app/build/intermediates/roborazzi/favorites_412_dark.png
+app/build/intermediates/roborazzi/search_700_light.png
+app/build/intermediates/roborazzi/recents_700_light.png
+app/build/intermediates/roborazzi/settings_412_light.png
+app/build/intermediates/roborazzi/favorites_360_light.png
+app/build/intermediates/roborazzi/recents_412_dark.png
+app/build/intermediates/roborazzi/recents_360_light.png
+app/build/intermediates/roborazzi/search_412_light.png
+app/build/intermediates/roborazzi/recents_700_dark.png
+app/build/intermediates/roborazzi/recents_412_light.png
+app/build/intermediates/roborazzi/recents_360_dark.png
+app/build/intermediates/roborazzi/library_700_light.png
+app/build/intermediates/roborazzi/search_412_dark.png
+app/build/intermediates/roborazzi/canary_sdk30.png
+app/build/intermediates/roborazzi/canary_view_default.png
+app/build/intermediates/roborazzi/settings_360_light.png
+app/build/intermediates/roborazzi/library_700_dark.png
+app/build/intermediates/roborazzi/library_412_light.png
+app/build/intermediates/roborazzi/settings_700_light.png
+app/build/intermediates/roborazzi/search_360_dark.png
+app/build/intermediates/roborazzi/library_360_light.png
+app/build/intermediates/roborazzi/library_360_dark.png
+app/build/intermediates/roborazzi/favorites_412_light.png
+app/build/intermediates/roborazzi/canary_view_native.png
+app/build/intermediates/roborazzi/favorites_360_dark.png
+app/build/intermediates/roborazzi/canary_sdk33.png
+app/build/intermediates/roborazzi/settings_412_dark.png
+app/build/intermediates/roborazzi/search_360_light.png
+app/build/intermediates/roborazzi/favorites_700_dark.png
+app/build/intermediates/packaged_res/debug/packageDebugResources/mipmap-hdpi-v4/ic_launcher.png
+app/build/intermediates/packaged_res/debug/packageDebugResources/mipmap-xxxhdpi-v4/ic_launcher.png
+app/build/intermediates/packaged_res/debug/packageDebugResources/mipmap-xhdpi-v4/ic_launcher.png
+app/build/intermediates/packaged_res/debug/packageDebugResources/mipmap-mdpi-v4/ic_launcher.png
+app/build/intermediates/packaged_res/debug/packageDebugResources/mipmap-xxhdpi-v4/ic_launcher.png
