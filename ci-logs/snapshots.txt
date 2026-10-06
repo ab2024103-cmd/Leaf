@@ -474,3 +474,79 @@ app/build/intermediates/roborazzi/favorites_700_dark.png
 app/build/intermediates/packaged_res/debug/packageDebugResources/mipmap-hdpi-v4/ic_launcher.png
 app/build/intermediates/packaged_res/debug/packageDebugResources/mipmap-xxxhdpi-v4/ic_launcher.png
 app/build/intermediates/packaged_res/debug/packageDebugResources/mipmap-xhdpi-v4/ic_launcher.png
+--- src/test/snapshots ---
+total 1448
+drwxr-xr-x 2 runner runner  4096 Oct  6 22:17 .
+drwxr-xr-x 4 runner runner  4096 Oct  6 22:17 ..
+-rw-r--r-- 1 runner runner 40384 Oct  6 22:17 favorites_360_dark.png
+-rw-r--r-- 1 runner runner 39941 Oct  6 22:17 favorites_360_light.png
+-rw-r--r-- 1 runner runner 42497 Oct  6 22:17 favorites_412_dark.png
+-rw-r--r-- 1 runner runner 42131 Oct  6 22:17 favorites_412_light.png
+-rw-r--r-- 1 runner runner 56417 Oct  6 22:17 favorites_700_dark.png
+-rw-r--r-- 1 runner runner 55898 Oct  6 22:17 favorites_700_light.png
+-rw-r--r-- 1 runner runner 37036 Oct  6 22:17 library_360_dark.png
+-rw-r--r-- 1 runner runner 36353 Oct  6 22:17 library_360_light.png
+-rw-r--r-- 1 runner runner 38854 Oct  6 22:17 library_412_dark.png
+-rw-r--r-- 1 runner runner 38389 Oct  6 22:17 library_412_light.png
+-rw-r--r-- 1 runner runner 52687 Oct  6 22:17 library_700_dark.png
+-rw-r--r-- 1 runner runner 52099 Oct  6 22:17 library_700_light.png
+-rw-r--r-- 1 runner runner 42344 Oct  6 22:17 recents_360_dark.png
+-rw-r--r-- 1 runner runner 41898 Oct  6 22:17 recents_360_light.png
+-rw-r--r-- 1 runner runner 45070 Oct  6 22:17 recents_412_dark.png
+-rw-r--r-- 1 runner runner 44715 Oct  6 22:17 recents_412_light.png
+-rw-r--r-- 1 runner runner 58612 Oct  6 22:17 recents_700_dark.png
+-rw-r--r-- 1 runner runner 58128 Oct  6 22:17 recents_700_light.png
+-rw-r--r-- 1 runner runner 40858 Oct  6 22:17 search_360_dark.png
+-rw-r--r-- 1 runner runner 40369 Oct  6 22:17 search_360_light.png
+-rw-r--r-- 1 runner runner 43069 Oct  6 22:17 search_412_dark.png
+-rw-r--r-- 1 runner runner 42633 Oct  6 22:17 search_412_light.png
+-rw-r--r-- 1 runner runner 56571 Oct  6 22:17 search_700_dark.png
+-rw-r--r-- 1 runner runner 56024 Oct  6 22:17 search_700_light.png
+-rw-r--r-- 1 runner runner 46166 Oct  6 22:17 settings_360_dark.png
+-rw-r--r-- 1 runner runner 45201 Oct  6 22:17 settings_360_light.png
+-rw-r--r-- 1 runner runner 49417 Oct  6 22:17 settings_412_dark.png
+-rw-r--r-- 1 runner runner 48461 Oct  6 22:17 settings_412_light.png
+-rw-r--r-- 1 runner runner 61578 Oct  6 22:17 settings_700_dark.png
+-rw-r--r-- 1 runner runner 60764 Oct  6 22:17 settings_700_light.png
+--- build/outputs/roborazzi ---
+--- any recent png under app ---
+app/build/intermediates/roborazzi/search_700_dark.png
+app/build/intermediates/roborazzi/settings_360_dark.png
+app/build/intermediates/roborazzi/library_412_dark.png
+app/build/intermediates/roborazzi/favorites_700_light.png
+app/build/intermediates/roborazzi/settings_700_dark.png
+app/build/intermediates/roborazzi/favorites_412_dark.png
+app/build/intermediates/roborazzi/search_700_light.png
+app/build/intermediates/roborazzi/recents_700_light.png
+app/build/intermediates/roborazzi/settings_412_light.png
+app/build/intermediates/roborazzi/favorites_360_light.png
+app/build/intermediates/roborazzi/recents_412_dark.png
+app/build/intermediates/roborazzi/recents_360_light.png
+app/build/intermediates/roborazzi/search_412_light.png
+app/build/intermediates/roborazzi/recents_700_dark.png
+app/build/intermediates/roborazzi/recents_412_light.png
+app/build/intermediates/roborazzi/recents_360_dark.png
+app/build/intermediates/roborazzi/library_700_light.png
+app/build/intermediates/roborazzi/search_412_dark.png
+app/build/intermediates/roborazzi/settings_360_light.png
+app/build/intermediates/roborazzi/library_700_dark.png
+app/build/intermediates/roborazzi/library_412_light.png
+app/build/intermediates/roborazzi/settings_700_light.png
+app/build/intermediates/roborazzi/search_360_dark.png
+app/build/intermediates/roborazzi/library_360_light.png
+app/build/intermediates/roborazzi/library_360_dark.png
+app/build/intermediates/roborazzi/favorites_412_light.png
+app/build/intermediates/roborazzi/favorites_360_dark.png
+app/build/intermediates/roborazzi/settings_412_dark.png
+app/build/intermediates/roborazzi/search_360_light.png
+app/build/intermediates/roborazzi/favorites_700_dark.png
+app/build/intermediates/packaged_res/debug/packageDebugResources/mipmap-hdpi-v4/ic_launcher.png
+app/build/intermediates/packaged_res/debug/packageDebugResources/mipmap-xxxhdpi-v4/ic_launcher.png
+app/build/intermediates/packaged_res/debug/packageDebugResources/mipmap-xhdpi-v4/ic_launcher.png
+app/build/intermediates/packaged_res/debug/packageDebugResources/mipmap-mdpi-v4/ic_launcher.png
+app/build/intermediates/packaged_res/debug/packageDebugResources/mipmap-xxhdpi-v4/ic_launcher.png
+app/src/test/snapshots/search_700_dark.png
+app/src/test/snapshots/settings_360_dark.png
+app/src/test/snapshots/library_412_dark.png
+app/src/test/snapshots/favorites_700_light.png
+app/src/test/snapshots/settings_700_dark.png
