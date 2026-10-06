@@ -22,7 +22,10 @@ name: Android CI
 
 on:
   push:
-    branches: [ main ]
+    # 'arena/**' covers the working branch this build is developed on: this
+    # repository does not fire pull_request events, so push is the only trigger
+    # that produces a run (and therefore an APK artifact) for a feature branch.
+    branches: [ main, 'arena/**' ]
     tags: [ 'v*' ]
   pull_request:
   workflow_dispatch:
