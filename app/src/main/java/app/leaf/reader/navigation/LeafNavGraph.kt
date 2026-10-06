@@ -34,7 +34,11 @@ import app.leaf.reader.feature.settings.SettingsScreen
  * full-screen surface so each open document keeps its own state (§3).
  */
 @Composable
-fun LeafShell(windowSizeClass: WindowSizeClass) {
+fun LeafShell(
+    windowSizeClass: WindowSizeClass,
+    /** Library is the default destination; the screenshot tests start on each one. */
+    startDestination: LeafDestination = LeafDestination.LIBRARY
+) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -65,7 +69,7 @@ fun LeafShell(windowSizeClass: WindowSizeClass) {
             }
             NavHost(
                 navController = navController,
-                startDestination = LeafDestination.LIBRARY.route,
+                startDestination = startDestination.route,
                 modifier = Modifier.weight(1f)
             ) {
                 composable(LeafDestination.LIBRARY.route) { LibraryScreen() }
