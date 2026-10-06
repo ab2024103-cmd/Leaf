@@ -124,6 +124,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ github.ref_name }}
+      # `secrets` is not a valid named-value inside an `if:` expression, so every
+      # secret this job needs is surfaced as an env var and tested in the shell.
+      UNSIGNED_NOTE: ${{ secrets.KEYSTORE_BASE64 == '' && '⚠️ This APK is **unsigned** — add the `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD` secrets to publish a signed build.' || '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -138,20 +141,29 @@ jobs:
 
       - name: Decode the release keystore
         id: keystore
-        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/leaf-release.jks"
-          echo "have_keystore=yes" >> "$GITHUB_OUTPUT"
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/leaf-release.jks"
+            echo "have_keystore=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "have_keystore=no" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build release APK + AAB (signed)
         if: steps.keystore.outputs.have_keystore == 'yes'
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           ./gradlew assembleRelease bundleRelease \
             -PversionName="${VERSION#v}" \
             -Pandroid.injected.signing.store.file="$RUNNER_TEMP/leaf-release.jks" \
-            -Pandroid.injected.signing.store.password="${{ secrets.KEYSTORE_PASSWORD }}" \
-            -Pandroid.injected.signing.key.alias="${{ secrets.KEY_ALIAS }}" \
-            -Pandroid.injected.signing.key.password="${{ secrets.KEY_PASSWORD }}"
+            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
 
       - name: Build release APK + AAB (unsigned — no keystore secrets yet)
         if: steps.keystore.outputs.have_keystore != 'yes'
@@ -175,7 +187,7 @@ jobs:
             Automated build of `${{ github.sha }}`.
 
             **Install** the APK on any Android 6.0+ device (allow installs from unknown sources).
-            ${{ secrets.KEYSTORE_BASE64 == '' && '⚠️ This APK is **unsigned** — add the `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD` secrets to publish a signed build.' || '' }}
+            ${{ env.UNSIGNED_NOTE }}
 
   # ── optional: emulator smoke tests (slow — run at milestone gates) ─────────
   # emulator:
