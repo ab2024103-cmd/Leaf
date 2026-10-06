@@ -1,5 +1,7 @@
 package app.leaf.reader
 
+import android.app.Application
+
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -29,7 +31,7 @@ import org.robolectric.annotation.Config
 
 /** Settings defaults and the §8.13 sort-field migration. */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [35])
+@Config(sdk = [35], application = Application::class)
 class SettingsStoreTest {
 
     @get:Rule

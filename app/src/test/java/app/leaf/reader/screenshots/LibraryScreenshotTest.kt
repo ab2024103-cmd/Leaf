@@ -1,5 +1,7 @@
 package app.leaf.reader.screenshots
 
+import android.app.Application
+
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -15,7 +17,7 @@ import org.robolectric.annotation.GraphicsMode
 
 /** Library at 360 / 412 / 700 dp, light and dark (§13 M1, §12). */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [35])
+@Config(sdk = [35], application = Application::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class LibraryScreenshotTest {
 

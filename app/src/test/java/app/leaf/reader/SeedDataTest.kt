@@ -1,5 +1,7 @@
 package app.leaf.reader
 
+import android.app.Application
+
 import app.leaf.reader.core.data.db.DatabaseSeeder
 import app.leaf.reader.core.model.DocType
 import kotlinx.coroutines.flow.first
@@ -19,7 +21,7 @@ import org.robolectric.annotation.Config
  * 7 tags, 6 smart collections, recents, highlights and bookmarks (§3).
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [35])
+@Config(sdk = [35], application = Application::class)
 class SeedDataTest {
 
     private lateinit var db: app.leaf.reader.core.data.db.LeafDatabase

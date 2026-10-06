@@ -1,5 +1,7 @@
 package app.leaf.reader
 
+import android.app.Application
+
 import app.leaf.reader.core.data.db.DatabaseSeeder
 import app.leaf.reader.core.data.db.LeafDatabase
 import app.leaf.reader.core.data.repo.DocumentRepository
@@ -18,7 +20,7 @@ import org.robolectric.annotation.Config
 
 /** Documents, their tags and the smart-collection rules (LEAF-SPEC.md §4). */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [35])
+@Config(sdk = [35], application = Application::class)
 class DocumentRepositoryTest {
 
     private lateinit var db: LeafDatabase
