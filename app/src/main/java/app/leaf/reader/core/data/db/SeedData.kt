@@ -83,7 +83,7 @@ object SeedData {
         )
     )
 
-    fun documents(now: Long) = seedDocuments(now)
+    internal fun documents(now: Long) = seedDocuments(now)
 
     /** Demo documents never point at a real file; the reader reads their cached text. */
     fun uriFor(id: String) = "leaf-demo://document/$id"

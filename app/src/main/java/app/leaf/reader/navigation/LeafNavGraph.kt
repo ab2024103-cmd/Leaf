@@ -44,7 +44,8 @@ fun LeafShell(windowSizeClass: WindowSizeClass) {
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
             // Keeps chrome clear of the status bar and the gesture/navigation bar (§5).
-            .windowInsetsPadding(WindowInsets.safeDrawing)
+            // systemBars is the equivalent available in this Compose version.
+            .windowInsetsPadding(WindowInsets.systemBars)
     ) {
         Row(modifier = Modifier.weight(1f)) {
             if (useRail) {

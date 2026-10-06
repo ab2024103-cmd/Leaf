@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import app.leaf.reader.R
 import app.leaf.reader.core.ui.theme.LeafMetrics
 import app.leaf.reader.core.ui.theme.LeafType
+import app.leaf.reader.core.ui.util.annotated
 
 /**
  * Leaf top app bar (small, §6.1). Padding matches the mockup: 4 dp top, 10 dp bottom,

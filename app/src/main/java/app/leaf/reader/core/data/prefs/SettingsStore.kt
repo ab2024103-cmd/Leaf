@@ -1,6 +1,7 @@
 package app.leaf.reader.core.data.prefs
 
 import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
@@ -79,7 +80,7 @@ class SettingsStore(private val dataStore: DataStore<Preferences>) {
         searchHistory = this[SEARCH_HISTORY]?.toList() ?: emptyList()
     )
 
-    private fun Preferences.writeAll(settings: LeafSettings) {
+    private fun MutablePreferences.writeAll(settings: LeafSettings) {
         this[APP_THEME] = settings.appTheme.name
         this[MATCH_SYSTEM_COLORS] = settings.matchSystemColors
         this[READING_THEME] = settings.readingTheme.name

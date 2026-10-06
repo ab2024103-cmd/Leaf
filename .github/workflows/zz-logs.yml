@@ -32,6 +32,7 @@ jobs:
           mkdir -p ci-logs
           set +e
           ./gradlew lint testDebugUnitTest assembleDebug --stacktrace > ci-logs/build.txt 2>&1
+          ./gradlew recordRoborazziDebug --stacktrace >> ci-logs/build.txt 2>&1
           echo "gradle-exit=$?" >> ci-logs/summary.txt
           set -e
           tail -c 200000 ci-logs/build.txt > ci-logs/tail.txt
@@ -46,7 +47,7 @@ jobs:
           git config user.name "Leaf build agent"
           git config user.email "agent@arena.ai"
           git pull --rebase origin arena/ceade348-leaf
-          git add -f ci-logs
+          git add -f ci-logs app/src/test/snapshots
           git diff --cached --quiet || git commit -m "ci: build log [skip ci]"
           git push origin HEAD:arena/ceade348-leaf
           echo "push-exit=$?" >> ci-logs/summary.txt

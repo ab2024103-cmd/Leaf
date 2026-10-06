@@ -18,6 +18,7 @@ import app.leaf.reader.R
  * and SemiBold through [FontVariation] so a single file covers both weights.
  * API 23–25 ignore variation settings and render the font's default (Regular) instance.
  */
+@OptIn(androidx.compose.ui.text.ExperimentalTextApi::class)
 val NotoSerif = FontFamily(
     Font(
         R.font.noto_serif,

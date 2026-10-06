@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.leaf.reader.R
 import app.leaf.reader.core.ui.components.LeafScreen
-import app.leaf.reader.core.ui.theme.LeafSpacing
+import app.leaf.reader.core.ui.theme.LeafShape
 import app.leaf.reader.core.ui.theme.FontWeight800
 import app.leaf.reader.core.ui.theme.LeafType
 import app.leaf.reader.core.ui.util.isScrolled
@@ -150,7 +150,7 @@ fun SettingsRow(
                 .size(36.dp)
                 .background(
                     color = MaterialTheme.colorScheme.secondaryContainer,
-                    shape = RoundedCornerShape(LeafSpacing.m)
+                    shape = RoundedCornerShape(LeafShape.m)
                 ),
             contentAlignment = Alignment.Center
         ) {
