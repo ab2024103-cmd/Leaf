@@ -21,6 +21,7 @@ import app.leaf.reader.core.model.SmartRule
 import app.leaf.reader.core.model.SortField
 import app.leaf.reader.core.model.Tag
 import app.leaf.reader.core.ui.theme.LeafMotion
+import app.leaf.reader.core.util.LeafClock
 import app.leaf.reader.core.util.normalizeTagName
 import app.leaf.reader.core.util.renameKeepingExtension
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,7 +44,8 @@ class LibraryViewModel(
     private val folders: FolderRepository,
     private val tags: TagRepository,
     private val smart: SmartCollectionRepository,
-    private val settings: SettingsStore
+    private val settings: SettingsStore,
+    private val clock: LeafClock
 ) : AndroidViewModel(app) {
 
     private data class Bundle(
@@ -72,7 +74,7 @@ class LibraryViewModel(
     private val sheet = MutableStateFlow(SheetState())
     private val dialog = MutableStateFlow<LibraryDialog>(LibraryDialog.None)
     private val message = MutableStateFlow<LeafMessage?>(null)
-    private val now = MutableStateFlow(System.currentTimeMillis())
+    private val now = MutableStateFlow(clock.nowMillis())
 
     /** The snapshot behind the current "Undo" (§8.7). */
     private var pendingUndo: DocumentSnapshot? = null
@@ -205,7 +207,7 @@ class LibraryViewModel(
 
     private fun chooseFolder(folderId: String?) {
         filter.value = filter.value.copy(folderId = folderId, smartId = null, type = null)
-        now.value = System.currentTimeMillis()
+        now.value = clock.nowMillis()
     }
 
     private fun chooseSmart(collectionId: String?) {
@@ -215,7 +217,7 @@ class LibraryViewModel(
             folderId = null,
             type = null
         )
-        now.value = System.currentTimeMillis()
+        now.value = clock.nowMillis()
     }
 
     private fun toggleTag(name: String) {
@@ -223,7 +225,7 @@ class LibraryViewModel(
         filter.value = filter.value.copy(
             tags = if (name in selected) selected - name else selected + name
         )
-        now.value = System.currentTimeMillis()
+        now.value = clock.nowMillis()
     }
 
     private fun chooseSortField(field: SortField) {
@@ -253,7 +255,7 @@ class LibraryViewModel(
             val next = !state.value.groupByType
             settings.update { it.copy(groupByType = next) }
             filter.value = filter.value.copy(type = null)
-            now.value = System.currentTimeMillis()
+            now.value = clock.nowMillis()
             post(
                 app.getString(
                     if (next) R.string.snack_grouped_on else R.string.snack_grouped_off
@@ -264,7 +266,7 @@ class LibraryViewModel(
 
     private fun openGroup(type: DocType) {
         filter.value = filter.value.copy(type = type)
-        now.value = System.currentTimeMillis()
+        now.value = clock.nowMillis()
         val count = state.value.view.visible.count { it.document.type == type }
         post(
             app.getString(
@@ -278,7 +280,7 @@ class LibraryViewModel(
 
     private fun closeGroup() {
         filter.value = filter.value.copy(type = null)
-        now.value = System.currentTimeMillis()
+        now.value = clock.nowMillis()
     }
 
     private fun groupTitleOf(type: DocType): String = app.getString(
@@ -348,7 +350,7 @@ class LibraryViewModel(
         when (action) {
             is TagAction.Open -> {
                 filter.value = filter.value.copy(tags = setOf(action.name))
-                now.value = System.currentTimeMillis()
+                now.value = clock.nowMillis()
                 dismissSheet()
             }
             is TagAction.Rename -> openSheet(LibrarySheet.RenameTag(action.name), LibrarySheet.TagManager)
@@ -564,7 +566,7 @@ class LibraryViewModel(
                 filter.value = filter.value.copy(folderId = null)
             }
             dialog.value = LibraryDialog.None
-            now.value = System.currentTimeMillis()
+            now.value = clock.nowMillis()
             post(app.getString(R.string.snack_folder_deleted))
         }
     }
@@ -574,7 +576,7 @@ class LibraryViewModel(
             tags.delete(name)
             filter.value = filter.value.copy(tags = filter.value.tags - name)
             dialog.value = LibraryDialog.None
-            now.value = System.currentTimeMillis()
+            now.value = clock.nowMillis()
             post(app.getString(R.string.snack_tag_deleted))
         }
     }
