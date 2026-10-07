@@ -43,6 +43,12 @@ fun LeafShell(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val useRail = windowSizeClass.widthSizeClass != WindowWidthSizeClass.Compact
+    // §5: one column on compact, two on medium, three on expanded.
+    val libraryColumns = when (windowSizeClass.widthSizeClass) {
+        WindowWidthSizeClass.Compact -> 1
+        WindowWidthSizeClass.Medium -> 2
+        else -> 3
+    }
 
     Column(
         modifier = Modifier
@@ -72,7 +78,7 @@ fun LeafShell(
                 startDestination = startDestination.route,
                 modifier = Modifier.weight(1f)
             ) {
-                composable(LeafDestination.LIBRARY.route) { LibraryScreen() }
+                composable(LeafDestination.LIBRARY.route) { LibraryScreen(columns = libraryColumns) }
                 composable(LeafDestination.RECENTS.route) { RecentsScreen() }
                 composable(LeafDestination.FAVORITES.route) { FavoritesScreen() }
                 composable(LeafDestination.SEARCH.route) { SearchScreen() }

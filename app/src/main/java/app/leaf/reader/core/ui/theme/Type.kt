@@ -63,10 +63,34 @@ object LeafType {
         fontSize = 11.sp, lineHeight = 15.sp, fontWeight = FontWeight.W400
     )
 
+    /** Filter chip label: 12.5 sp / 16, 600. */
+    val chipText = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontSize = 12.5.sp, lineHeight = 16.sp, fontWeight = FontWeight.W600
+    )
+
     /** Tag chip label: 10 sp / 13, 700. */
     val chipLabel = TextStyle(
         fontFamily = FontFamily.Default,
         fontSize = 10.sp, lineHeight = 13.sp, fontWeight = FontWeight.W700
+    )
+
+    /** Dialog title: 17 sp / 22, 600. */
+    val dialogTitle = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontSize = 17.sp, lineHeight = 22.sp, fontWeight = FontWeight.W600
+    )
+
+    /** Dialog body: 13.5 sp / 20, 400. */
+    val dialogBody = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontSize = 13.5.sp, lineHeight = 20.sp, fontWeight = FontWeight.W400
+    )
+
+    /** Sheet title: 16 sp / 20, 600. */
+    val sheetTitle = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontSize = 16.sp, lineHeight = 20.sp, fontWeight = FontWeight.W600
     )
 
     /** Body (sheets, settings): 14 sp / 20, 400. */

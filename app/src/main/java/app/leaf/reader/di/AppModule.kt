@@ -13,7 +13,9 @@ import app.leaf.reader.core.data.repo.FolderRepository
 import app.leaf.reader.core.data.repo.RecentRepository
 import app.leaf.reader.core.data.repo.SmartCollectionRepository
 import app.leaf.reader.core.data.repo.TagRepository
+import app.leaf.reader.feature.library.LibraryViewModel
 import org.koin.android.ext.koin.androidContext
+import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
@@ -49,4 +51,8 @@ val appModule = module {
     }
     singleOf(::SettingsStore)
     singleOf(::DatabaseSeeder)
+
+    // AndroidViewModel: the application is needed for the resource strings the
+    // snackbars, subtitles and headers are built from (§1.10).
+    viewModel { LibraryViewModel(androidApplication(), get(), get(), get(), get(), get()) }
 }

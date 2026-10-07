@@ -1,6 +1,9 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Leaf copy deck (LEAF-MASTER-PROMPT.md §11 + the mockup). M1 subset: only strings
-     the M1 scaffolds use. M2–M7 extend this file; translations land in M7. -->
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  Leaf copy deck (LEAF-MASTER-PROMPT.md §11 + the mockup).
+  M1 subset plus everything M2 · Library &amp; organisation needs. Later milestones extend
+  this file; translations land in M7.
+-->
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <string name="app_name">Leaf</string>
@@ -12,24 +15,301 @@
     <string name="nav_search">Search</string>
     <string name="nav_settings">Settings</string>
 
-    <!-- App-bar subtitles. The count-driven variants are wired in M2 with the list rows. -->
-    <plurals name="library_subtitle_all" tools:ignore="UnusedResources">
-        <item quantity="one">All %d document</item>
-        <item quantity="other">All %d documents</item>
+    <!-- App-bar subtitles -->
+    <plurals name="library_subtitle_all">
+        <item quantity="one">All %1$d document</item>
+        <item quantity="other">All %1$d documents</item>
     </plurals>
     <string name="library_subtitle_empty">Your library</string>
+    <string name="library_subtitle_folder">Folder · %1$s</string>
+    <string name="library_subtitle_collection">Collection · %1$s</string>
     <plurals name="recents_subtitle" tools:ignore="UnusedResources">
-        <item quantity="one">%d document opened recently</item>
-        <item quantity="other">%d documents opened recently</item>
+        <item quantity="one">%1$d document opened recently</item>
+        <item quantity="other">%1$d documents opened recently</item>
     </plurals>
     <string name="recents_subtitle_empty">Your reading history</string>
     <plurals name="favorites_subtitle" tools:ignore="UnusedResources">
-        <item quantity="one">%d starred document</item>
-        <item quantity="other">%d starred documents</item>
+        <item quantity="one">%1$d starred document</item>
+        <item quantity="other">%1$d starred documents</item>
     </plurals>
     <string name="favorites_subtitle_empty">Starred documents</string>
-    <!-- The Search destination has no subtitle in the mockup. -->
     <string name="settings_subtitle">Reading &amp; app preferences</string>
+
+    <!-- App-bar actions -->
+    <string name="action_open_documents">Open documents</string>
+    <string name="action_folders">Folders &amp; collections</string>
+    <string name="action_tags">Tags</string>
+
+    <!-- Filter rails -->
+    <string name="chip_all_documents">All documents</string>
+    <string name="chip_add_folder">+ Folder</string>
+    <string name="chip_add_collection">+ Collection</string>
+    <string name="chip_add_tag">+ Tag</string>
+    <string name="cd_filter_folder">Filter by folder %1$s</string>
+    <string name="cd_filter_collection">Filter by collection %1$s</string>
+    <string name="cd_filter_tag">Filter by tag %1$s</string>
+
+    <!-- Section header -->
+    <plurals name="library_count">
+        <item quantity="one">%1$d document</item>
+        <item quantity="other">%1$d documents</item>
+    </plurals>
+    <plurals name="library_types">
+        <item quantity="one">%1$d type</item>
+        <item quantity="other">%1$d types</item>
+    </plurals>
+    <string name="cd_group_by_type">Group by file type</string>
+    <string name="cd_group_by_type_on">Grouped by file type — tap for the plain list</string>
+    <string name="cd_sort">Sort documents</string>
+    <string name="cd_back_to_groups">All file types</string>
+    <string name="crumb_sub">%1$s · %2$s</string>
+
+    <!-- File-type groups (§6.1) -->
+    <string name="group_pdf">PDF documents</string>
+    <string name="group_docx">Word · DOCX</string>
+    <string name="group_xlsx">Excel · XLSX</string>
+    <string name="group_pptx">PowerPoint · PPTX</string>
+    <string name="group_txt">Plain text · TXT</string>
+    <string name="group_epub">EPUB books</string>
+    <string name="type_document">%1$s document</string>
+
+    <!-- Sorting -->
+    <string name="sort_sheet_title">Sort documents</string>
+    <string name="sort_sheet_sub">Pick a field, then the direction. Applies to the library, the favorites list and the open file-type group.</string>
+    <string name="sort_name">Name</string>
+    <string name="sort_added">Date added</string>
+    <string name="sort_opened">Last opened</string>
+    <string name="sort_size">File size</string>
+    <string name="sort_dir_ascending">Ascending</string>
+    <string name="sort_dir_descending">Descending</string>
+    <string name="sort_name_asc">A–Z</string>
+    <string name="sort_name_desc">Z–A</string>
+    <string name="sort_added_asc">Newest</string>
+    <string name="sort_added_desc">Oldest</string>
+    <string name="sort_opened_asc">Recent</string>
+    <string name="sort_opened_desc">Oldest</string>
+    <string name="sort_size_asc">Largest</string>
+    <string name="sort_size_desc">Smallest</string>
+    <string name="sort_chip">%1$s · %2$s</string>
+    <string name="sort_dirs">%1$s / %2$s</string>
+
+    <!-- FAB / new folder -->
+    <string name="fab_new_folder">New folder</string>
+    <string name="prompt_new_folder">New folder</string>
+    <string name="prompt_folder_name">Folder name</string>
+    <string name="prompt_folder_hint">e.g. Research, Invoices, Contracts</string>
+    <string name="prompt_new_subfolder">New subfolder</string>
+    <string name="prompt_inside_folder">Inside “%1$s”</string>
+    <string name="sheet_subfolder_picker_title">New subfolder in…</string>
+    <string name="sheet_subfolder_picker_sub">Choose the parent folder</string>
+    <string name="prompt_rename_folder">Rename folder</string>
+    <string name="prompt_currently">Currently “%1$s”</string>
+    <string name="sheet_folder_colour_title">Folder colour</string>
+    <string name="sheet_folder_colour_sub">%1$s — colour coding makes folders easier to scan.</string>
+
+    <!-- Folders &amp; collections sheet -->
+    <string name="sheet_folders_title">Folders &amp; collections</string>
+    <string name="sheet_folders_sub">Rename, recolour, nest or delete folders. Nesting is for power users — long-press a folder in the library to file documents into it.</string>
+    <string name="sheet_new_folder_row">New folder</string>
+    <string name="sheet_new_folder_row_sub">Create a top-level folder</string>
+    <string name="sheet_new_subfolder_row">New subfolder</string>
+    <string name="sheet_new_subfolder_row_sub">Nest a folder inside an existing one</string>
+    <string name="sheet_no_folders">No folders yet — create your first one below.</string>
+    <string name="folder_nested">nested</string>
+    <plurals name="folder_documents">
+        <item quantity="one">%1$d document</item>
+        <item quantity="other">%1$d documents</item>
+    </plurals>
+    <plurals name="folder_subfolders">
+        <item quantity="one">%1$d subfolder</item>
+        <item quantity="other">%1$d subfolders</item>
+    </plurals>
+    <string name="folder_summary">%1$s · %2$s</string>
+
+    <!-- New smart collection -->
+    <string name="sheet_new_collection_title">New collection</string>
+    <string name="sheet_new_collection_sub">Collections group documents automatically — no filing required.</string>
+    <string name="rule_all">All documents</string>
+    <string name="rule_all_sub">Every document in the library</string>
+    <string name="rule_type">Of one file type</string>
+    <string name="rule_type_sub">PDF, Word, Excel, PowerPoint, text or EPUB</string>
+    <string name="rule_age">Added in the last…</string>
+    <string name="rule_age_sub">A week, a month or any number of days</string>
+    <string name="rule_in_progress">Still reading</string>
+    <string name="rule_in_progress_sub">Started but not finished</string>
+    <string name="rule_unfiled">Not filed</string>
+    <string name="rule_unfiled_sub">Documents outside every folder</string>
+    <string name="rule_highlights">Has highlights</string>
+    <string name="rule_highlights_sub">Anything you have marked</string>
+    <string name="rule_tag">Tagged with…</string>
+    <string name="rule_tag_sub">Follows the tag, wherever it is used</string>
+    <string name="sheet_pick_type_title">Which file type?</string>
+    <string name="sheet_pick_type_sub">The collection updates itself as documents are added.</string>
+    <string name="sheet_pick_age_title">Added in the last…</string>
+    <string name="sheet_pick_age_sub">Counted from the moment a document joins the library.</string>
+    <string name="sheet_pick_tag_title">Tagged with…</string>
+    <string name="sheet_pick_tag_sub">Pick the tag this collection follows.</string>
+    <plurals name="last_days">
+        <item quantity="one">Last %1$d day</item>
+        <item quantity="other">Last %1$d days</item>
+    </plurals>
+    <string name="collection_pdfs">All PDFs</string>
+    <string name="collection_docx">Word documents</string>
+    <string name="collection_xlsx">Spreadsheets</string>
+    <string name="collection_pptx">Presentations</string>
+    <string name="collection_txt">Plain text</string>
+    <string name="collection_epub">EPUB books</string>
+    <string name="collection_week">Added this week</string>
+    <string name="collection_month">Added this month</string>
+    <string name="collection_tagged">Tagged “%1$s”</string>
+
+    <!-- Tag manager -->
+    <string name="sheet_tags_title">Tags</string>
+    <string name="sheet_tags_sub">Create, rename, recolour and delete tags. Tap a tag to filter the library by it.</string>
+    <string name="sheet_new_tag_row">New tag</string>
+    <string name="sheet_new_tag_row_sub">Up to 12 colour labels</string>
+    <string name="prompt_new_tag">New tag</string>
+    <string name="prompt_tag_name">Tag name</string>
+    <string name="prompt_tag_hint">Tags are colour labels you can filter by</string>
+    <string name="prompt_rename_tag">Rename tag</string>
+    <string name="sheet_tag_colour_title">Tag colour</string>
+
+    <!-- Actions sheet (long-press) -->
+    <string name="action_summary">%1$d pages · %2$s · %3$s · %4$d%% read</string>
+    <string name="action_open">Open</string>
+    <string name="action_open_sub">Resume at page %1$d</string>
+    <string name="action_open_new_tab">Open in new tab</string>
+    <string name="action_open_new_tab_sub">Keep your other documents open</string>
+    <string name="action_rename">Rename</string>
+    <string name="action_add_favorites">Add to favorites</string>
+    <string name="action_remove_favorites">Remove from favorites</string>
+    <string name="action_favorites_sub">Quick access from the Favorites tab</string>
+    <string name="action_manage_tags">Manage tags</string>
+    <string name="action_no_tags">No tags yet</string>
+    <string name="action_move_to_folder">Move to folder</string>
+    <string name="action_share">Share</string>
+    <string name="action_file_info">File info</string>
+    <string name="action_file_info_sub">Size, dates, page count, highlights</string>
+    <string name="action_delete_document">Delete document</string>
+    <string name="action_delete_document_sub">Removes it from your library</string>
+    <string name="action_coming_in">Arrives in %1$s</string>
+    <string name="milestone_reader">M3 · Reader</string>
+    <string name="milestone_tabs">M5 · Tabs</string>
+    <string name="milestone_sharing">M6 · Sharing</string>
+
+    <!-- Rename document -->
+    <string name="prompt_rename_document">Rename document</string>
+    <string name="prompt_new_name">New name</string>
+
+    <!-- Manage tags for one document -->
+    <string name="sheet_doc_tags_title">Tags</string>
+    <string name="sheet_doc_tags_sub">Apply as many labels as you like, then filter the library by combining them.</string>
+    <string name="sheet_new_tag_inline">New tag…</string>
+    <plurals name="tag_document_count">
+        <item quantity="one">%1$d document</item>
+        <item quantity="other">%1$d documents</item>
+    </plurals>
+
+    <!-- Move to folder -->
+    <string name="sheet_move_title">Move to folder</string>
+    <string name="sheet_move_sub">Nested folders are indented. Choose where this document lives.</string>
+    <string name="sheet_move_none">Remove from folder</string>
+    <string name="sheet_move_none_sub">Keep it in “Not filed”</string>
+
+    <!-- File info -->
+    <string name="sheet_info_title">File info</string>
+    <string name="info_type">Type</string>
+    <string name="info_size">Size</string>
+    <string name="info_pages">Pages</string>
+    <string name="info_added">Added</string>
+    <string name="info_last_opened">Last opened</string>
+    <string name="info_position">Reading position</string>
+    <string name="info_position_value">Page %1$d of %2$d · %3$d%%</string>
+    <string name="info_bookmarks">Bookmarks</string>
+    <string name="info_highlights">Highlights</string>
+    <string name="info_folder">Folder</string>
+    <string name="info_tags">Tags</string>
+    <string name="value_megabytes">%1$.2f MB</string>
+    <string name="value_never">Never</string>
+    <string name="value_not_filed">Not filed</string>
+    <string name="value_none">None</string>
+    <string name="value_date_and_ago">%1$s · %2$s</string>
+
+    <!-- Confirmations -->
+    <string name="dialog_delete_document_title">Delete this document?</string>
+    <string name="dialog_delete_document_body">“%1$s”, its %2$s and %3$d bookmark(s) will be removed from your library. This cannot be undone.</string>
+    <string name="dialog_delete_document_body_no_highlights">“%1$s” and %2$d bookmark(s) will be removed from your library. This cannot be undone.</string>
+    <plurals name="n_highlights">
+        <item quantity="one">%1$d highlight</item>
+        <item quantity="other">%1$d highlights</item>
+    </plurals>
+    <string name="dialog_delete_folder_title">Delete “%1$s”?</string>
+    <string name="dialog_delete_folder_body">%1$d document(s) will move to “%2$s”. They are not deleted.</string>
+    <string name="dialog_delete_folder_body_empty">This folder is empty and will be removed.</string>
+    <string name="action_delete_folder">Delete folder</string>
+    <string name="dialog_delete_tag_title">Delete tag “%1$s”?</string>
+    <string name="dialog_delete_tag_body">The tag is removed from every document. Documents themselves are untouched.</string>
+    <string name="action_delete_tag">Delete tag</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_save">Save</string>
+
+    <!-- Row content -->
+    <plurals name="n_pages">
+        <item quantity="one">%1$d page</item>
+        <item quantity="other">%1$d pages</item>
+    </plurals>
+    <plurals name="n_bookmarks">
+        <item quantity="one">%1$d bookmark</item>
+        <item quantity="other">%1$d bookmarks</item>
+    </plurals>
+    <plurals name="n_highlights_docs">
+        <item quantity="one">%1$d highlight</item>
+        <item quantity="other">%1$d highlights</item>
+    </plurals>
+    <string name="progress_label">%1$d%% · p%2$d</string>
+    <string name="separator">·</string>
+
+    <!-- Time -->
+    <string name="time_just_now">just now</string>
+    <string name="time_never">never</string>
+    <plurals name="time_minutes">
+        <item quantity="one">%1$d min ago</item>
+        <item quantity="other">%1$d min ago</item>
+    </plurals>
+    <plurals name="time_hours">
+        <item quantity="one">%1$d h ago</item>
+        <item quantity="other">%1$d h ago</item>
+    </plurals>
+    <plurals name="time_days">
+        <item quantity="one">%1$d d ago</item>
+        <item quantity="other">%1$d d ago</item>
+    </plurals>
+
+    <!-- Snackbars -->
+    <string name="snack_added_to_favorites">Added to favorites</string>
+    <string name="snack_removed_from_favorites">Removed from favorites</string>
+    <string name="snack_document_deleted">Document deleted</string>
+    <string name="snack_document_restored">Document restored</string>
+    <string name="snack_folder_created">Folder created</string>
+    <string name="snack_subfolder_created">Subfolder created</string>
+    <string name="snack_folder_renamed">Folder renamed</string>
+    <string name="snack_folder_deleted">Folder deleted</string>
+    <string name="snack_colour_updated">Colour updated</string>
+    <string name="snack_tag_created">Tag created</string>
+    <string name="snack_tag_renamed">Tag renamed</string>
+    <string name="snack_tag_deleted">Tag deleted</string>
+    <string name="snack_tag_exists">Tag already exists</string>
+    <string name="snack_collection_exists">That collection already exists</string>
+    <string name="snack_collection_added">Collection “%1$s” added</string>
+    <string name="snack_sorted_by">Sorted by %1$s</string>
+    <string name="snack_grouped_on">Grouped by file type · tap a group to see its files</string>
+    <string name="snack_grouped_off">Showing one list of every document</string>
+    <string name="snack_group_entered">%1$s · %2$s · sorted by %3$s</string>
+    <string name="snack_moved_to">Moved to %1$s</string>
+    <string name="snack_removed_from_folder">Removed from folder</string>
+    <string name="snack_renamed_to">Renamed to “%1$s”</string>
+    <string name="action_undo">Undo</string>
 
     <!-- Empty states (exact mockup copy) -->
     <string name="empty_library_title">Nothing here yet</string>
@@ -40,6 +320,16 @@
     <string name="empty_favorites_message">Tap the star on any document, or long-press a document and choose “Add to favorites”.</string>
     <string name="empty_search_title">Search your library</string>
     <string name="empty_search_message">Find documents by name, tag or folder — or search for a word <i>inside</i> your files. Combine filters to narrow it further.</string>
+
+    <!-- Content descriptions (§10) -->
+    <string name="cd_star_on">Remove from favorites</string>
+    <string name="cd_star_off">Add to favorites</string>
+    <string name="cd_rename">Rename</string>
+    <string name="cd_recolour">Change colour</string>
+    <string name="cd_delete">Delete</string>
+    <string name="cd_document">Document %1$s</string>
+    <string name="cd_reading_progress">%1$d%% read, page %2$d of %3$d</string>
+    <string name="cd_close_sheet">Close</string>
 
     <!-- Settings → About (§6.5) -->
     <string name="settings_group_about">About</string>
