@@ -7,7 +7,7 @@ import app.leaf.reader.core.data.repo.DocumentRepository
 import app.leaf.reader.core.data.repo.FolderRepository
 import app.leaf.reader.core.data.repo.SmartCollectionRepository
 import app.leaf.reader.core.data.repo.TagRepository
-import app.leaf.reader.core.domain.SmartRule
+import app.leaf.reader.core.model.SmartRule
 import app.leaf.reader.core.model.DocType
 import app.leaf.reader.core.util.LeafSwatches
 import kotlinx.coroutines.flow.first
