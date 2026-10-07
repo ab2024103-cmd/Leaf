@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -31,7 +33,14 @@ class DocumentRepositoryTest {
     @Before
     fun setUp() {
         db = testDatabase()
-        documents = DocumentRepository(db.documentDao(), db.documentTagDao())
+        documents = DocumentRepository(
+            documents = db.documentDao(),
+            documentTags = db.documentTagDao(),
+            bookmarks = db.bookmarkDao(),
+            highlights = db.highlightDao(),
+            progress = db.progressDao(),
+            recents = db.recentDao()
+        )
     }
 
     @After
@@ -69,6 +78,42 @@ class DocumentRepositoryTest {
         assertEquals(5, pdfs.size)
         assertEquals(6, all.first { it.id == "d1" }.pageCount)
         assertEquals(7, all.first { it.id == "d4" }.pageCount)
+    }
+
+    /** §8.7: a deleted document comes back with its highlights and bookmarks. */
+    @Test
+    fun delete_then_undo_restores_everything_attached_to_the_document() = runTest {
+        DatabaseSeeder(db).seed(now)
+
+        val before = documents.observeLibrary().first().first { it.id == "d1" }
+        val snapshot = documents.snapshot("d1")
+        documents.delete("d1")
+
+        assertEquals(9, documents.observeDocuments().first().size)
+        assertEquals(0, db.highlightDao().getForDocument("d1").size)
+        assertEquals(null, db.recentDao().get("d1"))
+
+        documents.restore(checkNotNull(snapshot))
+        val after = documents.observeLibrary().first().first { it.id == "d1" }
+        assertEquals(before, after)
+        assertEquals(3, db.highlightDao().getForDocument("d1").size)
+        assertEquals(1, db.bookmarkDao().getForDocument("d1").size)
+        assertEquals(listOf("personal", "reading"), after.document.tags)
+    }
+
+    @Test
+    fun library_rows_carry_progress_bookmarks_and_highlights() = runTest {
+        DatabaseSeeder(db).seed(now)
+
+        val library = documents.observeLibrary().first()
+        val d1 = library.first { it.id == "d1" }
+        assertEquals(3, d1.highlightCount)
+        assertEquals(1, d1.bookmarkCount)
+        // page 2 of 6 → 50 % read, so the progress row shows (§6.1).
+        assertEquals(50, d1.pctRead)
+        assertTrue(d1.showProgress)
+        val finished = library.first { it.id == "d2" }
+        assertFalse(finished.showProgress)
     }
 
     @Test
