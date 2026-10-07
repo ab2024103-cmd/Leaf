@@ -73,7 +73,9 @@ class LeafPressTest {
     fun release_before_470_ms_is_a_tap_and_never_opens_actions() {
         showPressTarget()
 
-        holdFor(LeafMotion.longPress - 1)
+        // The Compose test clock advances in 16 ms frames; 420 ms is safely before
+        // the 470 ms coroutine deadline even after rounding to the next frame.
+        holdFor(LeafMotion.longPress - 50)
 
         assertEquals(0, longPresses.get())
         assertEquals(1, taps.get())
