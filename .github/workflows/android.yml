@@ -148,6 +148,22 @@ jobs:
           set -o pipefail
           ./gradlew recordRoborazziDebug --stacktrace 2>&1 | tee gradle-screens.log
 
+
+      - name: Upload rendered screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-screens-${{ github.sha }}
+          path: |
+            app/build/outputs/roborazzi/**
+            app/src/test/snapshots/**
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Verify against the recorded baseline
+        run: |
+          set -o pipefail
+          ./gradlew verifyRoborazziDebug --stacktrace 2>&1 | tee -a gradle-screens.log
+
       # The sandbox this project is developed in cannot download Actions artifacts or
       # job logs, so the interesting part of the Gradle console is committed back to the
       # branch under ci-logs/ where it can simply be pulled and read. [skip ci] keeps
@@ -158,8 +174,16 @@ jobs:
           set -u
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ -d app/src/test/snapshots ]; then
+            mkdir -p /tmp/leaf-snapshots
+            cp -a app/src/test/snapshots/. /tmp/leaf-snapshots/
+          fi
           git fetch origin "${GITHUB_REF_NAME}" || true
           git checkout -B "${GITHUB_REF_NAME}" "origin/${GITHUB_REF_NAME}" || git checkout "${GITHUB_REF_NAME}"
+          if [ -d /tmp/leaf-snapshots ]; then
+            mkdir -p app/src/test/snapshots
+            cp -a /tmp/leaf-snapshots/. app/src/test/snapshots/
+          fi
           mkdir -p ci-logs
           LOG="ci-logs/${GITHUB_JOB}-${GITHUB_RUN_NUMBER}.log"
           : > "$LOG"
@@ -180,22 +204,9 @@ jobs:
             echo "### tail of the console"
             tail -n 1200 gradle-screens.log || true
           } >> "$LOG" 2>&1
-          git add ci-logs
+          git add ci-logs app/src/test/snapshots
           git commit -m "ci: build log [skip ci]" || echo "nothing to commit"
           git push origin "HEAD:${GITHUB_REF_NAME}" || echo "push failed"
-
-      - name: Upload rendered screenshots
-        uses: actions/upload-artifact@v4
-        with:
-          name: rendered-screens-${{ github.sha }}
-          path: |
-            app/build/outputs/roborazzi/**
-            app/src/test/snapshots/**
-          if-no-files-found: error
-          retention-days: 30
-
-      - name: Verify against the recorded baseline
-        run: ./gradlew verifyRoborazziDebug
 
   # ── release: tag v* ────────────────────────────────────────────────────────
   release:

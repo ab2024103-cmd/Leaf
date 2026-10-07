@@ -7,7 +7,6 @@ import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import app.leaf.reader.FIXED_NOW
-import app.leaf.reader.LeafApp
 import app.leaf.reader.core.data.db.DatabaseSeeder
 import app.leaf.reader.core.model.AppTheme
 import app.leaf.reader.core.ui.theme.LeafTheme
@@ -36,28 +35,28 @@ import org.robolectric.annotation.GraphicsMode
  * and above it are part of every baseline — and captured through the native view
  * hierarchy (Roborazzi's Compose bridge renders blank with this toolchain).
  *
- * The Library screen reads its ViewModel from Koin, so the run uses [LeafApp] rather
- * than a bare `Application`: that is the graph the app itself builds. The demo library
- * is then seeded synchronously — at [FIXED_NOW] — so the rows, the relative dates and
- * the chip counts are identical on every run.
+ * The Library screen reads its ViewModel from Koin, so the test application builds the
+ * app's real [app.leaf.reader.di.appModule] graph but omits the production background
+ * seeder. The demo library is seeded synchronously at [FIXED_NOW], so the rows, relative
+ * dates and chip counts are identical in Roborazzi's record and verify runs.
  */
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(application = LeafApp::class, sdk = [33])
+@Config(application = LibraryScreenshotApplication::class, sdk = [33])
 class LibraryScreenshotTest : KoinComponent {
 
     private val seeder: DatabaseSeeder by inject()
 
     @Before
     fun seedDemoLibrary() {
-        runBlocking(Dispatchers.IO) { seeder.seedIfEmpty(FIXED_NOW) }
+        runBlocking(Dispatchers.IO) { seeder.seed(FIXED_NOW) }
     }
 
     @After
     fun stopKoinGraph() {
-        // Koin is process-global; Robolectric creates a fresh LeafApp for the next
-        // parameterized screen capture but runs the tests in the same JVM.
+        // Koin is process-global; Robolectric creates a fresh screenshot Application
+        // for the next capture but runs the tests in the same JVM.
         if (GlobalContext.getOrNull() != null) stopKoin()
     }
 
