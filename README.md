@@ -125,7 +125,7 @@ by running it.
 
 ## Verification
 
-The final M2 branch run is green: [build, lint, all unit tests, APK assembly and screenshot parity](https://github.com/ab2024103-cmd/Leaf/actions/runs/37649821750).
+The final M2 branch run is green: [build, lint, all unit tests, APK assembly and screenshot parity](https://github.com/ab2024103-cmd/Leaf/actions/runs/37651118098).
 
 | Job | Result |
 |---|---|
@@ -134,8 +134,8 @@ The final M2 branch run is green: [build, lint, all unit tests, APK assembly and
 | Screenshot parity — record + verify | ✅ |
 | Release APK + AAB | skipped — only runs on `v*` tags |
 
-- **Installable debug APK:** [download](https://github.com/ab2024103-cmd/Leaf/actions/runs/37649821750/artifacts/11495139684)
-- **Rendered screenshots:** [download](https://github.com/ab2024103-cmd/Leaf/actions/runs/37649821750/artifacts/11495413820)
+- **Installable debug APK:** [download](https://github.com/ab2024103-cmd/Leaf/actions/runs/37651118098/artifacts/11496925848)
+- **Rendered screenshots:** [download](https://github.com/ab2024103-cmd/Leaf/actions/runs/37651118098/artifacts/11496970301)
 - **Committed Library baselines:** `app/src/test/snapshots/library_{360,412,700}_{light,dark}.png`
 
 The 89 tests include sorting in both directions, filter composition/count context, all seven smart
