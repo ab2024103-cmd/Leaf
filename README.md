@@ -13,10 +13,12 @@ The design contract lives in [`design/`](design/): `LEAF-MASTER-PROMPT.md` (the 
 
 ---
 
-## Status · Milestone 1 — Foundation
+## Status · Milestones 1–2 — Foundation + Library & organisation
 
-M1 builds the ground the rest of the app stands on. It is intentionally the smallest milestone that
-is *complete* rather than the largest that compiles.
+M1 established the Android foundation; M2 is now complete and green in CI. The default Library is a
+native Compose screen with live filters, grouping, sorting, organisation sheets and document actions.
+The milestones remain scoped: the rows that can genuinely work are live, while M3+ entry points are
+left out rather than displayed as dead buttons.
 
 **In this build**
 
@@ -38,10 +40,24 @@ is *complete* rather than the largest that compiles.
 - **Demo library** — the mockup's seed, generated from `design/leaf-mockup-v2.html`: 10 documents
   (including the `.xlsx` and the `.pptx`), 5 folders, 7 tags, 6 smart collections, recents,
   bookmarks, highlights and the text of all 40 pages.
+- **Library rows (§4.6)** — name and file icon, pages / size / bookmark / last-opened metadata, tag
+  chips, reading progress, star toggle, and the 470 ms long-press actions sheet.
+- **Filter rails and sort** — folders with subtree counts, smart collections, multi-select AND tags,
+  a four-field sort sheet, and a visible file-type filter glyph.
+- **File-type groups (§6.1, §8.13)** — PDF → DOCX → XLSX → PPTX → TXT → EPUB overview, responsive
+  one-/two-column cards, a transient group crumb, sorting inside a group, persisted grouping setting,
+  empty-group fallback and the three required snackbars.
+- **Folder and tag managers** — nested folders with document/subfolder counts; create/rename/recolour/
+  confirmed delete; tag create/rename with cascade/recolour/confirmed delete. Neither delete path ever
+  deletes documents.
+- **Smart collections** — the complete seven-rule composer (all, type, age, in progress, unfiled,
+  highlights, tag) with type/age/tag follow-up sheets.
+- **Document actions** — rename preserving the extension, favorite, manage tags, move, file info,
+  confirmed delete and Undo that restores attached data.
 
-**Not in this build** — document rows, filter rails, the sort sheet, the folder and tag managers,
-search and the reader. They arrive in M2–M8 with the features that make them work, so nothing on
-screen is a stub, a placeholder or a dead button.
+**Not in this build** — the reader (M3), advanced Search and its filter panel (M4), tabs and
+pick-a-document mode (M5), sharing (M6), full Settings controls (M7) and the remaining M8 scope.
+Recents, Favorites, Search and Settings still show their M1 scaffolds until their milestones.
 
 ## Build & verify
 
@@ -53,15 +69,16 @@ python3 tools/gen_seed_content.py                # regenerate SeedContent.kt fro
 python3 tools/gen_launcher_icon.py               # regenerate the legacy launcher PNGs
 ```
 
-Every push opens a draft PR whose CI run uploads `leaf-debug-<sha>` (an installable debug APK) and
-`rendered-screens-<sha>` (the screenshots).
+The session's draft PR is pinned to `arena/ceade348-leaf`; its CI uploads `leaf-debug-<sha>` (an
+installable debug APK) and `rendered-screens-<sha>` (the screenshots).
 
 ## Screenshots
 
 Roborazzi renders the five destinations at 360 / 412 / 700 dp in light and dark and commits the
-baselines to `app/src/test/snapshots/`. The screenshots are of the **empty** states: M1 ships the
-scaffolds, and the seeded library is proven by unit tests rather than by rows that M2 has not built
-yet.
+baselines to `app/src/test/snapshots/`. The six Library baselines show the seeded rows, three filter
+rails, star/progress states, group and sort controls; the other four destinations remain the M1
+scaffolds. The Library screenshot harness waits for the Room flow and uses a fixed clock so record
+and verify see the same content.
 
 | Destination | 360 dp | 412 dp | 700 dp |
 |---|---|---|---|
@@ -79,21 +96,21 @@ by running it.
 | # | Feature group | Source | Status |
 |---|---|---|---|
 | 1 | Recents — auto tracking, hero, continue grid, today/earlier, per-entry remove, clear today, clear all, badge | Mockup §6.2 | ☐ |
-| 2 | Favorites — star toggle, own sort (name/added/opened) | §6.3 | ☐ |
+| 2 | Favorites — star toggle, own sort (name/added/opened) | §6.3 | 🟨 partial — the Library star toggle is live; Favorites screen and its independent sort are later |
 | 3 | Page Stay — position, offset, zoom, scroll dir, theme, orientation; progress everywhere | §2.2 | ☐ |
-| 4 | Folders — create, rename, recolour, delete, nesting, counts | §6.1 | ☐ |
-| 5 | Smart collections — 7 rules, addable | §6.1 | ☐ |
-| 6 | Tags — create, rename (cascade), recolour, delete, AND filtering, manager | §6.1 | ☐ |
+| 4 | Folders — create, rename, recolour, delete, nesting, counts | §6.1 | ✅ M2 |
+| 5 | Smart collections — 7 rules, addable | §6.1 | ✅ M2 — all seven rules and their composer |
+| 6 | Tags — create, rename (cascade), recolour, delete, AND filtering, manager | §6.1 | ✅ M2 |
 | 7 | Advanced search — 5 scopes, combined filters, summary, snippets, open-at-page | §6.4 | ☐ |
 | 8 | Search history — chips, per-item delete, clear, re-run | §6.4 | ☐ |
-| 9 | Sorting — 4 fields × direction, independent favorites sort, applies to the open file-type group | §6.1 | ☐ |
+| 9 | Sorting — 4 fields × direction, independent favorites sort, applies to the open file-type group | §6.1 | 🟨 partial — Library sort and open groups are live; Favorites sort is later |
 | 10 | Highlighting — 5 colours, selection, recolour, remove, copy | §7.4 | ☐ |
 | 11 | Highlight undo/redo — 50-step, labels, snackbars | §7.4 | ☐ |
 | 12 | Highlights summary panel — quote, page, jump, delete, clear all | §6.7 | ☐ |
 | 13 | Bookmarks — page flag, toolbar, shortcut, sheet, count | §6.6 | ☐ |
 | 14 | Multi-tab — Open documents sheet + badge, pick-a-document mode, per-tab state, close any row incl. the active/last one, close all from n≥1, undo, configurable limit, back keeps tabs | §6.6 | ☐ |
 | 15 | Share — document, page image, selection, copy path, copy page text | §6.7 | ☐ |
-| 16 | File actions — rename, delete (+undo), move, tags, favorite, info | §6.7 | ☐ |
+| 16 | File actions — rename, delete (+undo), move, tags, favorite, info | §6.7 | 🟨 partial — these M2 actions are live; Open/new-tab/Share wait for their reader/tab/sharing milestones |
 | 17 | Reading themes — Paper, Sepia, Night, OLED, Auto | §4.2 | ☐ |
 | 18 | Scroll modes — vertical, horizontal with snap+page-turn | §6.6 | ☐ |
 | 19 | Zoom & pan — pinch, double-tap, buttons, ctrl-wheel, drag-pan, 70–250 % | §6.6 | ☐ |
@@ -108,30 +125,31 @@ by running it.
 
 ## Verification
 
-`./gradlew lint testDebugUnitTest assembleDebug` and `./gradlew recordRoborazziDebug
-verifyRoborazziDebug` are both green in CI on the working branch:
+The final M2 branch run is green: [build, lint, all unit tests, APK assembly and screenshot parity](https://github.com/ab2024103-cmd/Leaf/actions/runs/37649821750).
 
 | Job | Result |
 |---|---|
 | Build, lint & unit tests | ✅ |
-| Screenshot parity (record + verify against the committed baselines) | ✅ |
-| Release APK + AAB | skipped — runs on `v*` tags only |
+| Assemble debug APK | ✅ |
+| Screenshot parity — record + verify | ✅ |
+| Release APK + AAB | skipped — only runs on `v*` tags |
 
-CI uploads `leaf-debug-<sha>` (~14.9 MB installable debug APK), `rendered-screens-<sha>`
-(the 30 screenshots) and `reports-<sha>`.
+- **Installable debug APK:** [download](https://github.com/ab2024103-cmd/Leaf/actions/runs/37649821750/artifacts/11495139684)
+- **Rendered screenshots:** [download](https://github.com/ab2024103-cmd/Leaf/actions/runs/37649821750/artifacts/11495413820)
+- **Committed Library baselines:** `app/src/test/snapshots/library_{360,412,700}_{light,dark}.png`
 
-Coverage: 14 unit tests over the seed, the repositories and the settings store, plus 30
-screenshot baselines (5 screens × 360/412/700 dp × light/dark).
+The 89 tests include sorting in both directions, filter composition/count context, all seven smart
+rules, folder subtree/group counts, the empty-group fallback, rename-extension behavior, delete+Undo,
+folder/tag delete safety, and the 470 ms row long-press/tap flow; the 30 Roborazzi captures cover five
+destinations × three widths × light/dark.
 
 ## Deviations from the mockup and the spec
 
 Every deviation is a decision, not an accident.
 
-1. **Screens are empty scaffolds.** The mockup shows a full library; M1 shows each destination's app
-   bar and its exact empty-state copy. The seed — 10 documents, 5 folders, 7 tags, 6 collections,
-   40 pages of text, highlights and bookmarks — is in the database and verified by
-   `SeedDataTest`, but rows are M2. This is the milestone scope that was agreed before any code was
-   written: nothing on screen is a stub.
+1. **Non-Library destinations remain M1 scaffolds.** The M2 Library is now populated and functional;
+   Recents, Favorites, Search and Settings remain on their honest M1 empty-state surfaces until their
+   own milestones.
 2. **`ci/android.yml` could not pass as-is.** Its release job used
    `if: ${{ secrets.KEYSTORE_BASE64 != '' }}`; GitHub rejects the `secrets` context inside an `if:`
    expression, which invalidated the *entire* workflow file — every run of it produced zero jobs, on
@@ -163,13 +181,24 @@ Every deviation is a decision, not an accident.
    the mockup does not have. It exists in settings as `matchSystemColors`, default **off**, and is
    wired to `LeafTheme`; the Settings row that flips it lands in M7.
 9. **Demo documents use a `leaf-demo://` URI.** They are content, not files on disk, so their text
-   lives in the `extracted_text` cache. Real documents will arrive through the file picker and the
-   open-with intents in M2/M6.
+   lives in the `extracted_text` cache. M2 does not add an Import screen or a fake SAF result; real
+   document intake is deferred to the milestone that implements the reader/open flow.
 10. **No `design/leaf_tokens.json` in this repo.** The token set was re-derived from the mockup's CSS
     and compared against §4; the two agree everywhere except deviation 4.
+11. **Row tap stays inert until M3.** This was explicitly approved for M2. A long-press still opens the
+    actions sheet; the row has no dead click target.
+12. **Future actions are omitted rather than stubbed.** The M2 actions sheet omits Open, Open in new
+    tab and Share until M3/M5/M6 can perform them. Pick-a-document mode is deferred to M5 because its
+    entry points are part of the tabs flow.
+13. **The §6.1 filter glyph is decorative in M2.** The advanced filter panel is part of the later
+    Search scope; no inert tappable filter button is exposed.
+14. **Sort direction follows the labels.** “Ascending” shows A–Z / Newest / Recent / Largest, matching
+    the mockup's visible sort copy. The mockup's comparator reverses the three numeric/time fields
+    against those labels; Leaf keeps the labels and makes the order agree with what the user sees.
+15. **Milestone branch naming is session-pinned.** The Arena session is fixed to
+    `arena/ceade348-leaf`; the existing PR carries M1 + M2 rather than creating `m2-library`.
 
-## What's next — M2 · Library & organisation
+## What's next — M3 · Reader
 
-Document rows (file icon, meta line, tag chips, progress row, star), the three filter rails with live
-counts, the sort sheet, the folder and tag managers, the long-press actions sheet, and
-rename / move / delete with Undo — with unit tests for the sort comparators and filter composition.
+Build the real document-open path and reader while keeping the M2 Library rows, actions, filters,
+counts, file-type groups and persisted sort settings intact.
