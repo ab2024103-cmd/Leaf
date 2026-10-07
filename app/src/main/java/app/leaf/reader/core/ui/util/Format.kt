@@ -7,6 +7,7 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.platform.LocalContext
 import app.leaf.reader.R
 import app.leaf.reader.core.model.DocType
+import app.leaf.reader.core.util.TimeAgo
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

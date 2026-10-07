@@ -387,8 +387,8 @@ private fun FolderTree(
     parentId: String?,
     depth: Int,
     onPick: (String?) -> Unit,
-    subtitleFor: ((Folder) -> String)? = null,
-    actionsFor: ((Folder) -> (@Composable () -> Unit))? = null,
+    subtitleFor: (@Composable (Folder) -> String)? = null,
+    actionsFor: (@Composable (Folder) -> Unit)? = null,
     /** When set, a ✓ marks the folders it answers true for. */
     trailingFor: ((Folder) -> Boolean)? = null
 ) {
@@ -403,7 +403,7 @@ private fun FolderTree(
             indent = depth > 0,
             onClick = { onPick(folder.id) },
             trailing = when {
-                actionsFor != null -> { { actionsFor.invoke(folder).invoke() } }
+                actionsFor != null -> { { actionsFor.invoke(folder) } }
                 trailingFor != null && trailingFor.invoke(folder) -> { { LeafCheck() } }
                 else -> null
             }

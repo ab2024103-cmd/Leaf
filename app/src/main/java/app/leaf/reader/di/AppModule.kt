@@ -14,6 +14,7 @@ import app.leaf.reader.core.data.repo.RecentRepository
 import app.leaf.reader.core.data.repo.SmartCollectionRepository
 import app.leaf.reader.core.data.repo.TagRepository
 import app.leaf.reader.feature.library.LibraryViewModel
+import org.koin.android.ext.koin.androidApplication
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.core.module.dsl.singleOf

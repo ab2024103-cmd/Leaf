@@ -377,7 +377,7 @@ fun LeafPromptSheet(
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surface
                 ),
-                keyboardOptions = androidx.compose.ui.text.input.KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = androidx.compose.foundation.text.KeyboardActions(
                     onDone = { if (value.isNotBlank()) onSave(value.trim()) }
                 )
