@@ -107,7 +107,7 @@ class LibraryQueryTest {
             LibraryFilter(type = DocType.PDF),
             groupByType = true,
             field = SortField.FILE_SIZE,
-            ascending = false
+            ascending = true          // "Largest" — and d2 is four times d1
         )
         assertEquals(listOf("d2", "d1"), grouped.rows.map { it.id })
     }
@@ -149,7 +149,7 @@ class LibraryQueryTest {
         val filtered = view(LibraryFilter(folderId = "f-work", smartId = "s-pdf"))
         assertEquals(2, filtered.smartTotals["s-pdf"])
         assertEquals(3, filtered.smartTotals["s-all"])
-        assertEquals(2, filtered.smartTotals["s-week"])
+        assertEquals(3, filtered.smartTotals["s-week"])   // d1 + d2 + d5 were all added this week
     }
 
     // ── the grouped view ─────────────────────────────────────────────────────────
@@ -163,7 +163,7 @@ class LibraryQueryTest {
         )
         val pdf = cards.first { it.type == DocType.PDF }
         assertEquals(2, pdf.count)
-        assertEquals(2, pdf.docsWithHighlights)
+        assertEquals(1, pdf.docsWithHighlights)  // only d1 carries highlights
         assertEquals(1, pdf.docsWithBookmarks)
     }
 

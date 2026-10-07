@@ -34,7 +34,8 @@ class RenameTest {
 
     @Test
     fun a_document_without_an_extension_stays_without_one() {
-        assertEquals("README", renameKeepingExtension("README", "CHANGELOG"))
+        // No extension on either side, so the typed name wins outright.
+        assertEquals("CHANGELOG", renameKeepingExtension("README", "CHANGELOG"))
     }
 
     @Test

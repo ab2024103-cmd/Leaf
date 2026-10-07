@@ -96,6 +96,15 @@ jobs:
             echo "### errors and failures"
             grep -E "^e: |^w: |error:|FAILURE:|What went wrong|FAILED|Execution failed|error\(|\[Lint\]" gradle-build.log | head -300 || true
             echo
+            echo "### test failure details"
+            if [ -d app/build/test-results ]; then
+              find app/build/test-results -name '*.xml' | sort | while read -r xml; do
+                hits=$(grep -o '<testcase name="[^"]*"\|<failure message="[^"]*"\|<error message="[^"]*"' "$xml" | \
+                  sed -e 's/&lt;/</g' -e 's/&gt;/>/g' -e 's/&quot;/"/g' -e 's/&amp;/\&/g')
+                if [ -n "$hits" ]; then echo "$xml"; echo "$hits"; fi
+              done
+            fi
+            echo
             echo "### tail of the console"
             tail -n 1200 gradle-build.log || true
           } >> "$LOG" 2>&1
@@ -158,6 +167,15 @@ jobs:
             echo "### job: ${GITHUB_JOB}  run: ${GITHUB_RUN_NUMBER}  sha: ${GITHUB_SHA}"
             echo "### errors and failures"
             grep -E "^e: |^w: |error:|FAILURE:|What went wrong|FAILED|Execution failed|error\(|\[Lint\]" gradle-screens.log | head -300 || true
+            echo
+            echo "### test failure details"
+            if [ -d app/build/test-results ]; then
+              find app/build/test-results -name '*.xml' | sort | while read -r xml; do
+                hits=$(grep -o '<testcase name="[^"]*"\|<failure message="[^"]*"\|<error message="[^"]*"' "$xml" | \
+                  sed -e 's/&lt;/</g' -e 's/&gt;/>/g' -e 's/&quot;/"/g' -e 's/&amp;/\&/g')
+                if [ -n "$hits" ]; then echo "$xml"; echo "$hits"; fi
+              done
+            fi
             echo
             echo "### tail of the console"
             tail -n 1200 gradle-screens.log || true

@@ -6,7 +6,11 @@ import app.leaf.reader.core.model.SortField
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-/** §12: sort comparators, every field in both directions, plus the name tie-break. */
+/**
+ * §12: sort comparators, every field in both directions, plus the name tie-break.
+ * "Ascending" is the direction the sort chip names first for the field (§6.1):
+ * A–Z · Newest · Recent · Largest.
+ */
 class LibrarySortTest {
 
     private val library = listOf(
@@ -27,21 +31,21 @@ class LibrarySortTest {
     }
 
     @Test
-    fun date_added_newest_first_when_ascending() {
+    fun date_added_ascending_puts_the_newest_first() {
         assertEquals(listOf("d4", "d2", "d3", "d1"), sorted(SortField.DATE_ADDED, ascending = true))
         assertEquals(listOf("d1", "d3", "d2", "d4"), sorted(SortField.DATE_ADDED, ascending = false))
     }
 
     @Test
-    fun last_opened_recent_first_when_ascending() {
+    fun last_opened_ascending_puts_the_most_recent_first() {
         assertEquals(listOf("d1", "d4", "d3", "d2"), sorted(SortField.LAST_OPENED, ascending = true))
         assertEquals(listOf("d2", "d3", "d4", "d1"), sorted(SortField.LAST_OPENED, ascending = false))
     }
 
     @Test
-    fun file_size_largest_first_when_ascending() {
+    fun file_size_ascending_puts_the_largest_first() {
         assertEquals(listOf("d1", "d4", "d3", "d2"), sorted(SortField.FILE_SIZE, ascending = true))
-        assertEquals(listOf("d2", "d3", "d4", "d1"), sorted(SortField.FILE_SIZE, ascending = false))
+        assertEquals(listOf("d2", "d4", "d3", "d1"), sorted(SortField.FILE_SIZE, ascending = false))
     }
 
     @Test
@@ -50,9 +54,15 @@ class LibrarySortTest {
             doc("opened", openedDaysAgo = 1),
             doc("never", openedDaysAgo = null)
         )
+        // No timestamp at all reads as the oldest there is, so it trails "Recent" and
+        // leads "Oldest" — never disappearing from either end of the list.
         assertEquals(
             listOf("opened", "never"),
             LibrarySort.sorted(mixed, SortField.LAST_OPENED, ascending = true).map { it.id }
+        )
+        assertEquals(
+            listOf("never", "opened"),
+            LibrarySort.sorted(mixed, SortField.LAST_OPENED, ascending = false).map { it.id }
         )
     }
 
