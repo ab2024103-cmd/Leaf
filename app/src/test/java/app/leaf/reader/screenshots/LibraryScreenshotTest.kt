@@ -16,11 +16,14 @@ import app.leaf.reader.navigation.LeafShell
 import com.github.takahirom.roborazzi.captureRoboImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import org.koin.core.context.GlobalContext
+import org.koin.core.context.stopKoin
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -49,6 +52,13 @@ class LibraryScreenshotTest : KoinComponent {
     @Before
     fun seedDemoLibrary() {
         runBlocking(Dispatchers.IO) { seeder.seedIfEmpty(FIXED_NOW) }
+    }
+
+    @After
+    fun stopKoinGraph() {
+        // Koin is process-global; Robolectric creates a fresh LeafApp for the next
+        // parameterized screen capture but runs the tests in the same JVM.
+        if (GlobalContext.getOrNull() != null) stopKoin()
     }
 
     private fun capture(name: String, dark: Boolean, widthDp: Int, heightDp: Int) {

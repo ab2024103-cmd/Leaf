@@ -12,9 +12,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
 
 /**
  * Leaf application: builds the graph, migrates settings and seeds the demo library.
@@ -30,10 +28,6 @@ class LeafApp : Application(), KoinComponent {
 
     override fun onCreate() {
         super.onCreate()
-        // Robolectric builds a fresh Application per test in the same JVM, so the graph
-        // left behind by the previous one has to be dropped before this instance binds
-        // its own context. In the app itself there is only ever one process and one call.
-        if (GlobalContext.getOrNull() != null) stopKoin()
         startKoin {
             androidLogger()
             androidContext(this@LeafApp)
