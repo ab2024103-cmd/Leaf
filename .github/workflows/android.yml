@@ -76,14 +76,32 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Upload the Gradle console log
+      # The sandbox this project is developed in cannot download Actions artifacts or
+      # job logs, so the interesting part of the Gradle console is committed back to the
+      # branch under ci-logs/ where it can simply be pulled and read. [skip ci] keeps
+      # that commit from starting another run.
+      - name: Publish the Gradle log to the branch
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: gradle-log-${{ github.sha }}
-          path: gradle-build.log
-          if-no-files-found: ignore
-          retention-days: 14
+        run: |
+          set -u
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin "${GITHUB_REF_NAME}" || true
+          git checkout -B "${GITHUB_REF_NAME}" "origin/${GITHUB_REF_NAME}" || git checkout "${GITHUB_REF_NAME}"
+          mkdir -p ci-logs
+          LOG="ci-logs/${GITHUB_JOB}-${GITHUB_RUN_NUMBER}.log"
+          : > "$LOG"
+          {
+            echo "### job: ${GITHUB_JOB}  run: ${GITHUB_RUN_NUMBER}  sha: ${GITHUB_SHA}"
+            echo "### errors and failures"
+            grep -E "^e: |^w: |error:|FAILURE:|What went wrong|FAILED|Execution failed|error\(|\[Lint\]" gradle-build.log | head -300 || true
+            echo
+            echo "### tail of the console"
+            tail -n 1200 gradle-build.log || true
+          } >> "$LOG" 2>&1
+          git add ci-logs
+          git commit -m "ci: build log [skip ci]" || echo "nothing to commit"
+          git push origin "HEAD:${GITHUB_REF_NAME}" || echo "push failed"
 
       - name: Upload test & lint reports
         if: always()
@@ -121,14 +139,32 @@ jobs:
           set -o pipefail
           ./gradlew recordRoborazziDebug --stacktrace 2>&1 | tee gradle-screens.log
 
-      - name: Upload the screenshot Gradle log
+      # The sandbox this project is developed in cannot download Actions artifacts or
+      # job logs, so the interesting part of the Gradle console is committed back to the
+      # branch under ci-logs/ where it can simply be pulled and read. [skip ci] keeps
+      # that commit from starting another run.
+      - name: Publish the Gradle log to the branch
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: gradle-screens-log-${{ github.sha }}
-          path: gradle-screens.log
-          if-no-files-found: ignore
-          retention-days: 14
+        run: |
+          set -u
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin "${GITHUB_REF_NAME}" || true
+          git checkout -B "${GITHUB_REF_NAME}" "origin/${GITHUB_REF_NAME}" || git checkout "${GITHUB_REF_NAME}"
+          mkdir -p ci-logs
+          LOG="ci-logs/${GITHUB_JOB}-${GITHUB_RUN_NUMBER}.log"
+          : > "$LOG"
+          {
+            echo "### job: ${GITHUB_JOB}  run: ${GITHUB_RUN_NUMBER}  sha: ${GITHUB_SHA}"
+            echo "### errors and failures"
+            grep -E "^e: |^w: |error:|FAILURE:|What went wrong|FAILED|Execution failed|error\(|\[Lint\]" gradle-screens.log | head -300 || true
+            echo
+            echo "### tail of the console"
+            tail -n 1200 gradle-screens.log || true
+          } >> "$LOG" 2>&1
+          git add ci-logs
+          git commit -m "ci: build log [skip ci]" || echo "nothing to commit"
+          git push origin "HEAD:${GITHUB_REF_NAME}" || echo "push failed"
 
       - name: Upload rendered screenshots
         uses: actions/upload-artifact@v4
