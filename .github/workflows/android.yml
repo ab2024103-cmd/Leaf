@@ -58,8 +58,12 @@ jobs:
       - name: Set up Gradle (with caching)
         uses: gradle/actions/setup-gradle@v4
 
+      # pipefail + tee: the full Gradle console is kept as an artifact, so a failure
+      # can be read without downloading the job log (§13: verify every milestone).
       - name: Lint + unit tests
-        run: ./gradlew lint testDebugUnitTest --stacktrace
+        run: |
+          set -o pipefail
+          ./gradlew lint testDebugUnitTest --stacktrace 2>&1 | tee gradle-build.log
 
       - name: Assemble debug APK
         run: ./gradlew assembleDebug
@@ -71,6 +75,15 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 30
+
+      - name: Upload the Gradle console log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-log-${{ github.sha }}
+          path: gradle-build.log
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Upload test & lint reports
         if: always()
@@ -104,7 +117,18 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Render screenshots
-        run: ./gradlew recordRoborazziDebug
+        run: |
+          set -o pipefail
+          ./gradlew recordRoborazziDebug --stacktrace 2>&1 | tee gradle-screens.log
+
+      - name: Upload the screenshot Gradle log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-screens-log-${{ github.sha }}
+          path: gradle-screens.log
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Upload rendered screenshots
         uses: actions/upload-artifact@v4
