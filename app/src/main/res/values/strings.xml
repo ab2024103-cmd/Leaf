@@ -229,7 +229,7 @@
     <string name="info_highlights">Highlights</string>
     <string name="info_folder">Folder</string>
     <string name="info_tags">Tags</string>
-    <string name="value_megabytes">%1$.2f MB</string>
+    <string name="value_megabytes">%1$s MB</string>
     <string name="value_never">Never</string>
     <string name="value_not_filed">Not filed</string>
     <string name="value_none">None</string>
