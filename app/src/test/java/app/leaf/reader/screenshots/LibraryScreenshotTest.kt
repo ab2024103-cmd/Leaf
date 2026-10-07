@@ -1,11 +1,12 @@
 package app.leaf.reader.screenshots
 
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import app.leaf.reader.FIXED_NOW
 import app.leaf.reader.core.data.db.DatabaseSeeder
 import app.leaf.reader.core.model.AppTheme
@@ -17,13 +18,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.stopKoin
-import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
@@ -46,6 +47,9 @@ import org.robolectric.annotation.GraphicsMode
 @Config(application = LibraryScreenshotApplication::class, sdk = [33])
 class LibraryScreenshotTest : KoinComponent {
 
+    @get:Rule
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
+
     private val seeder: DatabaseSeeder by inject()
 
     @Before
@@ -61,8 +65,7 @@ class LibraryScreenshotTest : KoinComponent {
     }
 
     private fun capture(name: String, dark: Boolean, widthDp: Int, heightDp: Int) {
-        val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
-        activity.setContent {
+        composeRule.setContent {
             LeafTheme(appTheme = if (dark) AppTheme.DARK else AppTheme.LIGHT) {
                 LeafShell(
                     windowSizeClass = WindowSizeClass.calculateFromSize(
@@ -72,7 +75,14 @@ class LibraryScreenshotTest : KoinComponent {
                 )
             }
         }
-        activity.window.decorView.captureRoboImage("$name.png")
+        // The app uses Room Flow -> combine -> StateFlow. Wait until the seeded library
+        // has reached the actual semantics tree; capturing the first frame records the
+        // StateFlow's intentionally empty initial value instead of the screen (§12).
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithText("10 DOCUMENTS").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.waitForIdle()
+        composeRule.activity.window.decorView.captureRoboImage("$name.png")
     }
 
     @Test
