@@ -408,6 +408,20 @@ private fun SectionHeader(
                 }
             )
         }
+        // §6.1 places the filter glyph before the group toggle. Its advanced-filter
+        // panel is part of the later Search milestone, so it is kept decorative here —
+        // no control is drawn that appears tappable but has no M2 behavior.
+        Box(
+            modifier = Modifier.size(36.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_filter),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
+        }
         LeafIconButton(
             icon = R.drawable.ic_group_type,
             contentDescription = if (grouped) {
