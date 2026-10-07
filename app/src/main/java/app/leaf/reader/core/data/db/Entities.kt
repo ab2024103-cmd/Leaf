@@ -157,3 +157,27 @@ data class ProgressEntity(
     val scrollDir: ScrollDir,
     val updatedAt: Long
 )
+
+/**
+ * A per-document row count (`COUNT(*) … GROUP BY docId`) for bookmarks and highlights.
+ * Room binds the columns to the constructor by name.
+ */
+data class DocCount(
+    val docId: String,
+    val total: Int
+)
+
+/**
+ * Everything a deleted document needs to come back (§8.7): the document row itself, its
+ * tags, highlights and bookmarks. Cascading deletes take the rest, so an Undo has to
+ * carry them itself.
+ */
+data class DocumentSnapshot(
+    val document: DocumentEntity,
+    val tags: List<DocumentTagEntity>,
+    val bookmarks: List<BookmarkEntity>,
+    val highlights: List<HighlightEntity>,
+    val recent: RecentEntity?,
+    val progress: ProgressEntity?
+)
+

@@ -28,6 +28,12 @@ interface DocumentDao {
     @Query("SELECT COUNT(*) FROM documents")
     suspend fun count(): Int
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(document: DocumentEntity)
+
+    @Query("SELECT * FROM documents WHERE id = :id")
+    suspend fun get(id: String): DocumentEntity?
+
     @Query("UPDATE documents SET favorite = :favorite, favoritedAt = :favoritedAt WHERE id = :id")
     suspend fun setFavorite(id: String, favorite: Boolean, favoritedAt: Long?)
 
@@ -36,6 +42,10 @@ interface DocumentDao {
 
     @Query("UPDATE documents SET folderId = :folderId WHERE id = :id")
     suspend fun moveToFolder(id: String, folderId: String?)
+
+    /** Deleting a folder moves its documents to the parent, never to the bin (§2.1). */
+    @Query("UPDATE documents SET folderId = :folderId WHERE folderId = :id")
+    suspend fun reparent(id: String, folderId: String?)
 
     @Query("DELETE FROM documents WHERE id = :id")
     suspend fun delete(id: String)
@@ -56,8 +66,15 @@ interface DocumentTagDao {
     @Query("DELETE FROM document_tags WHERE docId = :docId")
     suspend fun deleteForDocument(docId: String)
 
+    @Query("SELECT * FROM document_tags WHERE docId = :docId")
+    suspend fun getForDocument(docId: String): List<DocumentTagEntity>
+
     @Query("DELETE FROM document_tags WHERE tagName = :tagName")
     suspend fun deleteForTag(tagName: String)
+
+    /** Renaming a tag cascades to every document that carries it (§2.1). */
+    @Query("UPDATE document_tags SET tagName = :newName WHERE tagName = :oldName")
+    suspend fun renameTag(oldName: String, newName: String)
 }
 
 @Dao
@@ -65,6 +82,15 @@ interface FolderDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(folders: List<FolderEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(folder: FolderEntity)
+
+    @Query("SELECT * FROM folders ORDER BY isSystem DESC, name ASC")
+    suspend fun getAll(): List<FolderEntity>
+
+    @Query("SELECT * FROM folders WHERE id = :id")
+    suspend fun get(id: String): FolderEntity?
 
     @Query("SELECT * FROM folders ORDER BY isSystem DESC, name ASC")
     fun observeAll(): Flow<List<FolderEntity>>
@@ -81,6 +107,13 @@ interface FolderDao {
     @Query("SELECT COUNT(*) FROM documents WHERE folderId = :id")
     suspend fun documentCount(id: String): Int
 
+    @Query("SELECT COUNT(*) FROM folders WHERE parentId = :id")
+    suspend fun childCount(id: String): Int
+
+    /** Deleting a folder re-parents its children one level up (§2.1). */
+    @Query("UPDATE folders SET parentId = :newParentId WHERE parentId = :id")
+    suspend fun reparentChildren(id: String, newParentId: String?)
+
     @Query("DELETE FROM folders WHERE id = :id")
     suspend fun delete(id: String)
 }
@@ -91,11 +124,17 @@ interface TagDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(tags: List<TagEntity>)
 
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insert(tag: TagEntity)
+
     @Query("SELECT * FROM tags ORDER BY name ASC")
     fun observeAll(): Flow<List<TagEntity>>
 
     @Query("SELECT COUNT(*) FROM tags")
     suspend fun count(): Int
+
+    @Query("SELECT * FROM tags ORDER BY name ASC")
+    suspend fun getAll(): List<TagEntity>
 
     @Query("UPDATE tags SET name = :name WHERE name = :oldName")
     suspend fun rename(oldName: String, name: String)
@@ -113,11 +152,17 @@ interface SmartCollectionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(collections: List<SmartCollectionEntity>)
 
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insert(collection: SmartCollectionEntity)
+
     @Query("SELECT * FROM smart_collections ORDER BY name ASC")
     fun observeAll(): Flow<List<SmartCollectionEntity>>
 
     @Query("SELECT COUNT(*) FROM smart_collections")
     suspend fun count(): Int
+
+    @Query("SELECT * FROM smart_collections ORDER BY name ASC")
+    suspend fun getAll(): List<SmartCollectionEntity>
 
     @Query("DELETE FROM smart_collections WHERE id = :id")
     suspend fun delete(id: String)
@@ -139,6 +184,12 @@ interface RecentDao {
     @Query("SELECT COUNT(*) FROM recents WHERE openedAt >= :since")
     fun observeCountSince(since: Long): Flow<Int>
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(entries: List<RecentEntity>)
+
+    @Query("SELECT * FROM recents WHERE docId = :docId")
+    suspend fun get(docId: String): RecentEntity?
+
     @Query("DELETE FROM recents WHERE docId = :docId")
     suspend fun delete(docId: String)
 
@@ -159,6 +210,16 @@ interface BookmarkDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(bookmarks: List<BookmarkEntity>)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(bookmark: BookmarkEntity)
+
+    @Query("SELECT * FROM bookmarks WHERE docId = :docId ORDER BY page ASC")
+    suspend fun getForDocument(docId: String): List<BookmarkEntity>
+
+    /** One row per document that has bookmarks — the library needs only the count. */
+    @Query("SELECT docId, COUNT(*) AS total FROM bookmarks GROUP BY docId")
+    fun observeCounts(): Flow<List<DocCount>>
+
     @Query("SELECT * FROM bookmarks WHERE docId = :docId ORDER BY page ASC")
     fun observeForDocument(docId: String): Flow<List<BookmarkEntity>>
 
@@ -174,6 +235,16 @@ interface HighlightDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(highlights: List<HighlightEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(highlight: HighlightEntity)
+
+    @Query("SELECT * FROM highlights WHERE docId = :docId ORDER BY page ASC, createdAt ASC")
+    suspend fun getForDocument(docId: String): List<HighlightEntity>
+
+    /** One row per document that has highlights — the library needs only the count. */
+    @Query("SELECT docId, COUNT(*) AS total FROM highlights GROUP BY docId")
+    fun observeCounts(): Flow<List<DocCount>>
 
     @Query("SELECT * FROM highlights WHERE docId = :docId ORDER BY page ASC, createdAt ASC")
     fun observeForDocument(docId: String): Flow<List<HighlightEntity>>
@@ -219,8 +290,15 @@ interface ProgressDao {
     @Query("SELECT * FROM reading_progress WHERE docId = :docId")
     fun observe(docId: String): Flow<ProgressEntity?>
 
+    @Query("SELECT * FROM reading_progress WHERE docId = :docId")
+    suspend fun get(docId: String): ProgressEntity?
+
     @Query("SELECT * FROM reading_progress")
     suspend fun getAll(): List<ProgressEntity>
+
+    /** Every position at once, so the library rows can show progress in one pass. */
+    @Query("SELECT * FROM reading_progress")
+    fun observeAll(): Flow<List<ProgressEntity>>
 
     @Query("DELETE FROM reading_progress WHERE docId = :docId")
     suspend fun delete(docId: String)

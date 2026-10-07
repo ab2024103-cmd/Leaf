@@ -102,8 +102,13 @@ data class Tag(
     val colorHex: String
 )
 
-/** Auto-updating collection rules (§2.1). */
+/**
+ * Auto-updating collection rules (§2.1, LEAF-SPEC §2.1). Seven kinds — the seven
+ * collections the spec names plus the tag rule the manager can build.
+ */
 sealed interface SmartRule {
+    /** Every document in the library. */
+    data object All : SmartRule
     /** Every document of one type. */
     data class OfType(val type: DocType) : SmartRule
     /** Added within the last [days] days. */

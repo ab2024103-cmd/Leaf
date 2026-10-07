@@ -167,6 +167,7 @@ private fun SmartCollection.toEntity() = SmartCollectionEntity(
     id = id,
     name = name,
     ruleKind = when (rule) {
+        SmartRule.All -> "all"
         is SmartRule.OfType -> "type"
         is SmartRule.AgeDays -> "ageDays"
         SmartRule.InProgress -> "inProgress"
