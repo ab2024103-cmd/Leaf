@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
@@ -58,8 +59,7 @@ data class RowMeta(
  * padding, a 40 × 48 dp file icon, then name · meta · tags · progress · star.
  *
  * Long-press (470 ms) opens the actions sheet with a pressed state and a haptic (§8.9).
- * The tap is deliberately not wired: §6.1 opens the reader, and the reader is M3 — a row
- * that pretends to open something would be a dead affordance.
+ * PDF taps open the M3 reader; unsupported formats have no dead click target until M6.
  */
 @Composable
 fun LeafDocumentRow(
@@ -68,6 +68,7 @@ fun LeafDocumentRow(
     tagColors: (String) -> Color,
     onStar: () -> Unit,
     onLongPress: () -> Unit,
+    onTap: (() -> Unit)?,
     modifier: Modifier = Modifier
 ) {
     var pressed by remember { mutableStateOf(false) }
@@ -77,6 +78,7 @@ fun LeafDocumentRow(
     } else {
         ""
     }
+    val openActionLabel = if (onTap != null) stringResource(R.string.action_open) else null
 
     Surface(
         modifier = modifier
@@ -88,13 +90,20 @@ fun LeafDocumentRow(
             .semantics {
                 contentDescription = doc.document.name
                 if (progressDescription.isNotEmpty()) stateDescription = progressDescription
+                if (onTap != null && openActionLabel != null) {
+                    onClick(label = openActionLabel) {
+                        onTap()
+                        true
+                    }
+                }
             }
             .leafPressable(
                 onPressChange = { pressed = it },
                 onLongPress = {
                     haptics.longPress()
                     onLongPress()
-                }
+                },
+                onTap = onTap
             ),
         shape = RoundedCornerShape(LeafMetrics.cardRadius),
         color = if (pressed) {

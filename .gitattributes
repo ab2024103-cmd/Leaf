@@ -1,0 +1,2 @@
+# PDF cross-reference tables require fixed-width trailing spaces; treat bundled PDFs as binary.
+*.pdf binary

@@ -3,6 +3,7 @@ package app.leaf.reader
 import android.app.Application
 import app.leaf.reader.core.data.db.DatabaseSeeder
 import app.leaf.reader.core.data.prefs.SettingsStore
+import app.leaf.reader.core.format.PdfBitmapCache
 import app.leaf.reader.di.appModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,6 +26,7 @@ class LeafApp : Application(), KoinComponent {
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val seeder: DatabaseSeeder by inject()
     private val settings: SettingsStore by inject()
+    private val pdfBitmapCache: PdfBitmapCache by inject()
 
     override fun onCreate() {
         super.onCreate()
@@ -33,6 +35,7 @@ class LeafApp : Application(), KoinComponent {
             androidContext(this@LeafApp)
             modules(appModule)
         }
+        registerComponentCallbacks(pdfBitmapCache)
         appScope.launch {
             // Idempotent: the seeder no-ops once the library is populated.
             settings.migrateLegacySortField()

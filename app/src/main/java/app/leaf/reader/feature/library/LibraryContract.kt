@@ -176,6 +176,8 @@ sealed interface TagAction {
 
 /** The nine long-press actions (§6.7), minus the row-level ones. */
 sealed interface DocumentAction {
+    data class Open(val id: String) : DocumentAction
+
     data class Rename(val id: String) : DocumentAction
 
     data class Favorite(val id: String) : DocumentAction
@@ -205,6 +207,10 @@ sealed interface RuleChoice {
 }
 
 /** The screen's whole event surface: one lambda per user action, none optional. */
+sealed interface LibraryEvent {
+    data class OpenDocument(val documentId: String) : LibraryEvent
+}
+
 data class LibraryHandlers(
     // ── rails, sort, grouping ─────────────────────────────────────────────────
     val onFolderChosen: (String?) -> Unit,
@@ -224,6 +230,7 @@ data class LibraryHandlers(
     // ── rows ──────────────────────────────────────────────────────────────────
     val onStar: (String) -> Unit,
     val onRowLongPress: (String) -> Unit,
+    val onOpenDocument: (String) -> Unit,
     // ── managers ──────────────────────────────────────────────────────────────
     val onFolderAction: (FolderAction) -> Unit,
     val onTagAction: (TagAction) -> Unit,

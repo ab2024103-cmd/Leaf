@@ -5,6 +5,7 @@ import app.leaf.reader.core.model.DocType
 import app.leaf.reader.core.model.HighlightColor
 import app.leaf.reader.core.model.NormalizedRect
 import app.leaf.reader.core.model.Orientation
+import app.leaf.reader.core.model.ReadingTheme
 import app.leaf.reader.core.model.ScrollDir
 
 /**
@@ -24,6 +25,12 @@ class Converters {
 
     @TypeConverter
     fun orientation(value: Orientation?): String? = value?.name
+
+    @TypeConverter
+    fun readingTheme(value: String?): ReadingTheme? = value?.let { ReadingTheme.valueOf(it) }
+
+    @TypeConverter
+    fun readingTheme(value: ReadingTheme?): String? = value?.name
 
     @TypeConverter
     fun scrollDir(value: String?): ScrollDir? = value?.let { ScrollDir.valueOf(it) }

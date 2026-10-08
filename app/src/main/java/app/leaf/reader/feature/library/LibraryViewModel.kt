@@ -24,10 +24,12 @@ import app.leaf.reader.core.ui.theme.LeafMotion
 import app.leaf.reader.core.util.LeafClock
 import app.leaf.reader.core.util.normalizeTagName
 import app.leaf.reader.core.util.renameKeepingExtension
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -75,6 +77,8 @@ class LibraryViewModel(
     private val dialog = MutableStateFlow<LibraryDialog>(LibraryDialog.None)
     private val message = MutableStateFlow<LeafMessage?>(null)
     private val now = MutableStateFlow(clock.nowMillis())
+    private val eventChannel = Channel<LibraryEvent>(Channel.BUFFERED)
+    val events = eventChannel.receiveAsFlow()
 
     /** The snapshot behind the current "Undo" (§8.7). */
     private var pendingUndo: DocumentSnapshot? = null
@@ -117,6 +121,7 @@ class LibraryViewModel(
         onNewTag = { openSheet(LibrarySheet.NewTag) },
         onStar = { toggleFavorite(it) },
         onRowLongPress = { openSheet(LibrarySheet.Actions(it)) },
+        onOpenDocument = { openDocument(it) },
         onFolderAction = { perform(it) },
         onTagAction = { perform(it) },
         onDocumentAction = { perform(it) },
@@ -367,8 +372,14 @@ class LibraryViewModel(
         viewModelScope.launch { documents.replaceTags(docId, next.sorted()) }
     }
 
+    private fun openDocument(documentId: String) {
+        dismissSheet()
+        eventChannel.trySend(LibraryEvent.OpenDocument(documentId))
+    }
+
     private fun perform(action: DocumentAction) {
         when (action) {
+            is DocumentAction.Open -> openDocument(action.id)
             is DocumentAction.Rename -> openSheet(LibrarySheet.RenameDocument(action.id))
             is DocumentAction.Favorite -> {
                 toggleFavorite(action.id)

@@ -43,6 +43,12 @@ interface DocumentDao {
     @Query("UPDATE documents SET folderId = :folderId WHERE id = :id")
     suspend fun moveToFolder(id: String, folderId: String?)
 
+    @Query("UPDATE documents SET lastOpened = :openedAt WHERE id = :id")
+    suspend fun updateLastOpened(id: String, openedAt: Long)
+
+    @Query("UPDATE documents SET pageCount = :pageCount WHERE id = :id")
+    suspend fun updatePageCount(id: String, pageCount: Int)
+
     /** Deleting a folder moves its documents to the parent, never to the bin (§2.1). */
     @Query("UPDATE documents SET folderId = :folderId WHERE folderId = :id")
     suspend fun reparent(id: String, folderId: String?)
@@ -273,6 +279,9 @@ interface ExtractedTextDao {
 
     @Query("SELECT * FROM extracted_text WHERE docId = :docId ORDER BY pageIndex ASC")
     suspend fun pagesForDocument(docId: String): List<ExtractedTextEntity>
+
+    @Query("SELECT * FROM extracted_text WHERE docId = :docId AND pageIndex = :pageIndex LIMIT 1")
+    suspend fun page(docId: String, pageIndex: Int): ExtractedTextEntity?
 
     @Query("SELECT COUNT(*) FROM extracted_text")
     suspend fun count(): Int

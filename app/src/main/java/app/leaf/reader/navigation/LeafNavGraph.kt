@@ -8,11 +8,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.zIndex
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -23,6 +29,7 @@ import app.leaf.reader.core.ui.components.LeafNavRail
 import app.leaf.reader.feature.favorites.FavoritesScreen
 import app.leaf.reader.feature.library.LibraryScreen
 import app.leaf.reader.feature.recents.RecentsScreen
+import app.leaf.reader.feature.reader.ReaderScreen
 import app.leaf.reader.feature.search.SearchScreen
 import app.leaf.reader.feature.settings.SettingsScreen
 
@@ -37,11 +44,20 @@ import app.leaf.reader.feature.settings.SettingsScreen
 fun LeafShell(
     windowSizeClass: WindowSizeClass,
     /** Library is the default destination; the screenshot tests start on each one. */
-    startDestination: LeafDestination = LeafDestination.LIBRARY
+    startDestination: LeafDestination = LeafDestination.LIBRARY,
+    externalDocumentId: String? = null,
+    onExternalDocumentConsumed: () -> Unit = {}
 ) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
+    var readerDocumentId by rememberSaveable { mutableStateOf<String?>(null) }
+    LaunchedEffect(externalDocumentId) {
+        externalDocumentId?.let {
+            readerDocumentId = it
+            onExternalDocumentConsumed()
+        }
+    }
     val useRail = windowSizeClass.widthSizeClass != WindowWidthSizeClass.Compact
     // §5: one column on compact, two on medium, three on expanded.
     val libraryColumns = when (windowSizeClass.widthSizeClass) {
@@ -50,7 +66,8 @@ fun LeafShell(
         else -> 3
     }
 
-    Column(
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
+      Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
@@ -78,7 +95,12 @@ fun LeafShell(
                 startDestination = startDestination.route,
                 modifier = Modifier.weight(1f)
             ) {
-                composable(LeafDestination.LIBRARY.route) { LibraryScreen(columns = libraryColumns) }
+                composable(LeafDestination.LIBRARY.route) {
+                    LibraryScreen(
+                        onOpenDocument = { readerDocumentId = it },
+                        columns = libraryColumns
+                    )
+                }
                 composable(LeafDestination.RECENTS.route) { RecentsScreen() }
                 composable(LeafDestination.FAVORITES.route) { FavoritesScreen() }
                 composable(LeafDestination.SEARCH.route) { SearchScreen() }
@@ -99,5 +121,13 @@ fun LeafShell(
                 }
             )
         }
+      }
+      readerDocumentId?.let { documentId ->
+          ReaderScreen(
+              documentId = documentId,
+              onClose = { readerDocumentId = null },
+              modifier = Modifier.fillMaxSize().zIndex(1f)
+          )
+      }
     }
 }

@@ -1,5 +1,6 @@
 package app.leaf.reader.core.data.db
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -7,6 +8,7 @@ import androidx.room.PrimaryKey
 import app.leaf.reader.core.model.DocType
 import app.leaf.reader.core.model.HighlightColor
 import app.leaf.reader.core.model.Orientation
+import app.leaf.reader.core.model.ReadingTheme
 import app.leaf.reader.core.model.ScrollDir
 
 @Entity(tableName = "documents")
@@ -155,7 +157,11 @@ data class ProgressEntity(
     val scrollFraction: Float,
     val zoom: Float,
     val scrollDir: ScrollDir,
-    val updatedAt: Long
+    val updatedAt: Long,
+    /** Null follows the default reading theme; non-null is this document's override. */
+    val readingTheme: ReadingTheme? = null,
+    @ColumnInfo(defaultValue = "0.0") val panX: Float = 0f,
+    @ColumnInfo(defaultValue = "0.0") val panY: Float = 0f
 )
 
 /**

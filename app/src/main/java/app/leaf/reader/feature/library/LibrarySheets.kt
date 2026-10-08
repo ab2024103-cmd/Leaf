@@ -147,9 +147,8 @@ private fun SortFieldRow(
 /**
  * §6.7 long-press actions.
  *
- * **Deviation, documented:** "Open", "Open in new tab" and "Share" are not listed. The
- * reader is M3 and sharing is M5, and a row that pretends to open something would be a
- * dead affordance — the same rule that leaves the row tap itself unwired in this build.
+ * M3 adds the live PDF Open action. Open-in-new-tab and Share stay out of the sheet until
+ * their planned milestones; non-PDF Open is omitted until its M6 engine exists.
  */
 @Composable
 fun ActionsSheetContent(
@@ -159,6 +158,14 @@ fun ActionsSheetContent(
     modifier: Modifier = Modifier
 ) {
     LeafSheetSurface(title = doc.document.name, subtitle = summary, modifier = modifier) {
+        if (doc.document.type == DocType.PDF) {
+            LeafSheetItem(
+                icon = R.drawable.ic_document,
+                title = stringResource(R.string.action_open),
+                subtitle = stringResource(R.string.action_open_sub, doc.page + 1),
+                onClick = { onAction(DocumentAction.Open(doc.id)) }
+            )
+        }
         LeafSheetItem(
             icon = R.drawable.ic_rename,
             title = stringResource(R.string.action_rename),

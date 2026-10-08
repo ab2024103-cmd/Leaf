@@ -9,6 +9,8 @@ import app.leaf.reader.core.model.ScrollDir
 import app.leaf.reader.core.model.SmartCollection
 import app.leaf.reader.core.model.SmartRule
 import app.leaf.reader.core.model.Tag
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * The demo library: 10 documents (including the .xlsx and .pptx), 5 folders with one
@@ -94,11 +96,12 @@ object SeedData {
  * on every launch, and [seed] repopulates from scratch for "Reset demo library" (§6.5).
  */
 class DatabaseSeeder(private val db: LeafDatabase) {
+    private val seedMutex = Mutex()
 
-    suspend fun seedIfEmpty(now: Long = System.currentTimeMillis()): Boolean {
-        if (db.documentDao().count() > 0) return false
+    suspend fun seedIfEmpty(now: Long = System.currentTimeMillis()): Boolean = seedMutex.withLock {
+        if (db.documentDao().count() > 0) return@withLock false
         seed(now)
-        return true
+        true
     }
 
     suspend fun seed(now: Long = System.currentTimeMillis()) {

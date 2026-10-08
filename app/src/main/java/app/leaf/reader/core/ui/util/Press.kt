@@ -46,15 +46,15 @@ internal suspend fun PointerInputScope.detectLeafPress(
 }
 
 /**
- * Row press handling for the library (§6.1). [onTap] is null until the milestone that
- * gives the row something to open, so nothing is wired to a dead action.
+ * Row press handling for the library (§6.1). Non-PDF rows keep [onTap] null until their
+ * format engine lands; PDF rows get a real open action in M3.
  */
 fun Modifier.leafPressable(
     onPressChange: (Boolean) -> Unit,
     onLongPress: () -> Unit,
     onTap: (() -> Unit)? = null
 ): Modifier = this.then(
-    Modifier.pointerInput(onLongPress) {
+    Modifier.pointerInput(onLongPress, onTap) {
         detectLeafPress(onPressChange = onPressChange, onLongPress = onLongPress, onTap = onTap)
     }
 )

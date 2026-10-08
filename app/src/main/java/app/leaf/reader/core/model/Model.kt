@@ -58,7 +58,12 @@ data class Progress(
     val scrollFraction: Float,
     val zoom: Float,
     val scrollDir: ScrollDir,
-    val updatedAt: Long
+    val updatedAt: Long,
+    /** Null means follow the app's current default reading theme. */
+    val readingTheme: ReadingTheme? = null,
+    /** Panned page fraction; device-independent and clamped to the current zoom bounds. */
+    val panX: Float = 0f,
+    val panY: Float = 0f
 )
 
 /** A bookmarked page (§2.2). */

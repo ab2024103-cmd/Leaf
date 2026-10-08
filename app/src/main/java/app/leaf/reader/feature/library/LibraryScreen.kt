@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -29,6 +30,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.leaf.reader.R
 import app.leaf.reader.core.domain.LibraryDoc
 import app.leaf.reader.core.domain.TypeGroupCard
+import app.leaf.reader.core.model.DocType
 import app.leaf.reader.core.model.Folder
 import app.leaf.reader.core.model.SmartCollection
 import app.leaf.reader.core.model.SortField
@@ -60,6 +62,7 @@ import app.leaf.reader.core.ui.util.timeAgoText
 import app.leaf.reader.core.util.TimeAgo
 import app.leaf.reader.core.util.formatMegabytes
 import app.leaf.reader.core.util.timeAgo
+import kotlinx.coroutines.flow.collect
 import org.koin.androidx.compose.koinViewModel
 
 /**
@@ -70,8 +73,7 @@ import org.koin.androidx.compose.koinViewModel
  * be rendered (and screenshot-tested) without a database, and every behaviour lives in
  * the ViewModel.
  *
- * **Deviation, documented:** tapping a row does nothing yet. §6.1 opens the reader, which
- * is M3, so the row carries no tap affordance at all rather than one that leads nowhere.
+ * PDF row taps open the M3 reader; formats without an engine remain untappable until M6.
  */
 @Composable
 fun LibraryContent(
@@ -205,6 +207,11 @@ fun LibraryContent(
                             },
                             onStar = { handlers.onStar(doc.id) },
                             onLongPress = { handlers.onRowLongPress(doc.id) },
+                            onTap = if (doc.document.type == DocType.PDF) {
+                                { handlers.onOpenDocument(doc.id) }
+                            } else {
+                                null
+                            },
                             modifier = Modifier.padding(horizontal = 12.dp)
                         )
                     }
@@ -249,11 +256,19 @@ fun LibraryContent(
 /** The screen entry point: the ViewModel owns the data and the behaviour. */
 @Composable
 fun LibraryScreen(
+    onOpenDocument: (String) -> Unit,
     viewModel: LibraryViewModel = koinViewModel(),
     /** 1 column on compact, 2 on medium, 3 on expanded (§5). */
     columns: Int = 1
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    LaunchedEffect(viewModel, onOpenDocument) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is LibraryEvent.OpenDocument -> onOpenDocument(event.documentId)
+            }
+        }
+    }
     LibraryContent(state = state, handlers = viewModel.handlers, columns = columns)
 }
 
