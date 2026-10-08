@@ -60,7 +60,18 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Lint + unit tests
-        run: ./gradlew lint testDebugUnitTest --stacktrace
+        run: |
+          set -o pipefail
+          ./gradlew lint testDebugUnitTest --stacktrace --console=plain 2>&1 | tee gradle-verification.log
+
+      - name: Upload Gradle diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-diagnostics-${{ github.sha }}
+          path: gradle-verification.log
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Assemble debug APK
         run: ./gradlew assembleDebug
@@ -104,8 +115,18 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Render screenshots
-        run: ./gradlew recordRoborazziDebug
+        run: |
+          set -o pipefail
+          ./gradlew recordRoborazziDebug --stacktrace --console=plain 2>&1 | tee screenshot-verification.log
 
+      - name: Upload screenshot diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshot-diagnostics-${{ github.sha }}
+          path: screenshot-verification.log
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Upload rendered screenshots
         uses: actions/upload-artifact@v4
@@ -223,4 +244,15 @@ jobs:
           target: google_apis
           profile: pixel_2
           disable-animations: true
-          script: ./gradlew connectedDebugAndroidTest --stacktrace
+          script: |
+            set -o pipefail
+            ./gradlew connectedDebugAndroidTest --stacktrace --console=plain 2>&1 | tee pdf-engine-api-${{ matrix.api }}.log
+
+      - name: Upload emulator diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdf-engine-diagnostics-api-${{ matrix.api }}-${{ github.sha }}
+          path: pdf-engine-api-${{ matrix.api }}.log
+          if-no-files-found: ignore
+          retention-days: 7
