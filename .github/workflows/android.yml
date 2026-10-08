@@ -79,15 +79,26 @@ jobs:
           LOG_FILE: gradle-verification.log
         run: |
           python3 - <<'PY'
-          import os, re
+          import os, re, xml.etree.ElementTree as ET
           from pathlib import Path
           lines = Path(os.environ["LOG_FILE"]).read_text(errors="replace").splitlines()
-          diagnostics = [line for line in lines if re.search(r"(^e: |^FAILURE:|^Execution failed for task|^Caused by:|error:|^> Task .* FAILED)", line)]
-          tail = lines[-40:]
+          diagnostics = [line for line in lines if re.search(r"(^e: |^FAILURE:|^Execution failed for task|^Caused by:|error:|FAILED|^> Task .* FAILED)", line)]
+          test_failures = []
+          for report in Path("app/build/test-results").glob("testDebugUnitTest/TEST-*.xml"):
+              try:
+                  root = ET.parse(report).getroot()
+              except ET.ParseError:
+                  continue
+              for case in root.iter("testcase"):
+                  for failure in (*case.findall("failure"), *case.findall("error")):
+                      detail = (failure.get("message") or "") + "\n" + (failure.text or "")
+                      test_failures.append(f"{case.get('classname')}.{case.get('name')}: {detail[:3000]}")
           sections = []
           if diagnostics:
               sections.append("Gradle error lines:\n" + "\n".join(diagnostics[-20:]))
-          sections.append("Gradle output tail:\n" + "\n".join(tail))
+          if test_failures:
+              sections.append("JUnit failures:\n" + "\n---\n".join(test_failures[:10]))
+          sections.append("Gradle output tail:\n" + "\n".join(lines[-40:]))
           message = "\n\n".join(sections)
           escaped = message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
           print(f"::error title=Gradle failure details::{escaped}")
@@ -154,15 +165,26 @@ jobs:
           LOG_FILE: screenshot-verification.log
         run: |
           python3 - <<'PY'
-          import os, re
+          import os, re, xml.etree.ElementTree as ET
           from pathlib import Path
           lines = Path(os.environ["LOG_FILE"]).read_text(errors="replace").splitlines()
-          diagnostics = [line for line in lines if re.search(r"(^e: |^FAILURE:|^Execution failed for task|^Caused by:|error:|^> Task .* FAILED)", line)]
-          tail = lines[-40:]
+          diagnostics = [line for line in lines if re.search(r"(^e: |^FAILURE:|^Execution failed for task|^Caused by:|error:|FAILED|^> Task .* FAILED)", line)]
+          test_failures = []
+          for report in Path("app/build/test-results").glob("testDebugUnitTest/TEST-*.xml"):
+              try:
+                  root = ET.parse(report).getroot()
+              except ET.ParseError:
+                  continue
+              for case in root.iter("testcase"):
+                  for failure in (*case.findall("failure"), *case.findall("error")):
+                      detail = (failure.get("message") or "") + "\n" + (failure.text or "")
+                      test_failures.append(f"{case.get('classname')}.{case.get('name')}: {detail[:3000]}")
           sections = []
           if diagnostics:
               sections.append("Screenshot error lines:\n" + "\n".join(diagnostics[-20:]))
-          sections.append("Screenshot output tail:\n" + "\n".join(tail))
+          if test_failures:
+              sections.append("JUnit failures:\n" + "\n---\n".join(test_failures[:10]))
+          sections.append("Screenshot output tail:\n" + "\n".join(lines[-40:]))
           message = "\n\n".join(sections)
           escaped = message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
           print(f"::error title=Screenshot failure details::{escaped}")
