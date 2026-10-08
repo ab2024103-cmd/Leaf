@@ -72,11 +72,15 @@ class PdfIntakeHandler(
 
     private suspend fun makeDurableUri(uri: Uri, intent: Intent): String {
         if (uri.scheme == "content") {
-            val accessFlags = intent.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            val hasReadGrant = intent.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION != 0
             val hasPersistableGrant = intent.flags and Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION != 0
-            if (hasPersistableGrant && accessFlags != 0) {
+            if (hasPersistableGrant && hasReadGrant) {
                 try {
-                    appContext.contentResolver.takePersistableUriPermission(uri, accessFlags)
+                    // PDFs are read-only here; pass the documented read bit directly for Android Lint.
+                    appContext.contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
                     return uri.toString()
                 } catch (_: SecurityException) {
                     // A share provider may advertise a persistable grant it cannot retain; copy only then.
