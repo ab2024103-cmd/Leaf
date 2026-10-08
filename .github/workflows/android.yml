@@ -93,11 +93,27 @@ jobs:
                   for failure in (*case.findall("failure"), *case.findall("error")):
                       detail = (failure.get("message") or "") + "\n" + (failure.text or "")
                       test_failures.append(f"{case.get('classname')}.{case.get('name')}: {detail[:3000]}")
+          lint_issues = []
+          for report in Path("app/build/reports").glob("lint-results*.xml"):
+              try:
+                  root = ET.parse(report).getroot()
+              except ET.ParseError:
+                  continue
+              for issue in root.iter("issue"):
+                  if issue.get("severity", "").lower() not in {"error", "fatal"}:
+                      continue
+                  location = issue.find("location")
+                  source = ""
+                  if location is not None:
+                      source = f" ({location.get('file', '')}:{location.get('line', '?')})"
+                  lint_issues.append(f"{issue.get('severity')}: {issue.get('id')}: {issue.get('message')}{source}")
           sections = []
           if diagnostics:
               sections.append("Gradle error lines:\n" + "\n".join(diagnostics[-20:]))
           if test_failures:
               sections.append("JUnit failures:\n" + "\n---\n".join(test_failures[:10]))
+          if lint_issues:
+              sections.append("Lint errors:\n" + "\n".join(lint_issues[:30]))
           sections.append("Gradle output tail:\n" + "\n".join(lines[-40:]))
           message = "\n\n".join(sections)
           escaped = message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
@@ -123,6 +139,7 @@ jobs:
           path: |
             app/build/reports/tests/**
             app/build/reports/lint-results-*.html
+            app/build/reports/lint-results-*.xml
             **/build/test-results/**
           if-no-files-found: ignore
           retention-days: 14
