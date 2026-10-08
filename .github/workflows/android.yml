@@ -343,7 +343,7 @@ jobs:
           "$SDKMANAGER" --install --channel=0 \
             'build-tools;37.0.0' platform-tools emulator "platforms;android-${API_LEVEL}" \
             "system-images;android-${API_LEVEL};${SYSTEM_IMAGE_TARGET};x86_64"
-          echo no | "$AVDMANAGER" create avd --force -n test \
+          "$AVDMANAGER" create avd --force -n test --device pixel_7_pro \
             --package "system-images;android-${API_LEVEL};${SYSTEM_IMAGE_TARGET};x86_64"
 
       - name: Boot emulator and run real-PDF tests
@@ -352,6 +352,7 @@ jobs:
           api-level: ${{ matrix.api }}
           arch: x86_64
           target: ${{ matrix.api == 23 && 'default' || 'google_apis' }}
+          profile: pixel_7_pro
           ram-size: 4096M
           force-avd-creation: false
           emulator-boot-timeout: 1200
