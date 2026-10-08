@@ -73,6 +73,23 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+      - name: Surface Gradle errors in check annotations
+        if: failure()
+        env:
+          LOG_FILE: gradle-verification.log
+        run: |
+          python3 - <<'PY'
+          import os, re
+          from pathlib import Path
+          lines = Path(os.environ["LOG_FILE"]).read_text(errors="replace").splitlines()
+          diagnostics = [line for line in lines if re.search(r"(^e: |^w: |^FAILURE:|^Execution failed for task|^Caused by:|error:)", line)]
+          if not diagnostics:
+              diagnostics = lines[-30:]
+          for line in diagnostics[-30:]:
+              escaped = line.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+              print(f"::error title=Gradle diagnostic::{escaped}")
+          PY
+
       - name: Assemble debug APK
         run: ./gradlew assembleDebug
 
@@ -127,6 +144,23 @@ jobs:
           path: screenshot-verification.log
           if-no-files-found: ignore
           retention-days: 7
+
+      - name: Surface screenshot errors in check annotations
+        if: failure()
+        env:
+          LOG_FILE: screenshot-verification.log
+        run: |
+          python3 - <<'PY'
+          import os, re
+          from pathlib import Path
+          lines = Path(os.environ["LOG_FILE"]).read_text(errors="replace").splitlines()
+          diagnostics = [line for line in lines if re.search(r"(^e: |^w: |^FAILURE:|^Execution failed for task|^Caused by:|error:)", line)]
+          if not diagnostics:
+              diagnostics = lines[-30:]
+          for line in diagnostics[-30:]:
+              escaped = line.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+              print(f"::error title=Screenshot diagnostic::{escaped}")
+          PY
 
       - name: Upload rendered screenshots
         uses: actions/upload-artifact@v4
@@ -256,3 +290,20 @@ jobs:
           path: pdf-engine-api-${{ matrix.api }}.log
           if-no-files-found: ignore
           retention-days: 7
+
+      - name: Surface emulator errors in check annotations
+        if: failure()
+        env:
+          LOG_FILE: pdf-engine-api-${{ matrix.api }}.log
+        run: |
+          python3 - <<'PY'
+          import os, re
+          from pathlib import Path
+          lines = Path(os.environ["LOG_FILE"]).read_text(errors="replace").splitlines()
+          diagnostics = [line for line in lines if re.search(r"(^e: |^w: |^FAILURE:|^Execution failed for task|^Caused by:|error:|AssertionError|Exception:)", line)]
+          if not diagnostics:
+              diagnostics = lines[-30:]
+          for line in diagnostics[-30:]:
+              escaped = line.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+              print(f"::error title=Emulator diagnostic::{escaped}")
+          PY
