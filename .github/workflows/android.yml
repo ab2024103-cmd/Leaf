@@ -321,6 +321,31 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      - name: Install PDF test emulator image and create AVD
+        env:
+          API_LEVEL: ${{ matrix.api }}
+          SYSTEM_IMAGE_TARGET: ${{ matrix.api == 23 && 'default' || 'google_apis' }}
+        run: |
+          set -euo pipefail
+          exec > >(tee -a emulator-setup.log) 2>&1
+          export ANDROID_AVD_HOME="$HOME/.android/avd"
+          mkdir -p "$ANDROID_AVD_HOME" "$HOME/.android"
+          touch "$HOME/.android/repositories.cfg"
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          AVDMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager"
+          if [[ ! -x "$SDKMANAGER" || ! -x "$AVDMANAGER" ]]; then
+            echo "Android command-line tools were not found under $ANDROID_HOME/cmdline-tools/latest/bin"
+            exit 1
+          fi
+          set +o pipefail
+          yes | "$SDKMANAGER" --licenses >/dev/null
+          set -o pipefail
+          "$SDKMANAGER" --install --channel=0 \
+            'build-tools;37.0.0' platform-tools emulator "platforms;android-${API_LEVEL}" \
+            "system-images;android-${API_LEVEL};${SYSTEM_IMAGE_TARGET};x86_64"
+          echo no | "$AVDMANAGER" create avd --force -n test \
+            --package "system-images;android-${API_LEVEL};${SYSTEM_IMAGE_TARGET};x86_64"
+
       - name: Boot emulator and run real-PDF tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -328,6 +353,7 @@ jobs:
           arch: x86_64
           target: ${{ matrix.api == 23 && 'default' || 'google_apis' }}
           ram-size: 4096M
+          force-avd-creation: false
           emulator-boot-timeout: 1200
           disable-linux-hw-accel: false
           disable-animations: true
@@ -340,7 +366,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: pdf-engine-diagnostics-api-${{ matrix.api }}-${{ github.sha }}
-          path: pdf-engine-api-${{ matrix.api }}.log
+          path: |
+            pdf-engine-api-${{ matrix.api }}.log
+            emulator-setup.log
           if-no-files-found: ignore
           retention-days: 7
 
@@ -354,7 +382,11 @@ jobs:
           from pathlib import Path
           log_file = Path(os.environ["LOG_FILE"])
           if not log_file.exists() or log_file.stat().st_size == 0:
-              print("::error title=Emulator diagnostics::Emulator setup failed before the Gradle test script created its log file.")
+              setup_log = Path("emulator-setup.log")
+              details = setup_log.read_text(errors="replace").splitlines()[-40:] if setup_log.exists() else []
+              message = "Emulator setup failed before the Gradle test script created its log file.\n" + "\n".join(details)
+              escaped = message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+              print(f"::error title=Emulator setup diagnostics::{escaped}")
               sys.exit(0)
           lines = log_file.read_text(errors="replace").splitlines()
           diagnostics = [line for line in lines if re.search(r"(^e: |^w: |^FAILURE:|^Execution failed for task|^Caused by:|error:|AssertionError|Exception:)", line)]
