@@ -24,12 +24,12 @@ import java.io.IOException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.withTimeout
 import org.junit.After
@@ -42,6 +42,7 @@ import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], application = Application::class)
+@OptIn(ExperimentalCoroutinesApi::class)
 class ReaderViewModelTest {
     private lateinit var application: Application
     private lateinit var database: LeafDatabase
@@ -74,9 +75,10 @@ class ReaderViewModelTest {
         settingsFile.delete()
     }
 
+    // Room and Preferences DataStore use real I/O; runBlocking keeps the timeout wall-clock based.
     @Test
-    fun saved_reader_state_is_restored_by_a_fresh_viewmodel() = runTest {
-        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+    fun saved_reader_state_is_restored_by_a_fresh_viewmodel() = runBlocking {
+        Dispatchers.setMain(Dispatchers.Unconfined)
         try {
             DatabaseSeeder(database).seed(FIXED_NOW)
             val factory = DocumentEngineFactory { TestReaderEngine() }
@@ -122,8 +124,8 @@ class ReaderViewModelTest {
     }
 
     @Test
-    fun damaged_pdf_open_becomes_a_reader_error_state() = runTest {
-        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+    fun damaged_pdf_open_becomes_a_reader_error_state() = runBlocking {
+        Dispatchers.setMain(Dispatchers.Unconfined)
         try {
             DatabaseSeeder(database).seed(FIXED_NOW)
             val factory = DocumentEngineFactory { throw IOException("damaged PDF fixture") }
