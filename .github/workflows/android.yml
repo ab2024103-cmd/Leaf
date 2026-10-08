@@ -321,7 +321,8 @@ jobs:
           api-level: ${{ matrix.api }}
           arch: x86_64
           target: google_apis
-          profile: pixel_2
+          profile: Nexus 6
+          emulator-boot-timeout: 1200
           disable-animations: true
           script: |
             set -o pipefail
@@ -342,9 +343,13 @@ jobs:
           LOG_FILE: pdf-engine-api-${{ matrix.api }}.log
         run: |
           python3 - <<'PY'
-          import os, re
+          import os, re, sys
           from pathlib import Path
-          lines = Path(os.environ["LOG_FILE"]).read_text(errors="replace").splitlines()
+          log_file = Path(os.environ["LOG_FILE"])
+          if not log_file.exists() or log_file.stat().st_size == 0:
+              print("::error title=Emulator diagnostics::Emulator setup failed before the Gradle test script created its log file.")
+              sys.exit(0)
+          lines = log_file.read_text(errors="replace").splitlines()
           diagnostics = [line for line in lines if re.search(r"(^e: |^w: |^FAILURE:|^Execution failed for task|^Caused by:|error:|AssertionError|Exception:)", line)]
           if not diagnostics:
               diagnostics = lines[-30:]
