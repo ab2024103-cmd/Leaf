@@ -86,7 +86,7 @@ class SearchFlowTest : KoinComponent {
 
         composeRule.onNodeWithContentDescription("Search history").performClick()
         composeRule.onNodeWithText("Search history").assertIsDisplayed()
-        composeRule.onAllNodesWithText("Simplicity").onLast().performClick()
+        composeRule.onAllNodesWithText("Simplicity")[1].performClick()
         waitForText("The Art of Simple Living.pdf")
 
         composeRule.onNodeWithContentDescription("Clear search").performClick()
