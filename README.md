@@ -137,17 +137,17 @@ by running it.
 
 ## Verification
 
-M2 is verified in [CI run 37662707845](https://github.com/ab2024103-cmd/Leaf/actions/runs/37662707845). M3 checks are tracked in [CI run 37863047454](https://github.com/ab2024103-cmd/Leaf/actions/runs/37863047454) for commit `e4438da`.
+M2 is verified in [CI run 37662707845](https://github.com/ab2024103-cmd/Leaf/actions/runs/37662707845). The latest M3 CI is [run 37863918869](https://github.com/ab2024103-cmd/Leaf/actions/runs/37863918869) for commit `d45fc0c`; [run 37863047454](https://github.com/ab2024103-cmd/Leaf/actions/runs/37863047454) is the earlier pass for screenshots.
 
 | Check | M2 last verified | M3 latest completed CI |
 |---|---|---|
-| Build, lint & JVM tests | ✅ | ✅ CI run 37863047454 |
-| Debug APK | ✅ | ✅ CI run 37863047454 |
-| Screenshot parity | ✅ | ✅ CI run 37863047454 (reader matrix included) |
-| Real PDF on API 23 / 36 | not part of M2 | ⚠️ unverified — both emulator jobs exited 127 before instrumentation in CI run 37863047454; SDK/AVD preflight passed |
+| Build, lint & JVM tests | ✅ | ✅ CI run 37863918869 |
+| Debug APK | ✅ | ✅ CI run 37863918869 |
+| Screenshot parity | ✅ | ⚠️ latest run failed in `SeedDataTest` with an uncaught Room connection-pool exception; passed in run 37863047454 |
+| Real PDF on API 23 / 36 | not part of M2 | ⚠️ unverified — emulator preflight found missing `libpulse.so.0`; instrumentation did not run in CI run 37863918869 |
 | Release APK + AAB | skipped — only runs on `v*` tags | skipped — only runs on `v*` tags |
 
-The follow-up workflow adds explicit Android SDK executable/version checks and captures emulator-startup output; real-device API 23 / 36 verification remains pending until those instrumented tests pass.
+The follow-up pins emulator jobs to Ubuntu 24.04, installs `libpulse0`, and keeps explicit SDK/emulator diagnostics. API 23 / 36 instrumentation and a green screenshot rerun remain pending.
 
 M2's 89 tests covered sorting in both directions, filter composition/count context, all seven smart
 rules, folder subtree/group counts, the empty-group fallback, rename-extension behavior, delete+Undo,
@@ -215,9 +215,11 @@ Every deviation is a decision, not an accident.
     `arena/ceade348-leaf`; the existing draft PR carries M1–M3 rather than creating a separate
     milestone branch.
 16. **Verification is partial.** The editing environment has no Java runtime, so Gradle could not
-    start locally. CI run 37863047454 passed build/lint/JVM tests, screenshot parity and debug APK
-    assembly/upload. Its API 23 and API 36 jobs failed before instrumentation with exit code 127;
-    no real-renderer device test or API-23 memory/performance result is claimed until that matrix passes.
+    start locally. CI run 37863918869 passed build/lint/JVM tests and debug APK assembly/upload, but
+    screenshot parity hit an uncaught Room connection-pool exception in `SeedDataTest`. Its API 23
+    and API 36 jobs could not load the emulator because `libpulse.so.0` was missing; instrumentation
+    did not run. No real-renderer device test or API-23 memory/performance result is claimed until the
+    screenshot and emulator matrices pass.
 17. **Page Stay test boundary.** The M3 test closes and reopens the on-disk Room database and creates a
     fresh ReaderViewModel; an OS-level forced process-kill / relaunch test remains a release QA check.
 18. **Frame-rate QA boundary.** API 23 / 36 instrumentation sweeps 50 real-PDF tile requests and logs
