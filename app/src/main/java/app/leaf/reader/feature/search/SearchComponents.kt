@@ -519,6 +519,7 @@ private fun emphasizedExcerpt(text: String, start: Int, end: Int): AnnotatedStri
     append(text.substring(safeEnd))
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 internal fun SearchHistorySheet(
     history: List<String>,
