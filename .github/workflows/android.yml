@@ -349,7 +349,7 @@ jobs:
           "$SDKMANAGER" --install --channel=0 \
             'build-tools;37.0.0' platform-tools emulator "platforms;android-${API_LEVEL}" \
             "system-images;android-${API_LEVEL};${SYSTEM_IMAGE_TARGET};x86_64"
-          "$AVDMANAGER" create avd --force -n test --device pixel_7_pro \
+          "$AVDMANAGER" create avd --force -n test --device pixel_2 \
             --package "system-images;android-${API_LEVEL};${SYSTEM_IMAGE_TARGET};x86_64"
           printf 'ANDROID_HOME=%s\n' "$ANDROID_HOME"
           for executable in "$ANDROID_HOME/emulator/emulator" "$ANDROID_HOME/platform-tools/adb"; do
@@ -364,7 +364,7 @@ jobs:
           "$ANDROID_HOME/platform-tools/adb" version
 
       - name: Boot emulator and run real-PDF tests
-        timeout-minutes: 65
+        timeout-minutes: 60
         env:
           API_LEVEL: ${{ matrix.api }}
         run: |
@@ -388,7 +388,7 @@ jobs:
           timeout 30s "$ADB" start-server
           booted=0
           boot_started=$SECONDS
-          boot_deadline=$((boot_started + 1200))
+          boot_deadline=$((boot_started + 900))
           attempt=0
           while (( SECONDS < boot_deadline )); do
             attempt=$((attempt + 1))
@@ -411,7 +411,7 @@ jobs:
             sleep 2
           done
           if [[ "$booted" != "1" ]]; then
-            echo "Timed out waiting for API $API_LEVEL emulator after 20 minutes."
+            echo "Timed out waiting for API $API_LEVEL emulator after 15 minutes."
             timeout 5s "$ADB" devices -l || true
             tail -n 120 "$EMULATOR_LOG" || true
             exit 1
@@ -437,29 +437,37 @@ jobs:
       - name: Surface emulator errors in check annotations
         if: failure()
         env:
+          API_LEVEL: ${{ matrix.api }}
           LOG_FILE: pdf-engine-api-${{ matrix.api }}.log
           EMULATOR_LOG: pdf-emulator-api-${{ matrix.api }}.log
         run: |
           python3 - <<'PY'
-          import os, re, sys
+          import os, re
           from pathlib import Path
+          api_level = os.environ["API_LEVEL"]
           log_file = Path(os.environ["LOG_FILE"])
+          setup_log = Path("emulator-setup.log")
+          emulator_log = Path(os.environ["EMULATOR_LOG"])
           if not log_file.exists() or log_file.stat().st_size == 0:
-              setup_log = Path("emulator-setup.log")
-              emulator_log = Path(os.environ["EMULATOR_LOG"])
-              details = []
-              for diagnostic_log in (setup_log, emulator_log):
-                  if diagnostic_log.exists():
-                      details.extend(diagnostic_log.read_text(errors="replace").splitlines()[-40:])
-              message = "Emulator setup failed before the Gradle test script created its log file.\n" + "\n".join(details)
-              escaped = message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
-              print(f"::error title=Emulator setup diagnostics::{escaped}")
-              sys.exit(0)
-          lines = log_file.read_text(errors="replace").splitlines()
-          diagnostics = [line for line in lines if re.search(r"(^e: |^w: |^FAILURE:|^Execution failed for task|^Caused by:|error:|AssertionError|Exception:)", line)]
-          if not diagnostics:
-              diagnostics = lines[-30:]
-          for line in diagnostics[-30:]:
-              escaped = line.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
-              print(f"::error title=Emulator diagnostic::{escaped}")
+              sections = [f"API {api_level}: emulator failed before Gradle produced output."]
+              for diagnostic_log, label in ((setup_log, "setup"), (emulator_log, "emulator")):
+                  if not diagnostic_log.exists():
+                      continue
+                  rows = diagnostic_log.read_text(errors="replace").splitlines()
+                  pattern = r"(timed out|still waiting|booted|devices|boot|failed|error|fatal|warning|exception)"
+                  relevant = [line for line in rows if re.search(pattern, line, re.IGNORECASE)]
+                  selected = (relevant[-12:] if relevant else rows[-12:])
+                  sections.append(f"{label} log tail:\n" + "\n".join(line[:240] for line in selected))
+              message = "\n\n".join(sections)
+          else:
+              lines = log_file.read_text(errors="replace").splitlines()
+              diagnostics = [line for line in lines if re.search(r"(^e: |^FAILURE:|^Execution failed for task|^Caused by:|error:|AssertionError|Exception:)", line)]
+              sections = [f"API {api_level} Gradle output tail:\n" + "\n".join(line[:240] for line in lines[-24:])]
+              if diagnostics:
+                  sections.insert(0, "Gradle error lines:\n" + "\n".join(line[:240] for line in diagnostics[-16:]))
+              message = "\n\n".join(sections)
+          if len(message) > 3500:
+              message = message[:100] + "\n… diagnostic output truncated …\n" + message[-3300:]
+          escaped = message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+          print(f"::error title=API {api_level} emulator diagnostics::{escaped}")
           PY
