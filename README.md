@@ -113,8 +113,8 @@ by running it.
 | 4 | Folders — create, rename, recolour, delete, nesting, counts | §6.1 | ✅ M2 |
 | 5 | Smart collections — 7 rules, addable | §6.1 | ✅ M2 — all seven rules and their composer |
 | 6 | Tags — create, rename (cascade), recolour, delete, AND filtering, manager | §6.1 | ✅ M2 |
-| 7 | Advanced search — 5 scopes, combined filters, summary, snippets, open-at-page | §6.4 | ☐ |
-| 8 | Search history — chips, per-item delete, clear, re-run | §6.4 | ☐ |
+| 7 | Advanced search — 5 scopes, combined filters, summary, snippets, open-at-page | §6.4 | ✅ M4 |
+| 8 | Search history — chips, per-item delete, clear, re-run | §6.4 | ✅ M4 |
 | 9 | Sorting — 4 fields × direction, independent favorites sort, applies to the open file-type group | §6.1 | 🟨 partial — Library sort and open groups are live; Favorites sort is later |
 | 10 | Highlighting — 5 colours, selection, recolour, remove, copy | §7.4 | ☐ |
 | 11 | Highlight undo/redo — 50-step, labels, snackbars | §7.4 | ☐ |
