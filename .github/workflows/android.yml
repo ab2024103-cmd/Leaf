@@ -433,6 +433,8 @@ jobs:
             pdf-engine-api-${{ matrix.api }}.log
             pdf-emulator-api-${{ matrix.api }}.log
             emulator-setup.log
+            app/build/outputs/androidTest-results/connected/debug/**
+            app/build/reports/androidTests/connected/debug/**
           if-no-files-found: ignore
           retention-days: 7
 
@@ -444,7 +446,7 @@ jobs:
           EMULATOR_LOG: pdf-emulator-api-${{ matrix.api }}.log
         run: |
           python3 - <<'PY'
-          import os, re
+          import os, re, xml.etree.ElementTree as ET
           from pathlib import Path
           api_level = os.environ["API_LEVEL"]
           log_file = Path(os.environ["LOG_FILE"])
@@ -468,8 +470,21 @@ jobs:
               if diagnostics:
                   sections.insert(0, "Gradle error lines:\n" + "\n".join(line[:240] for line in diagnostics[-16:]))
               message = "\n\n".join(sections)
+          instrumented_failures = []
+          for report in Path("app/build").rglob("TEST-*.xml"):
+              try:
+                  root = ET.parse(report).getroot()
+              except ET.ParseError:
+                  continue
+              for case in root.iter("testcase"):
+                  for failure in (*case.findall("failure"), *case.findall("error")):
+                      detail = (failure.get("message") or "") + "\n" + "".join(failure.itertext())
+                      instrumented_failures.append(f"{case.get('classname')}.{case.get('name')}: {detail[:1800]}")
+          if instrumented_failures:
+              summary = "Android instrumented test failures:\n" + "\n---\n".join(instrumented_failures[:5])
+              message = summary + "\n\n" + message
           if len(message) > 3500:
-              message = message[:100] + "\n… diagnostic output truncated …\n" + message[-3300:]
+              message = message[:3440] + "\n… diagnostic output truncated …"
           escaped = message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
           print(f"::error title=API {api_level} emulator diagnostics::{escaped}")
           PY
