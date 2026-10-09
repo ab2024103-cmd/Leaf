@@ -311,6 +311,64 @@
     <string name="snack_renamed_to">Renamed to “%1$s”</string>
     <string name="action_undo">Undo</string>
 
+    <!-- Search (§6.4) -->
+    <string name="search_hint">Search name, tag, folder or words inside files…</string>
+    <string name="search_scope_everything">Everything</string>
+    <string name="search_scope_name">Name</string>
+    <string name="search_scope_tag">Tag</string>
+    <string name="search_scope_folder">Folder</string>
+    <string name="search_scope_inside_files">Inside files</string>
+    <string name="search_filters">Filters</string>
+    <string name="search_filters_with_count">Filters (%1$d)</string>
+    <string name="search_filter_type">Type</string>
+    <string name="search_filter_folder">Folder</string>
+    <string name="search_filter_tag">Tag</string>
+    <string name="search_filter_added">Added</string>
+    <string name="search_filter_any">Any</string>
+    <string name="search_filter_reset">Reset</string>
+    <string name="search_filter_apply">Apply</string>
+    <string name="search_added_any">Any time</string>
+    <string name="search_added_week">This week</string>
+    <string name="search_added_month">This month</string>
+    <string name="search_added_last_three_months">Last 3 months</string>
+    <string name="search_recent">Recent searches</string>
+    <string name="search_clear_all">Clear all</string>
+    <string name="search_by">Search by</string>
+    <string name="search_quick_all_pdfs">All PDFs</string>
+    <string name="search_quick_week">Added this week</string>
+    <string name="search_quick_folder_work">Folder · Work</string>
+    <string name="search_quick_tag_important">Tag · important</string>
+    <string name="search_quick_word_chapter">Word · chapter</string>
+    <string name="search_history_title">Search history</string>
+    <string name="search_history_clear">Clear search history</string>
+    <string name="dialog_clear_search_history_title">Clear search history?</string>
+    <string name="search_summary">%1$s · %2$s contain “%3$s” (%4$s)</string>
+    <string name="search_documents_heading">Documents · %1$d</string>
+    <string name="search_inside_heading">Inside files · %1$d</string>
+    <string name="search_document_metadata">%1$s · %2$s MB · %3$s</string>
+    <string name="search_file_metadata">%1$s · first on page %2$d · %3$s</string>
+    <string name="search_no_results_title">No results</string>
+    <string name="search_no_results_message">Nothing matched “%1$s”. Try another word, or loosen the filters — you have %2$d active.</string>
+    <string name="cd_clear_search">Clear search</string>
+    <string name="cd_remove_search_history">Remove “%1$s” from search history</string>
+    <string name="snack_search_history_cleared">Search history cleared</string>
+    <plurals name="search_document_count">
+        <item quantity="one">%1$d document</item>
+        <item quantity="other">%1$d documents</item>
+    </plurals>
+    <plurals name="search_file_count">
+        <item quantity="one">%1$d file</item>
+        <item quantity="other">%1$d files</item>
+    </plurals>
+    <plurals name="search_hit_count">
+        <item quantity="one">%1$d hit</item>
+        <item quantity="other">%1$d hits</item>
+    </plurals>
+    <plurals name="search_match_count">
+        <item quantity="one">%1$d match</item>
+        <item quantity="other">%1$d matches</item>
+    </plurals>
+
     <!-- Empty states (exact mockup copy) -->
     <string name="empty_library_title">Nothing here yet</string>
     <string name="empty_library_message">Change the folder, collection or tag filter — or clear your filters to see the whole library.</string>
@@ -347,6 +405,12 @@
     <string name="reader_horizontal_lower">horizontal</string>
     <string name="reader_page_accessibility">Page %1$d</string>
     <string name="reader_page_of">Page %1$d of %2$d</string>
+    <string name="reader_find_hint">Find in document…</string>
+    <string name="reader_find_counter">%1$d of %2$d</string>
+    <string name="reader_find_no_matches">No matches</string>
+    <string name="reader_find_previous">Previous match</string>
+    <string name="reader_find_next">Next match</string>
+    <string name="reader_find_close">Close find</string>
     <string name="reader_percent">%1$d%%</string>
     <string name="reader_jump_title">Jump to page</string>
     <string name="reader_jump_display">Page %1$d of %2$d</string>

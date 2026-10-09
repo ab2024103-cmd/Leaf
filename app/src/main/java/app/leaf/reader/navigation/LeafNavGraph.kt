@@ -52,9 +52,13 @@ fun LeafShell(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     var readerDocumentId by rememberSaveable { mutableStateOf<String?>(null) }
+    var readerStartPage by rememberSaveable { mutableStateOf<Int?>(null) }
+    var readerInitialFindQuery by rememberSaveable { mutableStateOf<String?>(null) }
     LaunchedEffect(externalDocumentId) {
         externalDocumentId?.let {
             readerDocumentId = it
+            readerStartPage = null
+            readerInitialFindQuery = null
             onExternalDocumentConsumed()
         }
     }
@@ -97,13 +101,30 @@ fun LeafShell(
             ) {
                 composable(LeafDestination.LIBRARY.route) {
                     LibraryScreen(
-                        onOpenDocument = { readerDocumentId = it },
+                        onOpenDocument = {
+                            readerStartPage = null
+                            readerInitialFindQuery = null
+                            readerDocumentId = it
+                        },
                         columns = libraryColumns
                     )
                 }
                 composable(LeafDestination.RECENTS.route) { RecentsScreen() }
                 composable(LeafDestination.FAVORITES.route) { FavoritesScreen() }
-                composable(LeafDestination.SEARCH.route) { SearchScreen() }
+                composable(LeafDestination.SEARCH.route) {
+                    SearchScreen(
+                        onOpenDocument = { documentId ->
+                            readerStartPage = null
+                            readerInitialFindQuery = null
+                            readerDocumentId = documentId
+                        },
+                        onOpenFileSearch = { documentId, pageIndex, query ->
+                            readerStartPage = pageIndex
+                            readerInitialFindQuery = query
+                            readerDocumentId = documentId
+                        }
+                    )
+                }
                 composable(LeafDestination.SETTINGS.route) { SettingsScreen() }
             }
         }
@@ -125,6 +146,8 @@ fun LeafShell(
       readerDocumentId?.let { documentId ->
           ReaderScreen(
               documentId = documentId,
+              initialPage = readerStartPage,
+              initialFindQuery = readerInitialFindQuery,
               onClose = { readerDocumentId = null },
               modifier = Modifier.fillMaxSize().zIndex(1f)
           )

@@ -1,10 +1,13 @@
 package app.leaf.reader.feature.reader
 
 import android.app.Activity
+import android.graphics.Paint
+import android.graphics.Typeface
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.TransformableState
@@ -64,7 +67,9 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.isCtrlPressed
 import androidx.compose.ui.input.pointer.pointerInput
@@ -89,7 +94,6 @@ import app.leaf.reader.core.format.DocumentEngine
 import app.leaf.reader.core.format.PageMetrics
 import app.leaf.reader.core.format.PdfTileGrid
 import app.leaf.reader.core.format.RenderTile
-import app.leaf.reader.core.model.ReadingTheme
 import app.leaf.reader.core.model.ScrollDir
 import app.leaf.reader.core.ui.theme.LocalReadingPalette
 import app.leaf.reader.core.ui.theme.LeafType
@@ -108,6 +112,8 @@ import kotlin.math.roundToInt
 @Composable
 fun ReaderScreen(
     documentId: String,
+    initialPage: Int? = null,
+    initialFindQuery: String? = null,
     onClose: () -> Unit,
     modifier: Modifier = Modifier.fillMaxSize(),
     viewModel: ReaderViewModel = koinViewModel()
@@ -116,7 +122,9 @@ fun ReaderScreen(
     val view = LocalView.current
     val activity = view.context as? Activity
 
-    LaunchedEffect(documentId, viewModel) { viewModel.openDocument(documentId) }
+    LaunchedEffect(documentId, initialPage, initialFindQuery, viewModel) {
+        viewModel.openDocument(documentId, initialPage, initialFindQuery)
+    }
     DisposableEffect(activity, state.isFullScreen) {
         val window = activity?.window
         if (window != null) {
@@ -137,6 +145,7 @@ fun ReaderScreen(
 
     BackHandler(enabled = state.sheet == ReaderSheet.NONE) {
         when {
+            state.findBarVisible -> viewModel.closeFindBar()
             state.isFullScreen -> viewModel.toggleFullScreen()
             else -> viewModel.closeReader(onClose)
         }
@@ -148,6 +157,7 @@ fun ReaderScreen(
         if (event.type == KeyEventType.KeyUp && event.key == Key.Escape) {
             when {
                 state.sheet != ReaderSheet.NONE -> viewModel.setSheet(ReaderSheet.NONE)
+                state.findBarVisible -> viewModel.closeFindBar()
                 state.isFullScreen -> viewModel.toggleFullScreen()
                 else -> viewModel.closeReader(onClose)
             }
@@ -182,6 +192,15 @@ private fun ReaderContent(
             state.document != null && state.engine != null -> {
                 Column(Modifier.fillMaxSize()) {
                     if (!state.isFullScreen) ReaderAppBar(state, onBack = { viewModel.closeReader(onClose) }, onLayout = { viewModel.setSheet(ReaderSheet.VIEW_LAYOUT) })
+                    if (!state.isFullScreen && state.findBarVisible) {
+                        ReaderFindBar(
+                            state = state,
+                            onQueryChange = viewModel::setFindQuery,
+                            onPrevious = viewModel::previousFindMatch,
+                            onNext = viewModel::nextFindMatch,
+                            onClose = viewModel::closeFindBar
+                        )
+                    }
                     if (!state.isFullScreen) state.textExtractionProgress?.let { ReaderExtractionProgress(it) }
                     ReaderViewport(
                         state = state,
@@ -202,6 +221,7 @@ private fun ReaderContent(
                             ReaderToolbar(
                                 state = state,
                                 onLayout = { viewModel.setSheet(ReaderSheet.VIEW_LAYOUT) },
+                                onFind = viewModel::toggleFindBar,
                                 onZoom = viewModel::stepZoom,
                                 onFullScreen = viewModel::toggleFullScreen,
                                 modifier = Modifier.fillMaxWidth()
@@ -283,6 +303,17 @@ private fun ReaderViewport(
                     }
                 }
             }
+            LaunchedEffect(listState, state.positionRequestId) {
+                if (state.positionRequestId > 0 && state.pageCount > 0) {
+                    val page = state.pageIndex.coerceIn(0, state.pageCount - 1)
+                    listState.scrollToItem(page)
+                    if (state.scrollFraction > 0f) {
+                        androidx.compose.runtime.withFrameNanos { }
+                        val item = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == page }
+                        if (item != null) listState.scrollToItem(page, (item.size * state.scrollFraction).roundToInt())
+                    }
+                }
+            }
             LaunchedEffect(listState, state.document?.id) {
                 snapshotFlow {
                     val item = listState.layoutInfo.visibleItemsInfo.firstOrNull()
@@ -310,6 +341,9 @@ private fun ReaderViewport(
                         zoom = state.zoom,
                         panX = state.panX,
                         panY = state.panY,
+                        findMatches = state.findMatches,
+                        activeFindIndex = state.findIndex,
+                        findQuery = state.findQuery,
                         onZoom = viewModel::setZoom,
                         onPan = viewModel::updatePan,
                         onPageTap = onPageTap,
@@ -342,6 +376,11 @@ private fun HorizontalReaderPager(
     LaunchedEffect(state.document?.id, state.pageCount) {
         if (state.pageCount > 0) pagerState.scrollToPage(state.pageIndex.coerceIn(0, state.pageCount - 1))
     }
+    LaunchedEffect(pagerState, state.positionRequestId) {
+        if (state.positionRequestId > 0 && state.pageCount > 0) {
+            pagerState.scrollToPage(state.pageIndex.coerceIn(0, state.pageCount - 1))
+        }
+    }
     LaunchedEffect(pagerState, state.document?.id) {
         snapshotFlow { pagerState.currentPage }.collect { page -> viewModel.updatePosition(page, 0f) }
     }
@@ -365,6 +404,9 @@ private fun HorizontalReaderPager(
                 zoom = state.zoom,
                 panX = state.panX,
                 panY = state.panY,
+                findMatches = state.findMatches,
+                activeFindIndex = state.findIndex,
+                findQuery = state.findQuery,
                 onZoom = viewModel::setZoom,
                 onPan = viewModel::updatePan,
                 onPageTap = onPageTap,
@@ -383,6 +425,9 @@ private fun PdfPageSlot(
     zoom: Float,
     panX: Float,
     panY: Float,
+    findMatches: List<ReaderFindMatch>,
+    activeFindIndex: Int,
+    findQuery: String,
     onZoom: (Float) -> Unit,
     onPan: (Float, Float) -> Unit,
     onPageTap: () -> Unit,
@@ -428,6 +473,9 @@ private fun PdfPageSlot(
                 zoom = zoom,
                 panX = panX,
                 panY = panY,
+                findMatches = findMatches,
+                activeFindIndex = activeFindIndex,
+                findQuery = findQuery,
                 onZoom = onZoom,
                 onPan = onPan,
                 onPageTap = onPageTap,
@@ -450,6 +498,9 @@ private fun PdfPageCanvas(
     zoom: Float,
     panX: Float,
     panY: Float,
+    findMatches: List<ReaderFindMatch>,
+    activeFindIndex: Int,
+    findQuery: String,
     onZoom: (Float) -> Unit,
     onPan: (Float, Float) -> Unit,
     onPageTap: () -> Unit,
@@ -595,9 +646,70 @@ private fun PdfPageCanvas(
                     )
                 }
             }
+            FindMatchOverlay(
+                pageIndex = pageIndex,
+                matches = findMatches,
+                activeIndex = activeFindIndex,
+                query = findQuery
+            )
         }
         if ((previewError && preview == null) || tileError) {
             ReaderPageError(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color.White.copy(alpha = 0.88f)))
+        }
+    }
+}
+
+@Composable
+private fun FindMatchOverlay(
+    pageIndex: Int,
+    matches: List<ReaderFindMatch>,
+    activeIndex: Int,
+    query: String
+) {
+    if (matches.none { it.pageIndex == pageIndex && it.bounds.isNotEmpty() }) return
+    Canvas(Modifier.fillMaxSize()) {
+        val ordinaryFill = androidx.compose.ui.graphics.Color(0xFFF2CD55).copy(alpha = 0.6f)
+        val ordinaryOutline = androidx.compose.ui.graphics.Color(0xFFB87919)
+        val activeFill = androidx.compose.ui.graphics.Color(0xFFFF8A3C)
+        matches.forEachIndexed { matchIndex, match ->
+            if (match.pageIndex != pageIndex) return@forEachIndexed
+            match.bounds.forEachIndexed { boundIndex, rect ->
+                val left = rect.left * size.width
+                val top = rect.top * size.height
+                val right = rect.right * size.width
+                val bottom = rect.bottom * size.height
+                val width = right - left
+                val height = bottom - top
+                if (width <= 0f || height <= 0f) return@forEachIndexed
+                val isActive = matchIndex == activeIndex
+                drawRect(
+                    color = if (isActive) activeFill else ordinaryFill,
+                    topLeft = Offset(left, top),
+                    size = androidx.compose.ui.geometry.Size(width, height)
+                )
+                if (isActive) {
+                    if (boundIndex == 0 && query.isNotBlank()) {
+                        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                            color = android.graphics.Color.WHITE
+                            textSize = height.coerceAtMost(24.dp.toPx()).coerceAtLeast(10.dp.toPx())
+                            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+                            val textWidth = measureText(query)
+                            if (textWidth > width - 4f && textWidth > 0f) {
+                                textScaleX = ((width - 4f).coerceAtLeast(1f) / textWidth).coerceAtLeast(0.1f)
+                            }
+                        }
+                        val baseline = top + height / 2f - (paint.ascent() + paint.descent()) / 2f
+                        drawContext.canvas.nativeCanvas.drawText(query, left + 2f, baseline, paint)
+                    }
+                } else {
+                    drawRect(
+                        color = ordinaryOutline,
+                        topLeft = Offset(left, top),
+                        size = androidx.compose.ui.geometry.Size(width, height),
+                        style = Stroke(width = 1.dp.toPx())
+                    )
+                }
+            }
         }
     }
 }
@@ -692,6 +804,7 @@ private fun ReaderFooter(
 private fun ReaderToolbar(
     state: ReaderContentState,
     onLayout: () -> Unit,
+    onFind: () -> Unit,
     onZoom: (Int) -> Unit,
     onFullScreen: () -> Unit,
     modifier: Modifier = Modifier
@@ -705,6 +818,7 @@ private fun ReaderToolbar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
+            ReaderControl(R.drawable.ic_nav_search, stringResource(R.string.reader_find_hint), onFind)
             ReaderControl(R.drawable.ic_view_layout, stringResource(R.string.reader_view_layout_title), onLayout)
             Spacer(Modifier.weight(1f))
             if (showZoom) {

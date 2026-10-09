@@ -16,10 +16,12 @@ import app.leaf.reader.core.data.prefs.SettingsStore
 import app.leaf.reader.core.data.repo.DocumentRepository
 import app.leaf.reader.core.data.repo.FolderRepository
 import app.leaf.reader.core.data.repo.RecentRepository
+import app.leaf.reader.core.data.repo.SearchRepository
 import app.leaf.reader.core.data.repo.SmartCollectionRepository
 import app.leaf.reader.core.data.repo.TagRepository
 import app.leaf.reader.core.util.LeafClock
 import app.leaf.reader.feature.reader.ReaderViewModel
+import app.leaf.reader.feature.search.SearchViewModel
 import app.leaf.reader.core.util.SystemLeafClock
 import app.leaf.reader.feature.library.LibraryViewModel
 import org.koin.android.ext.koin.androidApplication
@@ -54,6 +56,7 @@ val appModule = module {
     singleOf(::SmartCollectionRepository)
     singleOf(::RecentRepository)
     singleOf(::ReaderRepository)
+    singleOf(::SearchRepository)
     single { PdfIntakeHandler(androidContext(), get(), get(), get(), get()) }
     single { PdfBitmapCache() }
     single<DocumentEngineFactory> { PdfDocumentEngineFactory(androidContext(), get()) }
@@ -71,4 +74,5 @@ val appModule = module {
     // snackbars, subtitles and headers are built from (§1.10).
     viewModel { LibraryViewModel(androidApplication(), get(), get(), get(), get(), get(), get()) }
     viewModel { ReaderViewModel(androidApplication(), get(), get(), get(), get()) }
+    viewModel { SearchViewModel(androidApplication(), get(), get(), get()) }
 }

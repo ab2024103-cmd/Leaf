@@ -53,6 +53,10 @@ class PdfDocumentEngineInstrumentedTest {
 
             val text = engine.pageText(0).joinToString(" ") { it.text }
             assertTrue("Seed text should be extracted by the selected platform/PDFBox path", text.contains("Simplicity", ignoreCase = true))
+
+            val findMatches = engine.findInPage(0, "Simplicity")
+            assertEquals(1, findMatches.size)
+            assertTrue("Find should return normalized match geometry", findMatches.single().bounds.isNotEmpty())
         } finally {
             leases.forEach(engine::releaseBitmap)
             engine.close()

@@ -16,6 +16,7 @@ import app.leaf.reader.core.model.NormalizedRect
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.text.PDFTextStripper
+import com.tom_roush.pdfbox.text.TextPosition
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -170,21 +171,49 @@ class PdfDocumentEngine internal constructor(
         }
     }
 
-    override suspend fun findInPage(pageIndex: Int, query: String): List<MatchRect> = withContext(Dispatchers.IO) {
-        if (query.isBlank()) return@withContext emptyList()
-        if (Build.VERSION.SDK_INT >= 35) {
-            searchPlatformText(pageIndex, query)
-        } else {
-            val foldedQuery = query.trim().lowercase()
-            pageText(pageIndex).flatMap { run ->
-                val foldedText = run.text.lowercase()
-                buildList {
-                    var start = 0
-                    while (start <= foldedText.length - foldedQuery.length) {
-                        val match = foldedText.indexOf(foldedQuery, start)
-                        if (match < 0) break
-                        add(MatchRect(run.text.substring(match, match + foldedQuery.length), emptyList()))
-                        start = match + 1
+    override suspend fun findInPage(pageIndex: Int, query: String): List<MatchRect> =
+        findInPages(listOf(pageIndex), query)[pageIndex].orEmpty()
+
+    override suspend fun findInPages(pageIndices: List<Int>, query: String): Map<Int, List<MatchRect>> =
+        withContext(Dispatchers.IO) {
+            val normalizedQuery = query.trim()
+            if (normalizedQuery.isEmpty()) return@withContext emptyMap()
+            val pages = pageIndices.distinct()
+            pages.forEach(::ensurePage)
+            if (Build.VERSION.SDK_INT >= 35) {
+                val result = LinkedHashMap<Int, List<MatchRect>>()
+                for (pageIndex in pages) {
+                    result[pageIndex] = searchPlatformText(pageIndex, normalizedQuery)
+                }
+                result
+            } else {
+                searchPdfBoxPages(pages, normalizedQuery)
+            }
+        }
+
+    /** PDFBox supplies glyph positions on API 23–34 so Find can paint actual hit bounds. */
+    private fun searchPdfBoxPages(pageIndices: List<Int>, query: String): Map<Int, List<MatchRect>> {
+        PDFBoxResourceLoader.init(context)
+        if (pageIndices.isEmpty() || query.isEmpty()) return emptyMap()
+        return textInput().use { input ->
+            PDDocument.load(input).use { document ->
+                buildMap {
+                    pageIndices.forEach { pageIndex ->
+                        if (pageIndex !in 0 until document.numberOfPages) {
+                            throw IndexOutOfBoundsException("PDF page is outside the document")
+                        }
+                        val page = document.getPage(pageIndex)
+                        val cropBox = page.cropBox
+                        val rotation = ((page.rotation % 360) + 360) % 360
+                        val pageWidth = if (rotation == 90 || rotation == 270) cropBox.height else cropBox.width
+                        val pageHeight = if (rotation == 90 || rotation == 270) cropBox.width else cropBox.height
+                        val stripper = PdfBoxMatchStripper(query, pageWidth, pageHeight).apply {
+                            sortByPosition = true
+                            startPage = pageIndex + 1
+                            endPage = pageIndex + 1
+                        }
+                        stripper.getText(document)
+                        put(pageIndex, stripper.matches.toList())
                     }
                 }
             }
@@ -279,4 +308,96 @@ class PdfDocumentEngine internal constructor(
         right = (right / pageWidth).coerceIn(0f, 1f),
         bottom = (bottom / pageHeight).coerceIn(0f, 1f)
     )
+}
+
+/** API 23–34 fallback: search PDFBox text lines and return normalized glyph geometry. */
+private class PdfBoxMatchStripper(
+    private val query: String,
+    private val pageWidth: Float,
+    private val pageHeight: Float
+) : PDFTextStripper() {
+    val matches = mutableListOf<MatchRect>()
+
+    override fun writeString(text: String, textPositions: MutableList<TextPosition>) {
+        super.writeString(text, textPositions)
+        if (text.isEmpty() || query.isEmpty()) return
+
+        val positionsByCharacter = mapPositions(text, textPositions)
+        var start = 0
+        while (start <= text.length - query.length) {
+            val matchStart = text.indexOf(query, start, ignoreCase = true)
+            if (matchStart < 0) break
+            val matchEnd = matchStart + query.length
+            val matchedPositions = positionsByCharacter.subList(matchStart, matchEnd).filterNotNull()
+            val geometry = matchedPositions.ifEmpty { textPositions }
+            matches += MatchRect(
+                text = text.substring(matchStart, matchEnd),
+                bounds = mergeAdjacent(geometry.map(::normalizedBounds))
+            )
+            start = matchEnd
+        }
+    }
+
+    private fun mapPositions(text: String, positions: List<TextPosition>): List<TextPosition?> {
+        if (positions.size == text.length) return positions
+        val positionCharacters = positions.flatMap { position ->
+            position.unicode.orEmpty().map { character -> character to position }
+        }
+        val mapped = MutableList<TextPosition?>(text.length) { null }
+        var nextCharacter = 0
+        text.forEachIndexed { index, character ->
+            if (character.isWhitespace()) {
+                val next = positionCharacters.getOrNull(nextCharacter)
+                if (next?.first?.isWhitespace() == true) {
+                    mapped[index] = next.second
+                    nextCharacter++
+                }
+            } else {
+                val match = (nextCharacter until positionCharacters.size).firstOrNull { candidate ->
+                    positionCharacters[candidate].first.equals(character, ignoreCase = true)
+                }
+                if (match != null) {
+                    mapped[index] = positionCharacters[match].second
+                    nextCharacter = match + 1
+                }
+            }
+        }
+        return mapped
+    }
+
+    private fun normalizedBounds(position: TextPosition): NormalizedRect {
+        val width = pageWidth.coerceAtLeast(1f)
+        val height = pageHeight.coerceAtLeast(1f)
+        val left = position.xDirAdj
+        val top = position.yDirAdj - position.heightDir
+        return NormalizedRect(
+            left = (left / width).coerceIn(0f, 1f),
+            top = (top / height).coerceIn(0f, 1f),
+            right = ((left + position.widthDirAdj) / width).coerceIn(0f, 1f),
+            bottom = ((top + position.heightDir) / height).coerceIn(0f, 1f)
+        )
+    }
+
+    private fun mergeAdjacent(rectangles: List<NormalizedRect>): List<NormalizedRect> {
+        if (rectangles.size < 2) return rectangles
+        val sorted = rectangles.sortedWith(compareBy<NormalizedRect> { it.top }.thenBy { it.left })
+        val merged = mutableListOf<NormalizedRect>()
+        for (rectangle in sorted) {
+            val previous = merged.lastOrNull()
+            if (previous != null &&
+                kotlin.math.abs(previous.top - rectangle.top) < 0.015f &&
+                rectangle.left <= previous.right + 0.015f
+            ) {
+                merged[merged.lastIndex] = NormalizedRect(
+                    left = minOf(previous.left, rectangle.left),
+                    top = minOf(previous.top, rectangle.top),
+                    right = maxOf(previous.right, rectangle.right),
+                    bottom = maxOf(previous.bottom, rectangle.bottom)
+                )
+            } else {
+                merged += rectangle
+            }
+        }
+        return merged
+    }
 }

@@ -2,11 +2,19 @@ package app.leaf.reader.feature.reader
 
 import app.leaf.reader.core.format.DocumentEngine
 import app.leaf.reader.core.model.Document
+import app.leaf.reader.core.model.NormalizedRect
 import app.leaf.reader.core.model.ReadingTheme
 import app.leaf.reader.core.model.ScrollDir
 
 /** A sheet is present only while it has a live M3 action. */
 enum class ReaderSheet { NONE, JUMP_TO_PAGE, VIEW_LAYOUT }
+
+data class ReaderFindMatch(
+    /** Zero-based page index. */
+    val pageIndex: Int,
+    /** One or more normalized hit rectangles; empty when the renderer supplies no geometry. */
+    val bounds: List<NormalizedRect>
+)
 
 data class ReaderContentState(
     val isLoading: Boolean = false,
@@ -25,8 +33,16 @@ data class ReaderContentState(
     val sheet: ReaderSheet = ReaderSheet.NONE,
     val error: String? = null,
     val warning: String? = null,
-    val textExtractionProgress: Float? = null
+    val textExtractionProgress: Float? = null,
+    val findBarVisible: Boolean = false,
+    val findQuery: String = "",
+    val findMatches: List<ReaderFindMatch> = emptyList(),
+    val findIndex: Int = -1,
+    /** Changed only for explicit jumps so ordinary scrolling is never pulled back. */
+    val positionRequestId: Int = 0
 ) {
     val percentRead: Int
         get() = if (pageCount <= 0) 0 else (((pageIndex + 1).coerceAtMost(pageCount) * 100f) / pageCount).toInt()
+
+    val findMatchCount: Int get() = findMatches.size
 }

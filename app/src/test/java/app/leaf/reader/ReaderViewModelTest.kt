@@ -124,6 +124,43 @@ class ReaderViewModelTest {
     }
 
     @Test
+    fun search_handoff_prefills_find_selects_first_hit_and_cycles_matches() = runBlocking {
+        Dispatchers.setMain(Dispatchers.Unconfined)
+        try {
+            DatabaseSeeder(database).seed(FIXED_NOW)
+            val viewModel = ReaderViewModel(
+                application,
+                repository,
+                settings,
+                DocumentEngineFactory { TestReaderEngine() },
+                LeafClock { FIXED_NOW }
+            )
+
+            viewModel.openDocument("d1", initialPage = 4, initialFindQuery = "chapter")
+            val firstHit = withTimeout(10_000) {
+                viewModel.state.first { it.findMatches.isNotEmpty() }
+            }
+
+            assertEquals(true, firstHit.findBarVisible)
+            assertEquals("chapter", firstHit.findQuery)
+            assertEquals(0, firstHit.findIndex)
+            assertEquals(0, firstHit.pageIndex)
+            assertEquals(6, firstHit.findMatchCount)
+
+            viewModel.nextFindMatch()
+            val nextHit = viewModel.state.value
+            assertEquals(1, nextHit.findIndex)
+            assertEquals(1, nextHit.pageIndex)
+
+            val closed = CompletableDeferred<Unit>()
+            viewModel.closeReader { closed.complete(Unit) }
+            withTimeout(10_000) { closed.await() }
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
     fun damaged_pdf_open_becomes_a_reader_error_state() = runBlocking {
         Dispatchers.setMain(Dispatchers.Unconfined)
         try {

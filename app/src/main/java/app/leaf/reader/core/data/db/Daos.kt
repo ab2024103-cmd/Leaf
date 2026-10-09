@@ -280,6 +280,9 @@ interface ExtractedTextDao {
     @Query("SELECT * FROM extracted_text WHERE docId = :docId ORDER BY pageIndex ASC")
     suspend fun pagesForDocument(docId: String): List<ExtractedTextEntity>
 
+    @Query("SELECT * FROM extracted_text ORDER BY docId ASC, pageIndex ASC")
+    suspend fun pagesForLibrary(): List<ExtractedTextEntity>
+
     @Query("SELECT * FROM extracted_text WHERE docId = :docId AND pageIndex = :pageIndex LIMIT 1")
     suspend fun page(docId: String, pageIndex: Int): ExtractedTextEntity?
 

@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.leaf.reader.core.data.prefs.SettingsStore
 import app.leaf.reader.core.data.repo.ReaderRepository
+import app.leaf.reader.core.domain.countOccurrences
 import app.leaf.reader.core.format.DocumentEngine
 import app.leaf.reader.core.format.DocumentEngineFactory
 import app.leaf.reader.core.model.DocType
@@ -38,15 +39,17 @@ class ReaderViewModel(
     private var activeDocumentId: String? = null
     private var progressJob: Job? = null
     private var extractionJob: Job? = null
+    private var findJob: Job? = null
     private var session = 0
 
-    fun openDocument(documentId: String) {
+    fun openDocument(documentId: String, initialPage: Int? = null, initialFindQuery: String? = null) {
         if (documentId == activeDocumentId && activeEngine != null) return
         val request = ++session
         val previous = mutableState.value
         if (previous.document != null) viewModelScope.launch { persist(previous) }
         progressJob?.cancel()
         extractionJob?.cancel()
+        findJob?.cancel()
         val previousEngine = activeEngine
         activeEngine = null
         activeDocumentId = documentId
@@ -74,29 +77,34 @@ class ReaderViewModel(
                 val stored = repository.progress(documentId)
                 val pageCount = engine.pageCount
                 if (document.pageCount != pageCount) repository.updatePageCount(documentId, pageCount)
-                val page = if (prefs.rememberPage && stored != null) {
+                val page = initialPage?.coerceIn(0, pageCount - 1) ?: if (prefs.rememberPage && stored != null) {
                     stored.page.coerceIn(0, pageCount - 1)
                 } else {
                     0
                 }
+                val initialQuery = initialFindQuery?.takeIf(String::isNotBlank).orEmpty()
                 val initial = ReaderContentState(
                     document = document.copy(pageCount = pageCount),
                     engine = engine,
                     pageCount = pageCount,
                     pageIndex = page,
-                    scrollFraction = if (prefs.rememberPage) stored?.scrollFraction?.coerceIn(0f, 1f) ?: 0f else 0f,
+                    scrollFraction = if (initialPage != null || initialQuery.isNotEmpty()) 0f else if (prefs.rememberPage) stored?.scrollFraction?.coerceIn(0f, 1f) ?: 0f else 0f,
                     zoom = (if (prefs.rememberPage) stored?.zoom ?: prefs.zoom else prefs.zoom)
                         .coerceIn(LeafSettings.ZOOM_MIN, LeafSettings.ZOOM_MAX),
                     scrollDir = if (prefs.rememberPage) stored?.scrollDir ?: prefs.scrollDir else prefs.scrollDir,
                     readingTheme = if (prefs.rememberPage) stored?.readingTheme ?: prefs.readingTheme else prefs.readingTheme,
                     panX = if (prefs.rememberPage) stored?.panX ?: 0f else 0f,
                     panY = if (prefs.rememberPage) stored?.panY ?: 0f else 0f,
-                    warning = if (pageCount > MAX_PAGES) "This PDF has over 2,000 pages; only visible pages are rendered." else null
+                    warning = if (pageCount > MAX_PAGES) "This PDF has over 2,000 pages; only visible pages are rendered." else null,
+                    findBarVisible = initialQuery.isNotEmpty(),
+                    findQuery = initialQuery,
+                    positionRequestId = 1
                 )
                 mutableState.value = initial
                 repository.recordOpen(documentId, clock.nowMillis())
                 restorePosition(initial)
                 extractTextIfNeeded(documentId, engine, pageCount, request)
+                if (initialQuery.isNotEmpty()) setFindQuery(initialQuery)
             } catch (error: Exception) {
                 if (request == session) {
                     activeEngine?.let { withContext(Dispatchers.IO) { it.close() } }
@@ -152,7 +160,107 @@ class ReaderViewModel(
     fun jumpToPage(pageIndex: Int) {
         val current = mutableState.value
         if (current.pageCount <= 0) return
-        mutableState.update { it.copy(pageIndex = pageIndex.coerceIn(0, current.pageCount - 1), scrollFraction = 0f) }
+        mutableState.update {
+            it.copy(
+                pageIndex = pageIndex.coerceIn(0, current.pageCount - 1),
+                scrollFraction = 0f,
+                positionRequestId = it.positionRequestId + 1
+            )
+        }
+        schedulePersist()
+    }
+
+    fun toggleFindBar() {
+        if (mutableState.value.findBarVisible) {
+            closeFindBar()
+        } else {
+            mutableState.update { it.copy(findBarVisible = true) }
+        }
+    }
+
+    fun setFindQuery(query: String) {
+        mutableState.update {
+            it.copy(findBarVisible = true, findQuery = query, findMatches = emptyList(), findIndex = -1)
+        }
+        findJob?.cancel()
+        if (query.isBlank()) return
+        val request = session
+        findJob = viewModelScope.launch {
+            delay(FIND_DEBOUNCE_MILLIS)
+            val documentId = activeDocumentId ?: return@launch
+            val current = mutableState.value
+            val engine = activeEngine ?: return@launch
+            if (request != session || current.findQuery != query) return@launch
+
+            var pages = repository.cachedText(documentId)
+            if (pages.size < current.pageCount) {
+                extractionJob?.join()
+                if (request != session) return@launch
+                pages = repository.cachedText(documentId)
+            }
+            val found = withContext(Dispatchers.IO) {
+                val matchesPerPage = pages.sortedBy { it.pageIndex }.mapNotNull { page ->
+                    val count = countOccurrences(page.text, query)
+                    count.takeIf { it > 0 }?.let { page.pageIndex to it }
+                }
+                val geometryByPage = try {
+                    engine.findInPages(matchesPerPage.map { it.first }, query)
+                } catch (error: kotlinx.coroutines.CancellationException) {
+                    throw error
+                } catch (_: Exception) {
+                    emptyMap()
+                }
+                buildList {
+                    matchesPerPage.forEach { (pageIndex, occurrenceCount) ->
+                        val geometry = geometryByPage[pageIndex].orEmpty()
+                        repeat(occurrenceCount) { index ->
+                            add(ReaderFindMatch(pageIndex, geometry.getOrNull(index)?.bounds.orEmpty()))
+                        }
+                    }
+                }
+            }
+            if (request != session || mutableState.value.findQuery != query) return@launch
+            mutableState.update { latest ->
+                if (latest.findQuery != query) latest else {
+                    val first = found.firstOrNull()
+                    latest.copy(
+                        findMatches = found,
+                        findIndex = if (first == null) -1 else 0,
+                        pageIndex = first?.pageIndex ?: latest.pageIndex,
+                        scrollFraction = first?.bounds?.minOfOrNull { it.top } ?: latest.scrollFraction,
+                        positionRequestId = latest.positionRequestId + if (first == null) 0 else 1
+                    )
+                }
+            }
+            if (found.isNotEmpty()) schedulePersist(immediate = true)
+        }
+    }
+
+    fun closeFindBar() {
+        findJob?.cancel()
+        mutableState.update {
+            it.copy(findBarVisible = false, findQuery = "", findMatches = emptyList(), findIndex = -1)
+        }
+    }
+
+    fun nextFindMatch() = stepFindMatch(1)
+
+    fun previousFindMatch() = stepFindMatch(-1)
+
+    private fun stepFindMatch(direction: Int) {
+        val current = mutableState.value
+        if (current.findMatches.isEmpty()) return
+        val start = if (current.findIndex < 0) 0 else current.findIndex
+        val next = (start + direction + current.findMatches.size) % current.findMatches.size
+        val match = current.findMatches[next]
+        mutableState.update {
+            it.copy(
+                findIndex = next,
+                pageIndex = match.pageIndex,
+                scrollFraction = match.bounds.minOfOrNull { rect -> rect.top } ?: 0f,
+                positionRequestId = it.positionRequestId + 1
+            )
+        }
         schedulePersist()
     }
 
@@ -208,6 +316,7 @@ class ReaderViewModel(
         val snapshot = mutableState.value
         progressJob?.cancel()
         extractionJob?.cancel()
+        findJob?.cancel()
         viewModelScope.launch {
             if (snapshot.document != null && settings.current().rememberPage) persist(snapshot)
             if (request == session) {
@@ -250,6 +359,7 @@ class ReaderViewModel(
     override fun onCleared() {
         progressJob?.cancel()
         extractionJob?.cancel()
+        findJob?.cancel()
         activeEngine?.close()
         activeEngine = null
         super.onCleared()
@@ -258,6 +368,7 @@ class ReaderViewModel(
     companion object {
         const val MAX_PAGES = 2_000
         private const val SAVE_DEBOUNCE_MS = 350L
+        private const val FIND_DEBOUNCE_MILLIS = 250L
         private const val ZOOM_STEP = 0.1f
     }
 }

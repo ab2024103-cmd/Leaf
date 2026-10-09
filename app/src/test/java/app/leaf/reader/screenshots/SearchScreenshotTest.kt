@@ -1,6 +1,5 @@
 package app.leaf.reader.screenshots
 
-import android.app.Application
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
@@ -9,6 +8,8 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import app.leaf.reader.core.model.AppTheme
 import app.leaf.reader.core.ui.theme.LeafTheme
+import org.koin.core.context.GlobalContext
+import org.koin.core.context.stopKoin
 import app.leaf.reader.navigation.LeafDestination
 import app.leaf.reader.navigation.LeafShell
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -29,8 +30,13 @@ import org.robolectric.annotation.GraphicsMode
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(application = Application::class, sdk = [33])
+@Config(application = ReaderScreenshotApplication::class, sdk = [33])
 class SearchScreenshotTest {
+
+    @org.junit.After
+    fun stopKoinGraph() {
+        if (GlobalContext.getOrNull() != null) stopKoin()
+    }
 
     private fun capture(name: String, dark: Boolean, widthDp: Int, heightDp: Int) {
         val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()

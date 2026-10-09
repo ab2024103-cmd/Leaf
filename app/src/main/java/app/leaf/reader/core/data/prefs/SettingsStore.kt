@@ -21,6 +21,8 @@ import app.leaf.reader.core.model.ReadingTheme
 import app.leaf.reader.core.model.ScrollDir
 import app.leaf.reader.core.model.SortField
 import app.leaf.reader.core.model.Typeface
+import app.leaf.reader.core.domain.normalizeSearchHistory
+import org.json.JSONArray
 import java.io.IOException
 
 /**
@@ -77,8 +79,24 @@ class SettingsStore(private val dataStore: DataStore<Preferences>) {
         },
         sortAscending = this[SORT_ASCENDING] ?: true,
         favSort = enumOrDefault(this[FAV_SORT], FavSort.ADDED),
-        searchHistory = this[SEARCH_HISTORY]?.toList() ?: emptyList()
+        searchHistory = readSearchHistory()
     )
+
+    private fun Preferences.readSearchHistory(): List<String> {
+        val ordered = this[SEARCH_HISTORY_ORDERED]
+        if (ordered != null) {
+            val decoded = runCatching {
+                val json = JSONArray(ordered)
+                buildList {
+                    for (index in 0 until json.length()) add(json.getString(index))
+                }
+            }.getOrNull()
+            if (decoded != null) return normalizeSearchHistory(decoded)
+        }
+        // M3 stored an unordered set but did not expose search, so this is only a
+        // compatibility fallback for installations that already have that key.
+        return normalizeSearchHistory(this[SEARCH_HISTORY]?.toList().orEmpty())
+    }
 
     private fun MutablePreferences.writeAll(settings: LeafSettings) {
         this[APP_THEME] = settings.appTheme.name
@@ -100,7 +118,8 @@ class SettingsStore(private val dataStore: DataStore<Preferences>) {
         this[SORT_FIELD] = settings.sortField.name
         this[SORT_ASCENDING] = settings.sortAscending
         this[FAV_SORT] = settings.favSort.name
-        this[SEARCH_HISTORY] = settings.searchHistory.toSet()
+        this[SEARCH_HISTORY_ORDERED] = JSONArray(normalizeSearchHistory(settings.searchHistory)).toString()
+        remove(SEARCH_HISTORY)
     }
 
     private inline fun <reified T : Enum<T>> enumOrDefault(value: String?, fallback: T): T =
@@ -129,5 +148,6 @@ class SettingsStore(private val dataStore: DataStore<Preferences>) {
         val SORT_ASCENDING = booleanPreferencesKey("sort_ascending")
         val FAV_SORT = stringPreferencesKey("fav_sort")
         val SEARCH_HISTORY = stringSetPreferencesKey("search_history")
+        val SEARCH_HISTORY_ORDERED = stringPreferencesKey("search_history_ordered")
     }
 }

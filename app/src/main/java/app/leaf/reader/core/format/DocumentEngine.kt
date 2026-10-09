@@ -63,6 +63,15 @@ interface DocumentEngine : AutoCloseable {
 
     suspend fun findInPage(pageIndex: Int, query: String): List<MatchRect>
 
+    /** Batch geometry extraction lets PDF engines parse one source once per Find query. */
+    suspend fun findInPages(pageIndices: List<Int>, query: String): Map<Int, List<MatchRect>> {
+        val matches = LinkedHashMap<Int, List<MatchRect>>()
+        for (pageIndex in pageIndices.distinct()) {
+            matches[pageIndex] = findInPage(pageIndex, query)
+        }
+        return matches
+    }
+
     /** Extract every page once in the background so M4 search uses the Room cache. */
     suspend fun extractAllText(onProgress: suspend (completed: Int, total: Int) -> Unit): List<List<TextRun>>
 }
