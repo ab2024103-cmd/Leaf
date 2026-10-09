@@ -299,6 +299,7 @@ jobs:
     name: Real PDF · API ${{ matrix.api }}
     needs: build
     runs-on: ubuntu-24.04
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -363,6 +364,7 @@ jobs:
           "$ANDROID_HOME/platform-tools/adb" version
 
       - name: Boot emulator and run real-PDF tests
+        timeout-minutes: 65
         env:
           API_LEVEL: ${{ matrix.api }}
         run: |
@@ -380,35 +382,45 @@ jobs:
             -no-snapshot -noaudio -no-boot-anim -accel on > "$EMULATOR_LOG" 2>&1 &
           emulator_pid=$!
           cleanup() {
-            "$ADB" -s emulator-5554 emu kill >/dev/null 2>&1 || kill "$emulator_pid" >/dev/null 2>&1 || true
+            timeout 5s "$ADB" -s emulator-5554 emu kill >/dev/null 2>&1 || kill "$emulator_pid" >/dev/null 2>&1 || true
           }
           trap cleanup EXIT
-          "$ADB" start-server
+          timeout 30s "$ADB" start-server
           booted=0
-          for attempt in $(seq 1 600); do
-            state=$("$ADB" -s emulator-5554 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)
+          boot_started=$SECONDS
+          boot_deadline=$((boot_started + 1200))
+          attempt=0
+          while (( SECONDS < boot_deadline )); do
+            attempt=$((attempt + 1))
+            state=$(timeout 5s "$ADB" -s emulator-5554 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)
             if [[ "$state" == "1" ]]; then
               booted=1
-              echo "Emulator API $API_LEVEL booted."
+              echo "Emulator API $API_LEVEL booted after $((SECONDS - boot_started)) seconds."
               break
             fi
             if ! kill -0 "$emulator_pid" 2>/dev/null; then
               echo "Emulator process exited before boot completed."
-              tail -n 100 "$EMULATOR_LOG" || true
+              timeout 5s "$ADB" devices -l || true
+              tail -n 120 "$EMULATOR_LOG" || true
               exit 1
+            fi
+            if (( attempt % 10 == 0 )); then
+              echo "Still waiting for API $API_LEVEL emulator ($((SECONDS - boot_started))s elapsed)."
+              timeout 5s "$ADB" devices -l || true
             fi
             sleep 2
           done
           if [[ "$booted" != "1" ]]; then
             echo "Timed out waiting for API $API_LEVEL emulator after 20 minutes."
-            tail -n 100 "$EMULATOR_LOG" || true
+            timeout 5s "$ADB" devices -l || true
+            tail -n 120 "$EMULATOR_LOG" || true
             exit 1
           fi
-          "$ADB" -s emulator-5554 shell input keyevent 82
-          "$ADB" -s emulator-5554 shell settings put global window_animation_scale 0.0
-          "$ADB" -s emulator-5554 shell settings put global transition_animation_scale 0.0
-          "$ADB" -s emulator-5554 shell settings put global animator_duration_scale 0.0
-          ./gradlew connectedDebugAndroidTest --stacktrace --console=plain 2>&1 | tee "$GRADLE_LOG"
+          timeout 20s "$ADB" -s emulator-5554 shell input keyevent 82
+          timeout 20s "$ADB" -s emulator-5554 shell settings put global window_animation_scale 0.0
+          timeout 20s "$ADB" -s emulator-5554 shell settings put global transition_animation_scale 0.0
+          timeout 20s "$ADB" -s emulator-5554 shell settings put global animator_duration_scale 0.0
+          timeout -k 10s 35m ./gradlew connectedDebugAndroidTest --stacktrace --console=plain 2>&1 | tee "$GRADLE_LOG"
 
       - name: Upload emulator diagnostics on failure
         if: failure()
