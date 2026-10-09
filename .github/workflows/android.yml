@@ -345,12 +345,24 @@ jobs:
             "system-images;android-${API_LEVEL};${SYSTEM_IMAGE_TARGET};x86_64"
           "$AVDMANAGER" create avd --force -n test --device pixel_7_pro \
             --package "system-images;android-${API_LEVEL};${SYSTEM_IMAGE_TARGET};x86_64"
+          printf 'ANDROID_HOME=%s\n' "$ANDROID_HOME"
+          for executable in "$ANDROID_HOME/emulator/emulator" "$ANDROID_HOME/platform-tools/adb"; do
+            if [[ ! -x "$executable" ]]; then
+              echo "Required Android tool is missing or not executable: $executable"
+              find "$ANDROID_HOME" -maxdepth 5 -type f \( -name emulator -o -name adb \) -print || true
+              exit 1
+            fi
+            ls -l "$executable"
+          done
+          "$ANDROID_HOME/emulator/emulator" -version
+          "$ANDROID_HOME/platform-tools/adb" version
 
       - name: Boot emulator and run real-PDF tests
         env:
           API_LEVEL: ${{ matrix.api }}
         run: |
           set -euo pipefail
+          exec > >(tee -a emulator-setup.log) 2>&1
           export ANDROID_AVD_HOME="$HOME/.android/avd"
           EMULATOR_LOG="pdf-emulator-api-${API_LEVEL}.log"
           GRADLE_LOG="pdf-engine-api-${API_LEVEL}.log"

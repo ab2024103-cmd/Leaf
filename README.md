@@ -137,15 +137,17 @@ by running it.
 
 ## Verification
 
-M2 is verified in [CI run 37662707845](https://github.com/ab2024103-cmd/Leaf/actions/runs/37662707845). The M3 branch build is pending its first push; the workflow now adds real-PDF instrumentation on API 23 and API 36.
+M2 is verified in [CI run 37662707845](https://github.com/ab2024103-cmd/Leaf/actions/runs/37662707845). M3 checks are tracked in [CI run 37863047454](https://github.com/ab2024103-cmd/Leaf/actions/runs/37863047454) for commit `e4438da`.
 
-| Check | M2 last verified | M3 current branch |
+| Check | M2 last verified | M3 latest completed CI |
 |---|---|---|
-| Build, lint & JVM tests | ✅ | pending CI |
-| Debug APK | ✅ | pending CI |
-| Screenshot parity | ✅ | pending CI (reader matrix added) |
-| Real PDF on API 23 / 36 | not part of M2 | pending CI |
+| Build, lint & JVM tests | ✅ | ✅ CI run 37863047454 |
+| Debug APK | ✅ | ✅ CI run 37863047454 |
+| Screenshot parity | ✅ | ✅ CI run 37863047454 (reader matrix included) |
+| Real PDF on API 23 / 36 | not part of M2 | ⚠️ unverified — both emulator jobs exited 127 before instrumentation in CI run 37863047454; SDK/AVD preflight passed |
 | Release APK + AAB | skipped — only runs on `v*` tags | skipped — only runs on `v*` tags |
+
+The follow-up workflow adds explicit Android SDK executable/version checks and captures emulator-startup output; real-device API 23 / 36 verification remains pending until those instrumented tests pass.
 
 M2's 89 tests covered sorting in both directions, filter composition/count context, all seven smart
 rules, folder subtree/group counts, the empty-group fallback, rename-extension behavior, delete+Undo,
@@ -212,9 +214,10 @@ Every deviation is a decision, not an accident.
 15. **Milestone branch naming is session-pinned.** The Arena session is fixed to
     `arena/ceade348-leaf`; the existing draft PR carries M1–M3 rather than creating a separate
     milestone branch.
-16. **Full verification remains pending.** The editing environment has no Java runtime, so Gradle
-    could not start locally. No M3 compilation, JVM/instrumented test, screenshot capture, APK or CI
-    result is claimed until the branch workflow completes.
+16. **Verification is partial.** The editing environment has no Java runtime, so Gradle could not
+    start locally. CI run 37863047454 passed build/lint/JVM tests, screenshot parity and debug APK
+    assembly/upload. Its API 23 and API 36 jobs failed before instrumentation with exit code 127;
+    no real-renderer device test or API-23 memory/performance result is claimed until that matrix passes.
 17. **Page Stay test boundary.** The M3 test closes and reopens the on-disk Room database and creates a
     fresh ReaderViewModel; an OS-level forced process-kill / relaunch test remains a release QA check.
 18. **Frame-rate QA boundary.** API 23 / 36 instrumentation sweeps 50 real-PDF tile requests and logs
