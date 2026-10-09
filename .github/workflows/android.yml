@@ -347,20 +347,51 @@ jobs:
             --package "system-images;android-${API_LEVEL};${SYSTEM_IMAGE_TARGET};x86_64"
 
       - name: Boot emulator and run real-PDF tests
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: ${{ matrix.api }}
-          arch: x86_64
-          target: ${{ matrix.api == 23 && 'default' || 'google_apis' }}
-          profile: pixel_7_pro
-          ram-size: 4096M
-          force-avd-creation: false
-          emulator-boot-timeout: 1200
-          disable-linux-hw-accel: false
-          disable-animations: true
-          script: |
-            set -o pipefail
-            ./gradlew connectedDebugAndroidTest --stacktrace --console=plain 2>&1 | tee pdf-engine-api-${{ matrix.api }}.log
+        env:
+          API_LEVEL: ${{ matrix.api }}
+        run: |
+          set -euo pipefail
+          export ANDROID_AVD_HOME="$HOME/.android/avd"
+          EMULATOR_LOG="pdf-emulator-api-${API_LEVEL}.log"
+          GRADLE_LOG="pdf-engine-api-${API_LEVEL}.log"
+          EMULATOR="$ANDROID_HOME/emulator/emulator"
+          ADB="$ANDROID_HOME/platform-tools/adb"
+          sed -i -e '/^hw.ramSize=/d' -e '/^hw.cpu.ncore=/d' "$ANDROID_AVD_HOME/test.avd/config.ini"
+          printf '%s\n' 'hw.ramSize=4096M' 'hw.cpu.ncore=2' >> "$ANDROID_AVD_HOME/test.avd/config.ini"
+          "$EMULATOR" -version
+          "$EMULATOR" -avd test -port 5554 -no-window -gpu swiftshader_indirect \
+            -no-snapshot -noaudio -no-boot-anim -accel on > "$EMULATOR_LOG" 2>&1 &
+          emulator_pid=$!
+          cleanup() {
+            "$ADB" -s emulator-5554 emu kill >/dev/null 2>&1 || kill "$emulator_pid" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+          "$ADB" start-server
+          booted=0
+          for attempt in $(seq 1 600); do
+            state=$("$ADB" -s emulator-5554 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)
+            if [[ "$state" == "1" ]]; then
+              booted=1
+              echo "Emulator API $API_LEVEL booted."
+              break
+            fi
+            if ! kill -0 "$emulator_pid" 2>/dev/null; then
+              echo "Emulator process exited before boot completed."
+              tail -n 100 "$EMULATOR_LOG" || true
+              exit 1
+            fi
+            sleep 2
+          done
+          if [[ "$booted" != "1" ]]; then
+            echo "Timed out waiting for API $API_LEVEL emulator after 20 minutes."
+            tail -n 100 "$EMULATOR_LOG" || true
+            exit 1
+          fi
+          "$ADB" -s emulator-5554 shell input keyevent 82
+          "$ADB" -s emulator-5554 shell settings put global window_animation_scale 0.0
+          "$ADB" -s emulator-5554 shell settings put global transition_animation_scale 0.0
+          "$ADB" -s emulator-5554 shell settings put global animator_duration_scale 0.0
+          ./gradlew connectedDebugAndroidTest --stacktrace --console=plain 2>&1 | tee "$GRADLE_LOG"
 
       - name: Upload emulator diagnostics on failure
         if: failure()
@@ -369,6 +400,7 @@ jobs:
           name: pdf-engine-diagnostics-api-${{ matrix.api }}-${{ github.sha }}
           path: |
             pdf-engine-api-${{ matrix.api }}.log
+            pdf-emulator-api-${{ matrix.api }}.log
             emulator-setup.log
           if-no-files-found: ignore
           retention-days: 7
@@ -377,6 +409,7 @@ jobs:
         if: failure()
         env:
           LOG_FILE: pdf-engine-api-${{ matrix.api }}.log
+          EMULATOR_LOG: pdf-emulator-api-${{ matrix.api }}.log
         run: |
           python3 - <<'PY'
           import os, re, sys
@@ -384,7 +417,11 @@ jobs:
           log_file = Path(os.environ["LOG_FILE"])
           if not log_file.exists() or log_file.stat().st_size == 0:
               setup_log = Path("emulator-setup.log")
-              details = setup_log.read_text(errors="replace").splitlines()[-40:] if setup_log.exists() else []
+              emulator_log = Path(os.environ["EMULATOR_LOG"])
+              details = []
+              for diagnostic_log in (setup_log, emulator_log):
+                  if diagnostic_log.exists():
+                      details.extend(diagnostic_log.read_text(errors="replace").splitlines()[-40:])
               message = "Emulator setup failed before the Gradle test script created its log file.\n" + "\n".join(details)
               escaped = message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
               print(f"::error title=Emulator setup diagnostics::{escaped}")
