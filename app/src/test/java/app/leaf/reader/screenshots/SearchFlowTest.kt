@@ -5,9 +5,7 @@ import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSiz
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
-import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasSetTextAction
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -88,7 +86,7 @@ class SearchFlowTest : KoinComponent {
 
         composeRule.onNodeWithContentDescription("Search history").performClick()
         composeRule.onNodeWithText("Search history").assertIsDisplayed()
-        composeRule.onNode(hasText("Simplicity") and hasClickAction()).performClick()
+        composeRule.onAllNodesWithText("Simplicity").onLast().performClick()
         waitForText("The Art of Simple Living.pdf")
 
         composeRule.onNodeWithContentDescription("Clear search").performClick()
