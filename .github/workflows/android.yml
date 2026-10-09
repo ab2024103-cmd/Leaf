@@ -331,6 +331,7 @@ jobs:
         env:
           API_LEVEL: ${{ matrix.api }}
           SYSTEM_IMAGE_TARGET: ${{ matrix.api == 23 && 'default' || 'google_apis' }}
+          SYSTEM_IMAGE_ABI: ${{ matrix.api == 23 && 'x86' || 'x86_64' }}
         run: |
           set -euo pipefail
           exec > >(tee -a emulator-setup.log) 2>&1
@@ -346,11 +347,12 @@ jobs:
           set +o pipefail
           yes | "$SDKMANAGER" --licenses >/dev/null
           set -o pipefail
+          echo "Preparing Android $API_LEVEL system image $SYSTEM_IMAGE_TARGET/$SYSTEM_IMAGE_ABI."
           "$SDKMANAGER" --install --channel=0 \
             'build-tools;37.0.0' platform-tools emulator "platforms;android-${API_LEVEL}" \
-            "system-images;android-${API_LEVEL};${SYSTEM_IMAGE_TARGET};x86_64"
+            "system-images;android-${API_LEVEL};${SYSTEM_IMAGE_TARGET};${SYSTEM_IMAGE_ABI}"
           "$AVDMANAGER" create avd --force -n test --device pixel_2 \
-            --package "system-images;android-${API_LEVEL};${SYSTEM_IMAGE_TARGET};x86_64"
+            --package "system-images;android-${API_LEVEL};${SYSTEM_IMAGE_TARGET};${SYSTEM_IMAGE_ABI}"
           printf 'ANDROID_HOME=%s\n' "$ANDROID_HOME"
           for executable in "$ANDROID_HOME/emulator/emulator" "$ANDROID_HOME/platform-tools/adb"; do
             if [[ ! -x "$executable" ]]; then
@@ -376,7 +378,7 @@ jobs:
           EMULATOR="$ANDROID_HOME/emulator/emulator"
           ADB="$ANDROID_HOME/platform-tools/adb"
           sed -i -e '/^hw.ramSize=/d' -e '/^hw.cpu.ncore=/d' "$ANDROID_AVD_HOME/test.avd/config.ini"
-          printf '%s\n' 'hw.ramSize=4096M' 'hw.cpu.ncore=2' >> "$ANDROID_AVD_HOME/test.avd/config.ini"
+          printf '%s\n' 'hw.ramSize=2048M' 'hw.cpu.ncore=2' >> "$ANDROID_AVD_HOME/test.avd/config.ini"
           "$EMULATOR" -version
           "$EMULATOR" -avd test -port 5554 -no-window -gpu swiftshader_indirect \
             -no-snapshot -noaudio -no-boot-anim -accel on > "$EMULATOR_LOG" 2>&1 &
@@ -454,7 +456,7 @@ jobs:
                   if not diagnostic_log.exists():
                       continue
                   rows = diagnostic_log.read_text(errors="replace").splitlines()
-                  pattern = r"(timed out|still waiting|booted|devices|boot|failed|error|fatal|warning|exception)"
+                  pattern = r"(timed out|still waiting|booted after|devices|device offline|emulator process exited|failed|error|fatal|exception)"
                   relevant = [line for line in rows if re.search(pattern, line, re.IGNORECASE)]
                   selected = (relevant[-12:] if relevant else rows[-12:])
                   sections.append(f"{label} log tail:\n" + "\n".join(line[:240] for line in selected))
