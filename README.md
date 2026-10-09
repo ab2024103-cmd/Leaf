@@ -124,10 +124,10 @@ by running it.
 | 15 | Share — document, page image, selection, copy path, copy page text | §6.7 | ☐ |
 | 16 | File actions — rename, delete (+undo), move, tags, favorite, info | §6.7 | 🟨 partial — M2 actions and PDF Open work; non-PDF Open is M6, new tab M5, Share M6 |
 | 17 | Reading themes — Paper, Sepia, Night, OLED, Auto | §4.2 | 🟨 partial — all five are live and saved in PDF Page Stay; global default control remains M7 |
-| 18 | Scroll modes — vertical, horizontal with snap+page-turn | §6.6 | 🟨 implemented — continuous vertical list and snapping horizontal pager; M3 CI/device verification pending |
-| 19 | Zoom & pan — pinch, double-tap, buttons, ctrl-wheel, drag-pan, 70–250 % | §6.6 | 🟨 implemented — pinch, double-tap, toolbar/sheet zoom, ctrl-wheel and drag-pan; M3 verification pending |
+| 18 | Scroll modes — vertical, horizontal with snap+page-turn | §6.6 | 🟨 implemented — continuous vertical list and snapping horizontal pager; reader screenshot matrix and API 23/36 PDF tests pass in M3 CI |
+| 19 | Zoom & pan — pinch, double-tap, buttons, ctrl-wheel, drag-pan, 70–250 % | §6.6 | 🟨 implemented — pinch, double-tap, toolbar/sheet zoom, ctrl-wheel and drag-pan; M3 CI passes |
 | 20 | Text reflow — all formats, anchored to pages | §7.2 | ☐ |
-| 21 | Full screen — hides all chrome, dim footer, Esc/tap exit | §6.6 | 🟨 implemented — system bars/app bar/toolbar hide; dim footer, Escape/back and tap exit; M3 verification pending |
+| 21 | Full screen — hides all chrome, dim footer, Esc/tap exit | §6.6 | 🟨 implemented — system bars/app bar/toolbar hide; dim footer, Escape/back and tap exit; M3 CI passes |
 | 22 | Rotate — auto toggle, per-document lock (auto/portrait/landscape) | §5 | ☐ |
 | 23 | Settings — appearance, reading, device, data, about | §6.5 | ☐ |
 | 24 | Responsive + platform — bar/rail, 2/3-col, foldable, toolbar priority ladder, API 23 → 36, i18n, a11y | §5, §9, §10 | 🟨 partial — bar/rail, 2-col grid metrics and API 23 → 36 support are in; 2-col *lists*, the toolbar ladder, i18n and the a11y pass land with their screens |
@@ -137,17 +137,17 @@ by running it.
 
 ## Verification
 
-M2 is verified in [CI run 37662707845](https://github.com/ab2024103-cmd/Leaf/actions/runs/37662707845). The latest M3 CI is [run 37863918869](https://github.com/ab2024103-cmd/Leaf/actions/runs/37863918869) for commit `d45fc0c`; [run 37863047454](https://github.com/ab2024103-cmd/Leaf/actions/runs/37863047454) is the earlier pass for screenshots.
+M2 is verified in [CI run 37662707845](https://github.com/ab2024103-cmd/Leaf/actions/runs/37662707845). M3 is green in [CI run 37934942214](https://github.com/ab2024103-cmd/Leaf/actions/runs/37934942214) for commit `e3a261a`.
 
-| Check | M2 last verified | M3 latest completed CI |
+| Check | M2 last verified | M3 latest CI |
 |---|---|---|
-| Build, lint & JVM tests | ✅ | ✅ CI run 37863918869 |
-| Debug APK | ✅ | ✅ CI run 37863918869 |
-| Screenshot parity | ✅ | ⚠️ latest run failed in `SeedDataTest` with an uncaught Room connection-pool exception; passed in run 37863047454 |
-| Real PDF on API 23 / 36 | not part of M2 | ⚠️ unverified — emulator preflight found missing `libpulse.so.0`; instrumentation did not run in CI run 37863918869 |
+| Build, lint & JVM tests | ✅ | ✅ CI run 37934942214 |
+| Debug APK | ✅ | ✅ [download](https://github.com/ab2024103-cmd/Leaf/actions/runs/37934942214/artifacts/11618397054) |
+| Screenshot parity | ✅ | ✅ 12 reader captures across Paper/Sepia/Night/OLED at 360/412/800 dp; [artifact](https://github.com/ab2024103-cmd/Leaf/actions/runs/37934942214/artifacts/11617991899) |
+| Real PDF on API 23 / 36 | not part of M2 | ✅ both real-renderer instrumentation jobs passed in CI run 37934942214 |
 | Release APK + AAB | skipped — only runs on `v*` tags | skipped — only runs on `v*` tags |
 
-The follow-up pins emulator jobs to Ubuntu 24.04, installs `libpulse0`, and keeps explicit SDK/emulator diagnostics. API 23 / 36 instrumentation and a green screenshot rerun remain pending.
+The PDF emulator matrix uses an API 23 x86 image and API 36 x86_64, with bounded boot/test timeouts and failure diagnostics. The API 23 tests also verified that PDFBox text extraction runs on the minimum supported API.
 
 M2's 89 tests covered sorting in both directions, filter composition/count context, all seven smart
 rules, folder subtree/group counts, the empty-group fallback, rename-extension behavior, delete+Undo,
@@ -214,17 +214,21 @@ Every deviation is a decision, not an accident.
 15. **Milestone branch naming is session-pinned.** The Arena session is fixed to
     `arena/ceade348-leaf`; the existing draft PR carries M1–M3 rather than creating a separate
     milestone branch.
-16. **Verification is partial.** The editing environment has no Java runtime, so Gradle could not
-    start locally. CI run 37863918869 passed build/lint/JVM tests and debug APK assembly/upload, but
-    screenshot parity hit an uncaught Room connection-pool exception in `SeedDataTest`. Its API 23
-    and API 36 jobs could not load the emulator because `libpulse.so.0` was missing; instrumentation
-    did not run. No real-renderer device test or API-23 memory/performance result is claimed until the
-    screenshot and emulator matrices pass.
+16. **Local Gradle verification is unavailable.** The editing environment has no Java runtime, so
+    Gradle could not start locally. CI run 37934942214 passed build/lint/JVM tests, screenshot parity,
+    and real-PDF instrumentation on API 23 and API 36; the debug APK and rendered screenshot artifacts
+    are linked in the verification table. Release APK + AAB remain tag-only and were correctly skipped.
 17. **Page Stay test boundary.** The M3 test closes and reopens the on-disk Room database and creates a
     fresh ReaderViewModel; an OS-level forced process-kill / relaunch test remains a release QA check.
 18. **Frame-rate QA boundary.** API 23 / 36 instrumentation sweeps 50 real-PDF tile requests and logs
     mean render time plus cache bytes; it does not prove 60 fps. Frame profiling on a physical/API-23
     device remains a manual release gate.
+19. **PDFBox-Android is pinned to 2.0.24.0 for API 23 text extraction.** CI reproduced a
+    `StackOverflowError` in `BufferedRandomAccessFile` on API 23 with 2.0.27.0. Upstream documents
+    the same regression on API 19–23, introduced in 2.0.25.0, while 2.0.24.0 and earlier do not
+    exhibit it ([upstream issue #442](https://github.com/TomRoush/PdfBox-Android/issues/442)). The
+    pinned release preserves the required PDFBox fallback and passes the real-PDF matrix on API 23
+    and API 36.
 
 ## What's next — M4 · Search
 
