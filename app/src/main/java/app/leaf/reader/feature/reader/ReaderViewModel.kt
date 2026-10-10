@@ -118,6 +118,7 @@ class ReaderViewModel(
                 if (document.pageCount != pageCount) repository.updatePageCount(documentId, pageCount)
                 val savedBookmarks = annotations.bookmarks(documentId)
                 val savedHighlights = annotations.highlights(documentId)
+                if (request != session) return@launch
                 val page = initialPage?.coerceIn(0, pageCount - 1)
                     ?: tab.page.coerceIn(0, pageCount - 1)
                 val initialQuery = initialFindQuery?.takeIf(String::isNotBlank)
@@ -142,9 +143,11 @@ class ReaderViewModel(
                     findQuery = initialQuery,
                     positionRequestId = 1
                 )
-                mutableState.value = initial
-                refreshHistoryState(documentId)
                 repository.recordOpen(documentId, clock.nowMillis())
+                if (request != session) return@launch
+                mutableState.value = initial
+                if (request != session) return@launch
+                refreshHistoryState(documentId)
                 observeAnnotations(documentId, engine, request)
                 extractTextIfNeeded(documentId, engine, pageCount, request)
                 schedulePersist(immediate = true)

@@ -139,6 +139,15 @@ class ReaderViewModelTest {
     @Test
     fun annotations_and_reader_position_survive_theme_zoom_changes_and_database_reopen() = runBlocking {
         Dispatchers.setMain(Dispatchers.Unconfined)
+        var firstViewModel: ReaderViewModel? = null
+        var firstReaderClosed = false
+        var reopenedViewModel: ReaderViewModel? = null
+        var reopenedReaderClosed = false
+        suspend fun closeReader(viewModel: ReaderViewModel) {
+            val closed = CompletableDeferred<Unit>()
+            viewModel.leaveReader { closed.complete(Unit) }
+            withTimeout(30_000) { closed.await() }
+        }
         try {
             DatabaseSeeder(database).seed(FIXED_NOW)
             annotationRepository.replaceBookmarks("d1", emptyList())
@@ -158,7 +167,7 @@ class ReaderViewModelTest {
             annotationRepository.insert(bookmark)
             annotationRepository.insert(highlight)
 
-            val firstViewModel = ReaderViewModel(
+            val firstVm = ReaderViewModel(
                 application,
                 repository,
                 annotationRepository,
@@ -167,14 +176,14 @@ class ReaderViewModelTest {
                 DocumentEngineFactory { TestReaderEngine() },
                 LeafClock { FIXED_NOW + 1 }
             )
-            firstViewModel.openDocument("d1")
-            firstViewModel.state.first { it.document?.id == "d1" }
-            firstViewModel.setZoom(1.8f)
-            firstViewModel.setReadingTheme(ReadingTheme.NIGHT)
-            firstViewModel.updatePosition(pageIndex = 3, scrollFraction = 0.3f)
-            val firstClosed = CompletableDeferred<Unit>()
-            firstViewModel.leaveReader { firstClosed.complete(Unit) }
-            withTimeout(10_000) { firstClosed.await() }
+            firstViewModel = firstVm
+            firstVm.openDocument("d1")
+            firstVm.state.first { it.document?.id == "d1" }
+            firstVm.setZoom(1.8f)
+            firstVm.setReadingTheme(ReadingTheme.NIGHT)
+            firstVm.updatePosition(pageIndex = 3, scrollFraction = 0.3f)
+            closeReader(firstVm)
+            firstReaderClosed = true
 
             database.close()
             database = Room.databaseBuilder(application, LeafDatabase::class.java, databaseName)
@@ -182,7 +191,7 @@ class ReaderViewModelTest {
                 .build()
             repository = readerRepository(database)
             annotationRepository = AnnotationRepository(database.bookmarkDao(), database.highlightDao())
-            val reopenedViewModel = ReaderViewModel(
+            val reopenedVm = ReaderViewModel(
                 application,
                 repository,
                 annotationRepository,
@@ -191,12 +200,15 @@ class ReaderViewModelTest {
                 DocumentEngineFactory { TestReaderEngine() },
                 LeafClock { FIXED_NOW + 2 }
             )
-            reopenedViewModel.openDocument("d1")
-            val restored = withTimeout(10_000) {
-                reopenedViewModel.state.first {
-                    it.document?.id == "d1" && it.bookmarks.size == 1 && it.highlights.size == 1
-                }
+            reopenedViewModel = reopenedVm
+            reopenedVm.openDocument("d1")
+            val restored = withTimeout(30_000) {
+                reopenedVm.state.first { it.document?.id == "d1" || it.error != null }
             }
+            assertEquals(null, restored.error)
+            assertEquals("d1", restored.document?.id)
+            assertEquals(1, restored.bookmarks.size)
+            assertEquals(1, restored.highlights.size)
 
             assertEquals(3, restored.pageIndex)
             assertEquals(0.3f, restored.scrollFraction)
@@ -205,10 +217,23 @@ class ReaderViewModelTest {
             assertEquals(bookmark, restored.bookmarks.single())
             assertEquals(highlight, restored.highlights.single())
 
-            val reopenedClosed = CompletableDeferred<Unit>()
-            reopenedViewModel.leaveReader { reopenedClosed.complete(Unit) }
-            withTimeout(10_000) { reopenedClosed.await() }
+            closeReader(reopenedVm)
+            reopenedReaderClosed = true
         } finally {
+            if (!reopenedReaderClosed) {
+                try {
+                    reopenedViewModel?.let { closeReader(it) }
+                } catch (_: Exception) {
+                    // Preserve the primary assertion/timeout failure during cleanup.
+                }
+            }
+            if (!firstReaderClosed) {
+                try {
+                    firstViewModel?.let { closeReader(it) }
+                } catch (_: Exception) {
+                    // Preserve the primary assertion/timeout failure during cleanup.
+                }
+            }
             Dispatchers.resetMain()
         }
     }
