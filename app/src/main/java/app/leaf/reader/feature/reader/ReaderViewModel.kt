@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -833,12 +834,15 @@ class ReaderViewModel(
         val request = ++session
         val snapshot = mutableState.value
         val engine = activeEngine
-        progressJob?.cancel()
-        extractionJob?.cancel()
-        findJob?.cancel()
-        annotationJob?.cancel()
+        val jobsToStop = listOfNotNull(progressJob, extractionJob, findJob, annotationJob)
+        jobsToStop.forEach { it.cancel() }
+        progressJob = null
+        extractionJob = null
+        findJob = null
+        annotationJob = null
         activeEngine = null
         viewModelScope.launch {
+            jobsToStop.joinAll()
             if (snapshot.document != null) persist(snapshot)
             engine?.let { withContext(Dispatchers.IO) { it.close() } }
             if (request == session) mutableState.update { it.copy(engine = null, isLoading = false) }
