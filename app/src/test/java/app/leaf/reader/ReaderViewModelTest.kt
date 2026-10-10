@@ -232,8 +232,9 @@ class ReaderViewModelTest {
             viewModel.state.first { it.document?.id == "d1" }
 
             val selectionBounds = listOf(NormalizedRect(0.2f, 0.3f, 0.52f, 0.34f))
+            val currentPage = viewModel.state.value.pageIndex
             viewModel.addHighlight(
-                ReaderSelection(0, "selected words", selectionBounds, startWord = 0, endWord = 1),
+                ReaderSelection(currentPage, "selected words", selectionBounds, startWord = 0, endWord = 1),
                 HighlightColor.BLUE
             )
             val added = withTimeout(10_000) {
