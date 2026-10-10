@@ -25,7 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
@@ -86,6 +86,7 @@ fun LeafDocumentRow(
     val openActionLabel = if (onTap != null) {
         stringResource(if (pickingNewTab) R.string.reader_pick_document else R.string.action_open)
     } else null
+    val pickerOutlineColor = MaterialTheme.colorScheme.outline
 
     Surface(
         modifier = modifier
@@ -94,17 +95,23 @@ fun LeafDocumentRow(
                 scaleX = if (pressed) LeafMotion.pressScale else 1f
                 scaleY = if (pressed) LeafMotion.pressScale else 1f
             }
-            .drawWithContent {
-                drawContent()
-                if (pickingNewTab) {
-                    drawRoundRect(
-                        color = MaterialTheme.colorScheme.outline,
-                        cornerRadius = CornerRadius(LeafMetrics.cardRadius.toPx()),
-                        style = Stroke(
-                            width = 1.5.dp.toPx(),
-                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(7.dp.toPx(), 5.dp.toPx()))
-                        )
+            .drawWithCache {
+                val pickerStroke = if (pickingNewTab) {
+                    Stroke(
+                        width = 1.5.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(7.dp.toPx(), 5.dp.toPx()))
                     )
+                } else null
+                val cardCornerRadius = CornerRadius(LeafMetrics.cardRadius.toPx())
+                onDrawWithContent {
+                    drawContent()
+                    pickerStroke?.let { stroke ->
+                        drawRoundRect(
+                            color = pickerOutlineColor,
+                            cornerRadius = cardCornerRadius,
+                            style = stroke
+                        )
+                    }
                 }
             }
             .semantics {

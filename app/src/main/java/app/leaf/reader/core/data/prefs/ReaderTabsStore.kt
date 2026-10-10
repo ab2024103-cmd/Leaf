@@ -36,7 +36,7 @@ class ReaderTabsStore(private val dataStore: DataStore<Preferences>) {
         val effectiveLimit = tabLimit.coerceIn(LeafSettings.TAB_LIMIT_MIN, LeafSettings.TAB_LIMIT_MAX)
         var result: OpenTabResult = OpenTabResult.Opened
         dataStore.edit { prefs ->
-            val old = prefs[TABS]?.let(::decode).orEmpty()
+            val old = prefs[TABS]?.let(::decode) ?: ReaderTabsState()
             val existing = old.tabs.firstOrNull { it.docId == docId }
             val next = when {
                 existing != null -> old.copy(activeDocId = docId)
@@ -68,7 +68,7 @@ class ReaderTabsStore(private val dataStore: DataStore<Preferences>) {
     suspend fun activate(docId: String): Boolean {
         var activated = false
         dataStore.edit { prefs ->
-            val current = prefs[TABS]?.let(::decode).orEmpty()
+            val current = prefs[TABS]?.let(::decode) ?: ReaderTabsState()
             if (current.tabs.any { it.docId == docId }) {
                 prefs[TABS] = encode(current.copy(activeDocId = docId))
                 activated = true
@@ -80,7 +80,7 @@ class ReaderTabsStore(private val dataStore: DataStore<Preferences>) {
     /** Saves a tab snapshot without resurrecting a tab that the user has closed. */
     suspend fun updateSnapshot(tab: ReaderTab) {
         dataStore.edit { prefs ->
-            val current = prefs[TABS]?.let(::decode).orEmpty()
+            val current = prefs[TABS]?.let(::decode) ?: ReaderTabsState()
             val index = current.tabs.indexOfFirst { it.docId == tab.docId }
             if (index >= 0) {
                 val tabs = current.tabs.toMutableList()
@@ -93,7 +93,7 @@ class ReaderTabsStore(private val dataStore: DataStore<Preferences>) {
     suspend fun close(docId: String): ClosedTab? {
         var closed: ClosedTab? = null
         dataStore.edit { prefs ->
-            val current = prefs[TABS]?.let(::decode).orEmpty()
+            val current = prefs[TABS]?.let(::decode) ?: ReaderTabsState()
             val index = current.tabs.indexOfFirst { it.docId == docId }
             if (index < 0) return@edit
             val tab = current.tabs[index]
@@ -112,7 +112,7 @@ class ReaderTabsStore(private val dataStore: DataStore<Preferences>) {
     /** Restores the saved row in-place; visibility of the Reader is controlled by the shell. */
     suspend fun restore(closed: ClosedTab) {
         dataStore.edit { prefs ->
-            val current = prefs[TABS]?.let(::decode).orEmpty()
+            val current = prefs[TABS]?.let(::decode) ?: ReaderTabsState()
             if (current.tabs.any { it.docId == closed.tab.docId }) return@edit
             val tabs = current.tabs.toMutableList()
             tabs.add(closed.index.coerceIn(0, tabs.size), closed.tab)
@@ -126,7 +126,7 @@ class ReaderTabsStore(private val dataStore: DataStore<Preferences>) {
 
     suspend fun removeDocument(docId: String) {
         dataStore.edit { prefs ->
-            val current = prefs[TABS]?.let(::decode).orEmpty()
+            val current = prefs[TABS]?.let(::decode) ?: ReaderTabsState()
             if (current.tabs.none { it.docId == docId }) return@edit
             val index = current.tabs.indexOfFirst { it.docId == docId }
             val tabs = current.tabs.filterNot { it.docId == docId }

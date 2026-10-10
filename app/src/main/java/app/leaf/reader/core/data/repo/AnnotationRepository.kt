@@ -16,30 +16,30 @@ class AnnotationRepository(
     private val highlights: HighlightDao
 ) {
     fun observeBookmarks(docId: String): Flow<List<Bookmark>> =
-        bookmarks.observeForDocument(docId).map { rows -> rows.map(BookmarkEntity::toModel) }
+        bookmarks.observeForDocument(docId).map { rows -> rows.map { it.toModel() } }
 
     fun observeHighlights(docId: String): Flow<List<Highlight>> =
-        highlights.observeForDocument(docId).map { rows -> rows.map(HighlightEntity::toModel) }
+        highlights.observeForDocument(docId).map { rows -> rows.map { it.toModel() } }
 
     suspend fun bookmarks(docId: String): List<Bookmark> =
-        bookmarks.getForDocument(docId).map(BookmarkEntity::toModel)
+        bookmarks.getForDocument(docId).map { it.toModel() }
 
     suspend fun highlights(docId: String): List<Highlight> =
-        highlights.getForDocument(docId).map(HighlightEntity::toModel)
+        highlights.getForDocument(docId).map { it.toModel() }
 
     suspend fun insert(bookmark: Bookmark) = bookmarks.insert(bookmark.toEntity())
 
     suspend fun deleteBookmark(id: String) = bookmarks.delete(id)
 
     suspend fun replaceBookmarks(docId: String, rows: List<Bookmark>) =
-        bookmarks.replaceForDocument(docId, rows.map(Bookmark::toEntity))
+        bookmarks.replaceForDocument(docId, rows.map { it.toEntity() })
 
     suspend fun insert(highlight: Highlight) = highlights.insert(highlight.toEntity())
 
     suspend fun deleteHighlight(id: String) = highlights.delete(id)
 
     suspend fun replaceHighlights(docId: String, rows: List<Highlight>) =
-        highlights.replaceForDocument(docId, rows.map(Highlight::toEntity))
+        highlights.replaceForDocument(docId, rows.map { it.toEntity() })
 
     private fun BookmarkEntity.toModel() = Bookmark(
         id = id,

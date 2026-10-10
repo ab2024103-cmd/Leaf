@@ -58,6 +58,7 @@ internal fun ReaderToolbar(
         val showZoom = maxWidth >= 392.dp
         val showZoomValue = maxWidth >= 460.dp
         val showHighlightsList = maxWidth >= 580.dp
+        val wideHighlightMenu = maxWidth >= 600.dp
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -65,7 +66,7 @@ internal fun ReaderToolbar(
         ) {
             HighlightTrigger(
                 state = state,
-                wide = maxWidth >= 600.dp,
+                wide = wideHighlightMenu,
                 onToggle = onHighlightMenu,
                 onClose = onHighlightMenu,
                 onSelect = onHighlightColor
