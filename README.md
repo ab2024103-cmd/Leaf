@@ -150,13 +150,13 @@ by running it.
 
 ## Verification
 
-M2 is verified in [CI run 37662707845](https://github.com/ab2024103-cmd/Leaf/actions/runs/37662707845). M3 passed in [CI run 37934942214](https://github.com/ab2024103-cmd/Leaf/actions/runs/37934942214) for commit `e3a261a`. M4 and M5 are green in [CI run 38068951703](https://github.com/ab2024103-cmd/Leaf/actions/runs/38068951703) for commit `6ff7c79`.
+M2 is verified in [CI run 37662707845](https://github.com/ab2024103-cmd/Leaf/actions/runs/37662707845). M3 passed in [CI run 37934942214](https://github.com/ab2024103-cmd/Leaf/actions/runs/37934942214) for commit `e3a261a`. M4 and M5 are green in [CI run 38070557916](https://github.com/ab2024103-cmd/Leaf/actions/runs/38070557916) for commit `5e08214`.
 
 | Check | M2 last verified | M3 CI | M5 latest CI |
 |---|---|---|---|
-| Build, lint & JVM tests | ✅ | ✅ CI run 37934942214 | ✅ CI run 38068951703 |
-| Debug APK | ✅ | ✅ [download](https://github.com/ab2024103-cmd/Leaf/actions/runs/37934942214/artifacts/11618397054) | ✅ [download](https://github.com/ab2024103-cmd/Leaf/actions/runs/38068951703/artifacts/11675678752) |
-| Screenshot parity | ✅ | ✅ 12 reader captures across Paper/Sepia/Night/OLED at 360/412/800 dp; [artifact](https://github.com/ab2024103-cmd/Leaf/actions/runs/37934942214/artifacts/11617991899) | ✅ [rendered-screens](https://github.com/ab2024103-cmd/Leaf/actions/runs/38068951703/artifacts/11675673718) |
+| Build, lint & JVM tests | ✅ | ✅ CI run 37934942214 | ✅ CI run 38070557916 |
+| Debug APK | ✅ | ✅ [download](https://github.com/ab2024103-cmd/Leaf/actions/runs/37934942214/artifacts/11618397054) | ✅ [download](https://github.com/ab2024103-cmd/Leaf/actions/runs/38070557916/artifacts/11676856651) |
+| Screenshot parity | ✅ | ✅ 12 reader captures across Paper/Sepia/Night/OLED at 360/412/800 dp; [artifact](https://github.com/ab2024103-cmd/Leaf/actions/runs/37934942214/artifacts/11617991899) | ✅ [rendered-screens](https://github.com/ab2024103-cmd/Leaf/actions/runs/38070557916/artifacts/11676631752) |
 | Real PDF on API 23 / 36 | not part of M2 | ✅ both real-renderer instrumentation jobs passed in CI run 37934942214 | ✅ both instrumentation jobs passed |
 | Release APK + AAB | skipped — only runs on `v*` tags | skipped — only runs on `v*` tags | skipped — only runs on `v*` tags |
 
@@ -233,7 +233,7 @@ Every deviation is a decision, not an accident.
     `arena/ceade348-leaf`; the existing draft PR carries M1–M5 rather than creating a separate
     milestone branch.
 16. **Local Gradle verification is unavailable.** The editing environment has no Java runtime, so
-    Gradle could not start locally. The latest CI run 38068951703 passed build/lint/JVM tests,
+    Gradle could not start locally. CI run 38070557916 for `5e08214` passed build/lint/JVM tests,
     screenshot parity, and real-PDF instrumentation on API 23 and API 36; its debug APK and rendered
     screenshot artifacts are linked in the verification table. Release APK + AAB remain tag-only and
     were correctly skipped.
