@@ -13,12 +13,13 @@ The design contract lives in [`design/`](design/): `LEAF-MASTER-PROMPT.md` (the 
 
 ---
 
-## Status · Milestones 1–3 — Foundation + Library + Reader core
+## Status · Milestones 1–5 — Foundation + Library + Reader + Search + Annotations & tabs
 
-M1 established the Android foundation and M2 completed the Library & organisation flows. M3 adds a
-real PDF reading path: demo PDFs, external PDF VIEW/SEND intake, the API-23-safe renderer and a live
-reader overlay. The milestone boundary remains explicit: unsupported formats and later-milestone
-controls are omitted rather than presented as dead buttons.
+M1 established the Android foundation; M2 completed the Library and organisation flows; M3 added a
+real PDF reading path; M4 delivered advanced search over cached PDF text; and M5 adds persistent
+highlights, bookmarks and multi-tab reading with a document picker. The milestone boundary remains
+explicit: unsupported formats and later-milestone controls are omitted rather than presented as dead
+buttons.
 
 **In this build**
 
@@ -62,11 +63,23 @@ controls are omitted rather than presented as dead buttons.
   extraction and API 23–34 PDFBox fallback cache extracted page text in Room.
 - **Demo and external PDFs** — five generated demo PDFs from the existing seed content; external
   `ACTION_VIEW` / `ACTION_SEND` PDF intake retains a durable URI grant or copies the file privately.
-  There is no Import screen or in-app file picker.
+  There is no Import screen.
+- **M4 advanced Search** — five scopes, combined filters, history, cached-PDF-text excerpts and
+  counts, and open-at-page handoff into Reader find. Full-text search is deliberately limited to
+  cached Room PDF text; non-PDF engines remain in M6.
+- **M5 annotations** — select PDF text, apply/recolour/remove/copy highlights, view saved quotes in
+  the highlights sheet, and undo/redo up to 50 annotation changes. “Clear highlights on this page”
+  affects only the current page and supports Undo; full-clear is confirmed in the highlights flow and
+  also supports Undo. Bookmarks can be toggled for the current page, revisited from their sheet, and
+  jumped to from Reader.
+- **M5 multi-tab Reader** — process-persistent per-document reader state, active/neighbor selection,
+  per-row close with Undo, close-all, configurable tab limit and the first-use “kept open” hint.
+  Reader overflow and Ctrl/⌘+T open the Library document picker; Ctrl/⌘+B opens bookmarks,
+  Ctrl/⌘+Z / Ctrl/⌘+Shift+Z / Ctrl/⌘+Y undo and redo annotations.
 
-**Not in this build** — advanced Search and its filter panel (M4), annotations and tabs (M5),
-non-PDF engines, reflow and sharing (M6), full Settings controls (M7) and the remaining M8 scope.
-Recents, Favorites, Search and Settings still show their M1 scaffolds until their milestones.
+**Not in this build** — non-PDF engines, reflow and sharing (M6), full Settings controls (M7) and the
+remaining M8 scope. Recents, Favorites and Settings still show their M1 scaffolds until their
+milestones.
 
 ## Build & verify
 
@@ -86,10 +99,10 @@ installable debug APK) and `rendered-screens-<sha>` (the screenshots).
 ## Screenshots
 
 Roborazzi renders the five destinations at 360 / 412 / 700 dp in light and dark. M3 adds the reader
-at 360 / 412 / 800 dp in Paper / Sepia / Night / OLED using a deterministic PDF-engine fixture; the
-separate API 23 / 36 instrumented test exercises the real bundled PDF and `PdfRenderer`. The Library
-screenshot harness waits for the Room flow and uses a fixed clock so record and verify see the same
-content.
+at 360 / 412 / 800 dp in Paper / Sepia / Night / OLED using a deterministic PDF-engine fixture; M5
+adds the open-documents, bookmarks and highlights sheets at 412 dp. The separate API 23 / 36
+instrumented test exercises the real bundled PDF and `PdfRenderer`. The Library screenshot harness
+waits for the Room flow and uses a fixed clock so record and verify see the same content.
 
 | Destination | 360 dp | 412 dp | 700 dp |
 |---|---|---|---|
@@ -116,13 +129,13 @@ by running it.
 | 7 | Advanced search — 5 scopes, combined filters, summary, snippets, open-at-page | §6.4 | ✅ M4 |
 | 8 | Search history — chips, per-item delete, clear, re-run | §6.4 | ✅ M4 |
 | 9 | Sorting — 4 fields × direction, independent favorites sort, applies to the open file-type group | §6.1 | 🟨 partial — Library sort and open groups are live; Favorites sort is later |
-| 10 | Highlighting — 5 colours, selection, recolour, remove, copy | §7.4 | ☐ |
-| 11 | Highlight undo/redo — 50-step, labels, snackbars | §7.4 | ☐ |
-| 12 | Highlights summary panel — quote, page, jump, delete, clear all | §6.7 | ☐ |
-| 13 | Bookmarks — page flag, toolbar, shortcut, sheet, count | §6.6 | ☐ |
-| 14 | Multi-tab — Open documents sheet + badge, pick-a-document mode, per-tab state, close any row incl. the active/last one, close all from n≥1, undo, configurable limit, back keeps tabs | §6.6 | ☐ |
+| 10 | Highlighting — 5 colours, selection, recolour, remove, copy | §7.4 | ✅ M5 |
+| 11 | Highlight undo/redo — 50-step, labels, snackbars | §7.4 | ✅ M5 |
+| 12 | Highlights summary panel — quote, page, jump, delete, clear all | §6.7 | ✅ M5 — current-page clear and confirmed full-clear both support Undo |
+| 13 | Bookmarks — page flag, toolbar, shortcut, sheet, count | §6.6 | ✅ M5 |
+| 14 | Multi-tab — Open documents sheet + badge, pick-a-document mode, per-tab state, close any row incl. the active/last one, close all from n≥1, undo, configurable limit, back keeps tabs | §6.6 | ✅ M5 |
 | 15 | Share — document, page image, selection, copy path, copy page text | §6.7 | ☐ |
-| 16 | File actions — rename, delete (+undo), move, tags, favorite, info | §6.7 | 🟨 partial — M2 actions and PDF Open work; non-PDF Open is M6, new tab M5, Share M6 |
+| 16 | File actions — rename, delete (+undo), move, tags, favorite, info | §6.7 | 🟨 partial — M2 actions and PDF Open work; the M5 new-tab picker is live; non-PDF Open and Share are M6 |
 | 17 | Reading themes — Paper, Sepia, Night, OLED, Auto | §4.2 | 🟨 partial — all five are live and saved in PDF Page Stay; global default control remains M7 |
 | 18 | Scroll modes — vertical, horizontal with snap+page-turn | §6.6 | 🟨 implemented — continuous vertical list and snapping horizontal pager; reader screenshot matrix and API 23/36 PDF tests pass in M3 CI |
 | 19 | Zoom & pan — pinch, double-tap, buttons, ctrl-wheel, drag-pan, 70–250 % | §6.6 | 🟨 implemented — pinch, double-tap, toolbar/sheet zoom, ctrl-wheel and drag-pan; M3 CI passes |
@@ -131,21 +144,21 @@ by running it.
 | 22 | Rotate — auto toggle, per-document lock (auto/portrait/landscape) | §5 | ☐ |
 | 23 | Settings — appearance, reading, device, data, about | §6.5 | ☐ |
 | 24 | Responsive + platform — bar/rail, 2/3-col, foldable, toolbar priority ladder, API 23 → 36, i18n, a11y | §5, §9, §10 | 🟨 partial — bar/rail, 2-col grid metrics and API 23 → 36 support are in; 2-col *lists*, the toolbar ladder, i18n and the a11y pass land with their screens |
-| 25 | Highlight colour menu — expanding labelled palette, live swatch, selection-aware hint, dismiss rules | §6.6 | ☐ |
+| 25 | Highlight colour menu — expanding labelled palette, live swatch, selection-aware hint, dismiss rules | §6.6 | ✅ M5 |
 | 26 | Excel `.xlsx` — sheet-per-page grid rendering, text, find, highlights, reflow | §7.3 | ☐ |
 | 27 | PowerPoint `.pptx` — slide-per-page card rendering, text, find, highlights, reflow | §7.3 | ☐ |
 
 ## Verification
 
-M2 is verified in [CI run 37662707845](https://github.com/ab2024103-cmd/Leaf/actions/runs/37662707845). M3 is green in [CI run 37934942214](https://github.com/ab2024103-cmd/Leaf/actions/runs/37934942214) for commit `e3a261a`.
+M2 is verified in [CI run 37662707845](https://github.com/ab2024103-cmd/Leaf/actions/runs/37662707845). M3 passed in [CI run 37934942214](https://github.com/ab2024103-cmd/Leaf/actions/runs/37934942214) for commit `e3a261a`. M4 and M5 are green in [CI run 38068951703](https://github.com/ab2024103-cmd/Leaf/actions/runs/38068951703) for commit `6ff7c79`.
 
-| Check | M2 last verified | M3 latest CI |
-|---|---|---|
-| Build, lint & JVM tests | ✅ | ✅ CI run 37934942214 |
-| Debug APK | ✅ | ✅ [download](https://github.com/ab2024103-cmd/Leaf/actions/runs/37934942214/artifacts/11618397054) |
-| Screenshot parity | ✅ | ✅ 12 reader captures across Paper/Sepia/Night/OLED at 360/412/800 dp; [artifact](https://github.com/ab2024103-cmd/Leaf/actions/runs/37934942214/artifacts/11617991899) |
-| Real PDF on API 23 / 36 | not part of M2 | ✅ both real-renderer instrumentation jobs passed in CI run 37934942214 |
-| Release APK + AAB | skipped — only runs on `v*` tags | skipped — only runs on `v*` tags |
+| Check | M2 last verified | M3 CI | M5 latest CI |
+|---|---|---|---|
+| Build, lint & JVM tests | ✅ | ✅ CI run 37934942214 | ✅ CI run 38068951703 |
+| Debug APK | ✅ | ✅ [download](https://github.com/ab2024103-cmd/Leaf/actions/runs/37934942214/artifacts/11618397054) | ✅ [download](https://github.com/ab2024103-cmd/Leaf/actions/runs/38068951703/artifacts/11675678752) |
+| Screenshot parity | ✅ | ✅ 12 reader captures across Paper/Sepia/Night/OLED at 360/412/800 dp; [artifact](https://github.com/ab2024103-cmd/Leaf/actions/runs/37934942214/artifacts/11617991899) | ✅ [rendered-screens](https://github.com/ab2024103-cmd/Leaf/actions/runs/38068951703/artifacts/11675673718) |
+| Real PDF on API 23 / 36 | not part of M2 | ✅ both real-renderer instrumentation jobs passed in CI run 37934942214 | ✅ both instrumentation jobs passed |
+| Release APK + AAB | skipped — only runs on `v*` tags | skipped — only runs on `v*` tags | skipped — only runs on `v*` tags |
 
 The PDF emulator matrix uses an API 23 x86 image and API 36 x86_64, with bounded boot/test timeouts and failure diagnostics. The API 23 tests also verified that PDFBox text extraction runs on the minimum supported API.
 
@@ -154,16 +167,20 @@ rules, folder subtree/group counts, the empty-group fallback, rename-extension b
 folder/tag delete safety, and the 470 ms row long-press/tap flow. M3 adds PDF tile-grid/cache lifetime,
 Page Stay repository and fresh-ViewModel restoration after closing and reopening the on-disk Room DB,
 damaged-PDF error-state coverage, real-renderer instrumentation (including a 50-tile API 23/36 sweep),
-and reader-theme screenshots. This is a process-recreation simulation, not an OS-level
-forced-process-kill test.
+and reader-theme screenshots. M4 tests the five search scopes, combined filters, nested folders,
+case-insensitive occurrence counts, bounded search history and the page-specific Reader handoff. M5
+tests persisted annotations across database reopen, page-only versus full clear, 50-step undo/redo,
+bookmark actions, saved tab order/state, limit behavior and row-close restoration; the screenshot suite
+also captures the tab, bookmark and highlight sheets. The database reopen checks simulate process
+recreation with a fresh ViewModel; they are not OS-level forced-process-kill tests.
 
 ## Deviations from the mockup and the spec
 
 Every deviation is a decision, not an accident.
 
-1. **Non-Library destinations remain M1 scaffolds.** The M2 Library is now populated and functional;
-   Recents, Favorites, Search and Settings remain on their honest M1 empty-state surfaces until their
-   own milestones.
+1. **Some non-Library destinations remain M1 scaffolds.** The M2 Library is populated and
+   functional; M4 Search is complete, while Recents, Favorites and Settings remain on their honest
+   M1 empty-state surfaces until their own milestones.
 2. **`ci/android.yml` could not pass as-is.** Its release job used
    `if: ${{ secrets.KEYSTORE_BASE64 != '' }}`; GitHub rejects the `secrets` context inside an `if:`
    expression, which invalidated the *entire* workflow file — every run of it produced zero jobs, on
@@ -203,21 +220,23 @@ Every deviation is a decision, not an accident.
 11. **Only seeded PDFs open in M3.** PDF row taps and the PDF-only Open action launch the reader;
     non-PDF demo rows remain available for Library organization but have no fake reader target. The
     M2 long-press actions sheet remains intact.
-12. **Later actions are omitted rather than stubbed.** Open in new tab and Share are deferred to
-    M5/M6; incoming external PDF VIEW/SEND intents work in M3, while the in-app document picker stays
-    deferred to M5. Pick-a-document mode remains part of the M5 tabs flow.
+12. **Later actions are omitted rather than stubbed.** M5 adds the Reader-to-Library document picker
+    for new tabs; Share remains deferred to M6. Incoming external PDF VIEW/SEND intents work in M3.
+    Non-PDF open, reflow, export-highlights-as-list, share-a-link, Duplicate and an Import screen are
+    not added.
 13. **The §6.1 filter glyph is decorative in M2.** The advanced filter panel is part of the later
     Search scope; no inert tappable filter button is exposed.
 14. **Sort direction follows the labels.** “Ascending” shows A–Z / Newest / Recent / Largest, matching
     the mockup's visible sort copy. The mockup's comparator reverses the three numeric/time fields
     against those labels; Leaf keeps the labels and makes the order agree with what the user sees.
 15. **Milestone branch naming is session-pinned.** The Arena session is fixed to
-    `arena/ceade348-leaf`; the existing draft PR carries M1–M3 rather than creating a separate
+    `arena/ceade348-leaf`; the existing draft PR carries M1–M5 rather than creating a separate
     milestone branch.
 16. **Local Gradle verification is unavailable.** The editing environment has no Java runtime, so
-    Gradle could not start locally. CI run 37934942214 passed build/lint/JVM tests, screenshot parity,
-    and real-PDF instrumentation on API 23 and API 36; the debug APK and rendered screenshot artifacts
-    are linked in the verification table. Release APK + AAB remain tag-only and were correctly skipped.
+    Gradle could not start locally. The latest CI run 38068951703 passed build/lint/JVM tests,
+    screenshot parity, and real-PDF instrumentation on API 23 and API 36; its debug APK and rendered
+    screenshot artifacts are linked in the verification table. Release APK + AAB remain tag-only and
+    were correctly skipped.
 17. **Page Stay test boundary.** The M3 test closes and reopens the on-disk Room database and creates a
     fresh ReaderViewModel; an OS-level forced process-kill / relaunch test remains a release QA check.
 18. **Frame-rate QA boundary.** API 23 / 36 instrumentation sweeps 50 real-PDF tile requests and logs
@@ -230,7 +249,7 @@ Every deviation is a decision, not an accident.
     pinned release preserves the required PDFBox fallback and passes the real-PDF matrix on API 23
     and API 36.
 
-## What's next — M4 · Search
+## What's next — M6 · Document formats, reflow & sharing
 
-Add the advanced search UI against cached PDF text without moving annotation, tab, reflow, sharing or
-broader settings work forward from their approved milestones.
+Add non-PDF reading engines, anchored text reflow and the approved sharing actions, without moving
+broader Settings controls (M7) or the remaining M8 scope forward.
