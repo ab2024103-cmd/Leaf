@@ -96,23 +96,10 @@ class M5ScreenshotsTest {
 
     @Test
     @Config(qualifiers = "w412dp-h892dp-normal-long-notround-any-320dpi-keyshidden-nonav")
-    fun bookmark_and_highlight_sheets_render_persistent_rows_and_actions() {
+    fun bookmarks_sheet_shows_saved_rows_and_current_page_action() {
         val bookmarks = listOf(
             Bookmark("b1", "d1", 1, "Page 2", now - 3_600_000),
             Bookmark("b2", "d1", 4, "Page 5", now - 86_400_000)
-        )
-        val highlights = listOf(
-            Highlight(
-                id = "h1", docId = "d1", page = 2, color = HighlightColor.YELLOW,
-                text = "A quoted passage remains legible across themes.",
-                bounds = listOf(NormalizedRect(0.12f, 0.2f, 0.78f, 0.24f)),
-                textRange = null, cfiRange = null, createdAt = now - 600_000
-            ),
-            Highlight(
-                id = "h2", docId = "d1", page = 4, color = HighlightColor.BLUE,
-                text = "A second saved excerpt.", bounds = emptyList(),
-                textRange = null, cfiRange = null, createdAt = now - 172_800_000
-            )
         )
 
         capture("reader_bookmarks_sheet_412") {
@@ -127,6 +114,25 @@ class M5ScreenshotsTest {
                 )
             }
         }
+    }
+
+    @Test
+    @Config(qualifiers = "w412dp-h892dp-normal-long-notround-any-320dpi-keyshidden-nonav")
+    fun highlights_sheet_shows_quotes_and_clear_action() {
+        val highlights = listOf(
+            Highlight(
+                id = "h1", docId = "d1", page = 2, color = HighlightColor.YELLOW,
+                text = "A quoted passage remains legible across themes.",
+                bounds = listOf(NormalizedRect(0.12f, 0.2f, 0.78f, 0.24f)),
+                textRange = null, cfiRange = null, createdAt = now - 600_000
+            ),
+            Highlight(
+                id = "h2", docId = "d1", page = 4, color = HighlightColor.BLUE,
+                text = "A second saved excerpt.", bounds = emptyList(),
+                textRange = null, cfiRange = null, createdAt = now - 172_800_000
+            )
+        )
+
         capture("reader_highlights_sheet_412", dark = true) {
             LeafSheetOverlay(onDismiss = {}) {
                 HighlightsSheet(

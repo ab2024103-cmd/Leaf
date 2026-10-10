@@ -981,7 +981,7 @@ private fun ReaderFooter(
             )
         }
         Text(
-            text = quantityText(R.plurals.n_bookmarks, state.bookmarks.size),
+            text = quantityText(R.plurals.n_bookmarks, state.bookmarks.size, state.bookmarks.size),
             style = LeafType.chipLabel,
             color = palette.textMuted,
             maxLines = 1

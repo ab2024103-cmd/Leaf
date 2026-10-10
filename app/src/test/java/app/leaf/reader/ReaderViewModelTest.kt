@@ -140,6 +140,8 @@ class ReaderViewModelTest {
         Dispatchers.setMain(Dispatchers.Unconfined)
         try {
             DatabaseSeeder(database).seed(FIXED_NOW)
+            annotationRepository.replaceBookmarks("d1", emptyList())
+            annotationRepository.replaceHighlights("d1", emptyList())
             val bookmark = Bookmark("bookmark-persist", "d1", 3, "Page 4", FIXED_NOW)
             val highlight = Highlight(
                 id = "highlight-persist",
@@ -215,6 +217,8 @@ class ReaderViewModelTest {
         Dispatchers.setMain(Dispatchers.Unconfined)
         try {
             DatabaseSeeder(database).seed(FIXED_NOW)
+            annotationRepository.replaceBookmarks("d1", emptyList())
+            annotationRepository.replaceHighlights("d1", emptyList())
             val viewModel = ReaderViewModel(
                 application,
                 repository,
