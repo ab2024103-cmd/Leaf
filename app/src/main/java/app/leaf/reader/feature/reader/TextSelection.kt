@@ -12,7 +12,7 @@ data class SelectableWord(
 )
 
 fun List<TextRun>.selectableWords(): List<SelectableWord> = buildList {
-    forEach { run ->
+    this@selectableWords.forEach { run ->
         val ranges = wordRanges(run.text)
         ranges.forEach { range ->
             val glyphBounds = run.characterBounds

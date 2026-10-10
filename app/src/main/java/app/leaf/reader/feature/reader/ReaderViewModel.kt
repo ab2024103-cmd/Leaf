@@ -846,7 +846,7 @@ class ReaderViewModel(
         progressJob?.cancel()
         val request = session
         progressJob = viewModelScope.launch {
-            if (!immediate) delay(SAVE_DEBOUNCE_MS)
+            if (!immediate) delay(SAVE_DEBOUNCE_MILLIS)
             if (request == session) persist(mutableState.value)
         }
     }

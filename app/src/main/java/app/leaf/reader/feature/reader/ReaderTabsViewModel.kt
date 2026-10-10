@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.leaf.reader.R
+import app.leaf.reader.core.data.prefs.OpenTabResult
 import app.leaf.reader.core.data.prefs.ReaderTabsStore
 import app.leaf.reader.core.data.repo.DocumentRepository
 import app.leaf.reader.core.data.repo.ReaderRepository

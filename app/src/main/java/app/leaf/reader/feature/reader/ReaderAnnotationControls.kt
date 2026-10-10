@@ -86,7 +86,11 @@ internal fun ReaderToolbar(
             ReaderControl(R.drawable.ic_view_layout, stringResource(R.string.reader_view_layout_title), onLayout)
             Spacer(Modifier.weight(1f))
             if (showZoom) {
-                ReaderControl(R.drawable.ic_zoom_out, stringResource(R.string.reader_zoom_out)) { onZoom(-1) }
+                ReaderControl(
+                    icon = R.drawable.ic_zoom_out,
+                    description = stringResource(R.string.reader_zoom_out),
+                    onClick = { onZoom(-1) }
+                )
                 if (showZoomValue) {
                     Text(
                         stringResource(R.string.reader_zoom_value, (state.zoom * 100).toInt()),
@@ -95,7 +99,11 @@ internal fun ReaderToolbar(
                         modifier = Modifier.padding(horizontal = 2.dp)
                     )
                 }
-                ReaderControl(R.drawable.ic_zoom_in, stringResource(R.string.reader_zoom_in)) { onZoom(1) }
+                ReaderControl(
+                    icon = R.drawable.ic_zoom_in,
+                    description = stringResource(R.string.reader_zoom_in),
+                    onClick = { onZoom(1) }
+                )
             }
             if (showHighlightsList) {
                 ReaderControl(R.drawable.ic_document, stringResource(R.string.reader_highlights_title), onHighlights)
