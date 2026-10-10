@@ -234,6 +234,15 @@ interface BookmarkDao {
 
     @Query("DELETE FROM bookmarks WHERE id = :id")
     suspend fun delete(id: String)
+
+    @Query("DELETE FROM bookmarks WHERE docId = :docId")
+    suspend fun clearForDocument(docId: String)
+
+    @Transaction
+    suspend fun replaceForDocument(docId: String, rows: List<BookmarkEntity>) {
+        clearForDocument(docId)
+        if (rows.isNotEmpty()) insertAll(rows)
+    }
 }
 
 @Dao
@@ -266,6 +275,12 @@ interface HighlightDao {
 
     @Query("DELETE FROM highlights WHERE docId = :docId")
     suspend fun clearForDocument(docId: String)
+
+    @Transaction
+    suspend fun replaceForDocument(docId: String, rows: List<HighlightEntity>) {
+        clearForDocument(docId)
+        if (rows.isNotEmpty()) insertAll(rows)
+    }
 
     @Query("DELETE FROM highlights")
     suspend fun clearAll()

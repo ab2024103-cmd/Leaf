@@ -111,6 +111,15 @@ class SettingsStoreTest {
     }
 
     @Test
+    fun tab_limit_persists_the_supported_minimum_and_maximum() = runTest {
+        store.update { it.copy(tabLimit = LeafSettings.TAB_LIMIT_MIN) }
+        assertEquals(1, store.current().tabLimit)
+
+        store.update { it.copy(tabLimit = LeafSettings.TAB_LIMIT_MAX) }
+        assertEquals(10, store.current().tabLimit)
+    }
+
+    @Test
     fun unknown_values_fall_back_to_the_default() = runTest {
         val dataStore = PreferenceDataStoreFactory.create(
             scope = CoroutineScope(UnconfinedTestDispatcher() + Job()),

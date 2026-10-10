@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import app.leaf.reader.core.model.AppTheme
 import app.leaf.reader.core.model.FavSort
+import app.leaf.reader.core.model.HighlightColor
 import app.leaf.reader.core.model.LeafSettings
 import app.leaf.reader.core.model.ReadingTheme
 import app.leaf.reader.core.model.ScrollDir
@@ -69,7 +70,7 @@ class SettingsStore(private val dataStore: DataStore<Preferences>) {
         showPageNumbers = this[SHOW_PAGE_NUMBERS] ?: true,
         animations = this[ANIMATIONS] ?: true,
         haptics = this[HAPTICS] ?: true,
-        tabLimit = this[TAB_LIMIT] ?: 6,
+        tabLimit = (this[TAB_LIMIT] ?: 6).coerceIn(LeafSettings.TAB_LIMIT_MIN, LeafSettings.TAB_LIMIT_MAX),
         groupByType = this[GROUP_BY_TYPE] ?: false,
         language = this[LANGUAGE] ?: "en",
         sortField = if (this[SORT_FIELD] == LEGACY_FILE_TYPE) {
@@ -79,7 +80,8 @@ class SettingsStore(private val dataStore: DataStore<Preferences>) {
         },
         sortAscending = this[SORT_ASCENDING] ?: true,
         favSort = enumOrDefault(this[FAV_SORT], FavSort.ADDED),
-        searchHistory = readSearchHistory()
+        searchHistory = readSearchHistory(),
+        highlightColor = enumOrDefault(this[HIGHLIGHT_COLOR], HighlightColor.YELLOW)
     )
 
     private fun Preferences.readSearchHistory(): List<String> {
@@ -118,6 +120,7 @@ class SettingsStore(private val dataStore: DataStore<Preferences>) {
         this[SORT_FIELD] = settings.sortField.name
         this[SORT_ASCENDING] = settings.sortAscending
         this[FAV_SORT] = settings.favSort.name
+        this[HIGHLIGHT_COLOR] = settings.highlightColor.name
         this[SEARCH_HISTORY_ORDERED] = JSONArray(normalizeSearchHistory(settings.searchHistory)).toString()
         remove(SEARCH_HISTORY)
     }
@@ -147,6 +150,7 @@ class SettingsStore(private val dataStore: DataStore<Preferences>) {
         val SORT_FIELD = stringPreferencesKey("sort_field")
         val SORT_ASCENDING = booleanPreferencesKey("sort_ascending")
         val FAV_SORT = stringPreferencesKey("fav_sort")
+        val HIGHLIGHT_COLOR = stringPreferencesKey("highlight_color")
         val SEARCH_HISTORY = stringSetPreferencesKey("search_history")
         val SEARCH_HISTORY_ORDERED = stringPreferencesKey("search_history_ordered")
     }

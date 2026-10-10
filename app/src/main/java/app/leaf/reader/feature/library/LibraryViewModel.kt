@@ -377,9 +377,15 @@ class LibraryViewModel(
         eventChannel.trySend(LibraryEvent.OpenDocument(documentId))
     }
 
+    private fun openInNewTab(documentId: String) {
+        dismissSheet()
+        eventChannel.trySend(LibraryEvent.OpenNewTab(documentId))
+    }
+
     private fun perform(action: DocumentAction) {
         when (action) {
             is DocumentAction.Open -> openDocument(action.id)
+            is DocumentAction.OpenInNewTab -> openInNewTab(action.id)
             is DocumentAction.Rename -> openSheet(LibrarySheet.RenameDocument(action.id))
             is DocumentAction.Favorite -> {
                 toggleFavorite(action.id)

@@ -388,8 +388,13 @@
     <string name="cd_document">Document %1$s</string>
     <string name="cd_reading_progress">%1$d%% read, page %2$d of %3$d</string>
     <string name="cd_close_sheet">Close</string>
+    <string name="cd_open_documents_count">Open documents, %1$d open</string>
 
-    <!-- Settings → About (§6.5) -->
+    <!-- Settings → M5 device control / About -->
+    <string name="settings_group_device">Device</string>
+    <string name="settings_maximum_open_tabs">Maximum open tabs</string>
+    <string name="settings_tab_limit_decrease">Decrease maximum open tabs</string>
+    <string name="settings_tab_limit_increase">Increase maximum open tabs</string>
     <string name="settings_group_about">About</string>
     <string name="settings_version">Version</string>
     <string name="settings_version_value">1.0.0</string>
@@ -440,6 +445,101 @@
     <string name="reader_theme_night">Night</string>
     <string name="reader_theme_oled">OLED</string>
     <string name="reader_theme_auto">Auto</string>
+
+    <!-- M5 · Annotation and persistent document tabs -->
+    <string name="reader_tabs_summary">%1$d of %2$d tabs open · switching keeps each document’s page, zoom and theme</string>
+    <string name="reader_tabs_empty">Nothing open yet — pick a document and it will stay here until you close it.</string>
+    <string name="reader_tabs_page_line">Page %1$d of %2$d · %3$s</string>
+    <string name="reader_tabs_active">ACTIVE</string>
+    <string name="reader_tabs_close_accessibility">Close %1$s</string>
+    <string name="reader_tabs_open_new">Open a new document…</string>
+    <string name="reader_tabs_open_new_sub">Goes to your library so you can choose</string>
+    <string name="reader_tabs_close_one">Close it</string>
+    <string name="reader_tabs_close_all">Close all tabs</string>
+    <string name="reader_tabs_close_all_count">%1$d documents will be closed</string>
+    <string name="reader_tabs_close_all_count_one">1 document will be closed</string>
+    <string name="reader_tabs_close_all_title">Close all tabs?</string>
+    <string name="reader_tabs_close_all_body">Your reading positions are saved, so every document resumes where you stopped. Highlights, bookmarks and favorites are untouched.</string>
+    <string name="reader_tabs_close_all_confirm">Close all</string>
+    <string name="reader_tabs_limit_sheet">Tab limit reached (%1$d) — close a tab first</string>
+    <string name="reader_tabs_limit_pick">Tab limit reached (%1$d) — close a tab or raise the limit in Settings</string>
+    <string name="reader_tabs_closed">Closed “%1$s”</string>
+    <string name="reader_tabs_closed_last">Tab closed — pick a document any time</string>
+    <string name="reader_tabs_restored">Tab restored</string>
+    <string name="reader_tabs_all_closed">All tabs closed</string>
+    <string name="reader_tabs_switched">Switched to “%1$s” · page %2$d of %3$d</string>
+    <string name="reader_tabs_opened_new">Opened in new tab</string>
+    <plurals name="reader_tabs_kept_open">
+        <item quantity="one">%1$d document kept open · Tap Tabs in Library to come back</item>
+        <item quantity="other">%1$d documents kept open · Tap Tabs in Library to come back</item>
+    </plurals>
+    <string name="reader_pick_title">Choose a document</string>
+    <string name="reader_pick_subtitle">Opens in a new tab · %1$d of %2$d in use</string>
+    <string name="reader_pick_cancel">Cancel</string>
+    <string name="reader_pick_document">Choose a document to open in a new tab</string>
+    <string name="reader_error_missing_document">This document is no longer in the library</string>
+    <string name="reader_error_pdf_only">Only PDF reading is available in this milestone</string>
+    <string name="reader_error_empty_pdf">The PDF contains no readable pages</string>
+    <string name="reader_warning_page_limit">This PDF has over 2,000 pages; only visible pages are rendered.</string>
+
+    <string name="reader_more_actions">More reader actions</string>
+    <string name="reader_bookmarks_title">Bookmarks</string>
+    <string name="reader_bookmarks_subtitle">%1$d bookmarks</string>
+    <string name="reader_bookmark_current_page">Bookmark current page</string>
+    <string name="reader_bookmark_remove_current_page">Remove bookmark from this page</string>
+    <string name="reader_bookmark_page_label">Page %1$d</string>
+    <string name="reader_bookmark_page_age">Page %1$d · %2$s</string>
+    <string name="reader_bookmark_add">Bookmark this page</string>
+    <string name="reader_bookmark_remove">Remove bookmark from this page</string>
+    <string name="reader_delete_bookmark">Delete bookmark on page %1$d</string>
+    <string name="reader_no_bookmarks">No bookmarks yet</string>
+    <string name="reader_highlights_title">Highlights</string>
+    <string name="reader_highlights_subtitle">%1$d highlights</string>
+    <string name="reader_highlight_page_line">Page %1$d · %2$s</string>
+    <string name="reader_highlight_quote">“%1$s”</string>
+    <string name="reader_delete_highlight">Delete highlight</string>
+    <string name="reader_clear_all_highlights">Clear all highlights</string>
+    <string name="reader_clear_page_highlights">Clear highlights on this page</string>
+    <string name="snack_no_page_highlights">No highlights on page %1$d</string>
+    <plurals name="snack_page_highlights_cleared">
+        <item quantity="one">Cleared %1$d highlight</item>
+        <item quantity="other">Cleared %1$d highlights</item>
+    </plurals>
+    <string name="reader_clear_highlights_title">Clear every highlight?</string>
+    <string name="reader_clear_highlights_body">Every highlight in this document will be removed.</string>
+    <string name="reader_no_highlights">No highlights in this document yet</string>
+    <string name="reader_highlight_label">Highlight</string>
+    <string name="reader_highlight_colour">Highlight colour</string>
+    <string name="reader_highlight_colour_heading">HIGHLIGHT COLOUR</string>
+    <string name="reader_close_highlight_menu">Close highlight colour menu</string>
+    <string name="reader_highlight_selected_hint">Tap a colour to highlight the selected text.</string>
+    <string name="reader_highlight_empty_hint">Select text in the page first, then pick a colour. Your choice becomes the default for the next selection.</string>
+    <string name="reader_remove_highlight">Remove highlight</string>
+    <string name="reader_copy_highlight">Copy highlighted text</string>
+    <string name="reader_done">Done</string>
+    <string name="reader_undo">Undo annotation change</string>
+    <string name="reader_redo">Redo annotation change</string>
+    <string name="reader_colour_yellow">Yellow</string>
+    <string name="reader_colour_green">Green</string>
+    <string name="reader_colour_blue">Blue</string>
+    <string name="reader_colour_pink">Pink</string>
+    <string name="reader_colour_orange">Orange</string>
+    <string name="reader_colour_yellow_lower">yellow</string>
+    <string name="reader_colour_green_lower">green</string>
+    <string name="reader_colour_blue_lower">blue</string>
+    <string name="reader_colour_pink_lower">pink</string>
+    <string name="reader_colour_orange_lower">orange</string>
+    <string name="snack_highlighted">Highlighted · %1$s</string>
+    <string name="snack_colour_changed">Colour changed to %1$s</string>
+    <string name="snack_highlight_removed">Highlight removed</string>
+    <string name="snack_all_highlights_removed">All highlights cleared</string>
+    <string name="snack_page_bookmarked">Page %1$d bookmarked</string>
+    <string name="snack_bookmark_removed">Bookmark removed from page %1$d</string>
+    <string name="snack_selected_colour">Selected %1$s · select text to highlight it</string>
+    <string name="snack_undone">Undid %1$s</string>
+    <string name="snack_redone">Redid %1$s</string>
+    <string name="snack_copied">Copied to clipboard</string>
+
     <string name="pdf_intake_missing">No PDF was included in that share.</string>
     <string name="pdf_intake_failed">Leaf could not open this PDF.</string>
 </resources>

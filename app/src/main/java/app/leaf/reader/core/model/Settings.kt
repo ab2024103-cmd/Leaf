@@ -40,7 +40,8 @@ data class LeafSettings(
     val sortField: SortField = SortField.NAME,
     val sortAscending: Boolean = true,
     val favSort: FavSort = FavSort.ADDED,
-    val searchHistory: List<String> = emptyList()
+    val searchHistory: List<String> = emptyList(),
+    val highlightColor: HighlightColor = HighlightColor.YELLOW
 ) {
     companion object {
         const val TAB_LIMIT_MIN = 1

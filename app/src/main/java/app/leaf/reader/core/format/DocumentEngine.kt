@@ -6,7 +6,9 @@ import app.leaf.reader.core.model.NormalizedRect
 /** One line or contiguous text run extracted from a document page. */
 data class TextRun(
     val text: String,
-    val bounds: List<NormalizedRect> = emptyList()
+    val bounds: List<NormalizedRect> = emptyList(),
+    /** Per-character PDF geometry when the engine can provide it; absent on API 35 text blocks. */
+    val characterBounds: List<NormalizedRect> = emptyList()
 )
 
 /** Geometry and source text for a search match; all bounds are in normalized page space. */

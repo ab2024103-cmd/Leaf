@@ -16,6 +16,7 @@ import app.leaf.reader.core.data.db.SmartCollectionDao
 import app.leaf.reader.core.data.db.SmartCollectionEntity
 import app.leaf.reader.core.data.db.TagDao
 import app.leaf.reader.core.data.db.TagEntity
+import app.leaf.reader.core.data.prefs.ReaderTabsStore
 import app.leaf.reader.core.domain.LibraryDoc
 import app.leaf.reader.core.model.Document
 import app.leaf.reader.core.model.Folder
@@ -36,7 +37,8 @@ class DocumentRepository(
     private val bookmarks: BookmarkDao,
     private val highlights: HighlightDao,
     private val progress: ProgressDao,
-    private val recents: RecentDao
+    private val recents: RecentDao,
+    private val tabs: ReaderTabsStore? = null
 ) {
 
     /** Every document with its tags, newest added first. */
@@ -119,6 +121,7 @@ class DocumentRepository(
 
     /** Removes the document from the library, the recents list and every tab (§8.7). */
     suspend fun delete(id: String) {
+        tabs?.removeDocument(id)
         recents.delete(id)
         documents.delete(id)
     }

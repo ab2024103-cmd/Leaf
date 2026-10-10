@@ -7,13 +7,19 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -22,27 +28,51 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.leaf.reader.R
+import app.leaf.reader.core.data.prefs.SettingsStore
+import app.leaf.reader.core.model.LeafSettings
 import app.leaf.reader.core.ui.components.LeafScreen
 import app.leaf.reader.core.ui.theme.LeafShape
 import app.leaf.reader.core.ui.theme.FontWeight800
 import app.leaf.reader.core.ui.theme.LeafType
 import app.leaf.reader.core.ui.util.isScrolled
+import org.koin.core.context.GlobalContext
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 
 /**
- * Settings (§6.5). M1 ships the About group — the one block whose content is static
- * and therefore complete. The Appearance, Reading, Device and Data groups land in M7
- * with the controls they contain.
+ * Settings (§6.5). The maximum open-tabs control is live here because tab-limit
+ * enforcement is part of M5; the remaining settings groups stay in their planned milestone.
  */
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(settingsStore: SettingsStore? = null) {
     val scrollState = rememberScrollState()
+    val scope = rememberCoroutineScope()
+    val resolvedStore = remember(settingsStore) {
+        settingsStore ?: GlobalContext.getOrNull()?.getOrNull<SettingsStore>()
+    }
+    val settingsFlow = remember(resolvedStore) { resolvedStore?.settings ?: flowOf(LeafSettings()) }
+    val settings by settingsFlow.collectAsStateWithLifecycle(initialValue = LeafSettings())
+    var fallbackTabLimit by remember { androidx.compose.runtime.mutableIntStateOf(LeafSettings().tabLimit) }
+    val tabLimit = if (resolvedStore == null) fallbackTabLimit else settings.tabLimit
     LeafScreen(
         title = stringResource(R.string.nav_settings),
         subtitle = stringResource(R.string.settings_subtitle),
         scrollState = scrollState,
         scrolled = isScrolled(scrollState)
     ) {
+        SettingsGroup(title = stringResource(R.string.settings_group_device)) {
+            TabLimitSettingsRow(
+                value = tabLimit,
+                onChange = { value ->
+                    if (resolvedStore == null) fallbackTabLimit = value
+                    else scope.launch {
+                        resolvedStore.update { current -> current.copy(tabLimit = value) }
+                    }
+                }
+            )
+        }
         SettingsGroup(title = stringResource(R.string.settings_group_about)) {
             SettingsRow(
                 icon = R.drawable.ic_settings_about,
@@ -86,6 +116,66 @@ fun SettingsScreen() {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 10.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun TabLimitSettingsRow(value: Int, onChange: (Int) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier.size(36.dp).background(
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                shape = RoundedCornerShape(LeafShape.m)
+            ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_tab_new),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+        Text(
+            text = stringResource(R.string.settings_maximum_open_tabs),
+            style = LeafType.body,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f).padding(start = 14.dp)
+        )
+        IconButton(
+            onClick = { onChange((value - 1).coerceAtLeast(LeafSettings.TAB_LIMIT_MIN)) },
+            enabled = value > LeafSettings.TAB_LIMIT_MIN,
+            modifier = Modifier.size(48.dp)
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_minus),
+                contentDescription = stringResource(R.string.settings_tab_limit_decrease),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+        Text(
+            text = value.toString(),
+            style = LeafType.body.copy(fontSize = 14.sp, fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.primary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.size(32.dp).wrapContentHeight(Alignment.CenterVertically)
+        )
+        IconButton(
+            onClick = { onChange((value + 1).coerceAtMost(LeafSettings.TAB_LIMIT_MAX)) },
+            enabled = value < LeafSettings.TAB_LIMIT_MAX,
+            modifier = Modifier.size(48.dp)
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_plus),
+                contentDescription = stringResource(R.string.settings_tab_limit_increase),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
             )
         }
     }

@@ -233,16 +233,23 @@ class PdfDocumentEngine internal constructor(
                 PDFBoxResourceLoader.init(context)
                 textInput().use { input ->
                     PDDocument.load(input).use { document ->
-                        val stripper = PDFTextStripper().apply { sortByPosition = true }
-                        buildList {
-                            for (page in 0 until pageCount) {
-                                stripper.startPage = page + 1
-                                stripper.endPage = page + 1
-                                val text = stripper.getText(document)
-                                add(text.lineSequence().filter(String::isNotBlank).map { TextRun(it) }.toList())
-                                onProgress(page + 1, pageCount)
-                            }
+                buildList {
+                    for (pageIndex in 0 until pageCount) {
+                        val page = document.getPage(pageIndex)
+                        val crop = page.cropBox
+                        val rotation = ((page.rotation % 360) + 360) % 360
+                        val width = if (rotation == 90 || rotation == 270) crop.height else crop.width
+                        val height = if (rotation == 90 || rotation == 270) crop.width else crop.height
+                        val stripper = PdfBoxTextStripper(width, height).apply {
+                            sortByPosition = true
+                            startPage = pageIndex + 1
+                            endPage = pageIndex + 1
                         }
+                        stripper.getText(document)
+                        add(stripper.runs.toList())
+                        onProgress(pageIndex + 1, pageCount)
+                    }
+                }
                     }
                 }
             }
@@ -277,12 +284,18 @@ class PdfDocumentEngine internal constructor(
         return textInput().use { input ->
             PDDocument.load(input).use { document ->
                 if (pageIndex !in 0 until document.numberOfPages) throw IndexOutOfBoundsException("PDF page is outside the document")
-                val stripper = PDFTextStripper().apply {
+                val page = document.getPage(pageIndex)
+                val crop = page.cropBox
+                val rotation = ((page.rotation % 360) + 360) % 360
+                val width = if (rotation == 90 || rotation == 270) crop.height else crop.width
+                val height = if (rotation == 90 || rotation == 270) crop.width else crop.height
+                val stripper = PdfBoxTextStripper(width, height).apply {
                     sortByPosition = true
                     startPage = pageIndex + 1
                     endPage = pageIndex + 1
                 }
-                stripper.getText(document).lineSequence().filter(String::isNotBlank).map { TextRun(it) }.toList()
+                stripper.getText(document)
+                stripper.runs.toList()
             }
         }
     }
@@ -308,6 +321,85 @@ class PdfDocumentEngine internal constructor(
         right = (right / pageWidth).coerceIn(0f, 1f),
         bottom = (bottom / pageHeight).coerceIn(0f, 1f)
     )
+}
+
+/** API 23–34 fallback: retain line text and per-character geometry for selection. */
+private class PdfBoxTextStripper(
+    private val pageWidth: Float,
+    private val pageHeight: Float
+) : PDFTextStripper() {
+    val runs = mutableListOf<TextRun>()
+
+    override fun writeString(text: String, textPositions: MutableList<TextPosition>) {
+        super.writeString(text, textPositions)
+        if (text.isBlank()) return
+        val mapped = mapPositions(text, textPositions)
+        val characters = mapped.map { position -> position?.let(::normalizedBounds) ?: NormalizedRect(0f, 0f, 0f, 0f) }
+        val geometry = characters.filter { it.right > it.left && it.bottom > it.top }
+        runs += TextRun(text, mergeAdjacent(geometry), characters)
+    }
+
+    private fun mapPositions(text: String, positions: List<TextPosition>): List<TextPosition?> {
+        if (positions.size == text.length) return positions
+        val positionCharacters = positions.flatMap { position ->
+            position.unicode.orEmpty().map { character -> character to position }
+        }
+        val mapped = MutableList<TextPosition?>(text.length) { null }
+        var nextCharacter = 0
+        text.forEachIndexed { index, character ->
+            if (character.isWhitespace()) {
+                val next = positionCharacters.getOrNull(nextCharacter)
+                if (next?.first?.isWhitespace() == true) {
+                    mapped[index] = next.second
+                    nextCharacter++
+                }
+            } else {
+                val match = (nextCharacter until positionCharacters.size).firstOrNull { candidate ->
+                    positionCharacters[candidate].first.equals(character, ignoreCase = true)
+                }
+                if (match != null) {
+                    mapped[index] = positionCharacters[match].second
+                    nextCharacter = match + 1
+                }
+            }
+        }
+        return mapped
+    }
+
+    private fun normalizedBounds(position: TextPosition): NormalizedRect {
+        val width = pageWidth.coerceAtLeast(1f)
+        val height = pageHeight.coerceAtLeast(1f)
+        val left = position.xDirAdj
+        val top = position.yDirAdj - position.heightDir
+        return NormalizedRect(
+            left = (left / width).coerceIn(0f, 1f),
+            top = (top / height).coerceIn(0f, 1f),
+            right = ((left + position.widthDirAdj) / width).coerceIn(0f, 1f),
+            bottom = ((top + position.heightDir) / height).coerceIn(0f, 1f)
+        )
+    }
+
+    private fun mergeAdjacent(rectangles: List<NormalizedRect>): List<NormalizedRect> {
+        if (rectangles.size < 2) return rectangles
+        val sorted = rectangles.sortedWith(compareBy<NormalizedRect> { it.top }.thenBy { it.left })
+        val merged = mutableListOf<NormalizedRect>()
+        for (rectangle in sorted) {
+            val previous = merged.lastOrNull()
+            if (previous != null && kotlin.math.abs(previous.top - rectangle.top) < 0.015f &&
+                rectangle.left <= previous.right + 0.015f
+            ) {
+                merged[merged.lastIndex] = NormalizedRect(
+                    left = minOf(previous.left, rectangle.left),
+                    top = minOf(previous.top, rectangle.top),
+                    right = maxOf(previous.right, rectangle.right),
+                    bottom = maxOf(previous.bottom, rectangle.bottom)
+                )
+            } else {
+                merged += rectangle
+            }
+        }
+        return merged
+    }
 }
 
 /** API 23–34 fallback: search PDFBox text lines and return normalized glyph geometry. */

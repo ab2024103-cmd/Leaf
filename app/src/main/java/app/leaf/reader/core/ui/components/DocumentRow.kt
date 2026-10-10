@@ -25,7 +25,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -69,7 +73,8 @@ fun LeafDocumentRow(
     onStar: () -> Unit,
     onLongPress: () -> Unit,
     onTap: (() -> Unit)?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    pickingNewTab: Boolean = false
 ) {
     var pressed by remember { mutableStateOf(false) }
     val haptics = rememberHaptics()
@@ -78,7 +83,9 @@ fun LeafDocumentRow(
     } else {
         ""
     }
-    val openActionLabel = if (onTap != null) stringResource(R.string.action_open) else null
+    val openActionLabel = if (onTap != null) {
+        stringResource(if (pickingNewTab) R.string.reader_pick_document else R.string.action_open)
+    } else null
 
     Surface(
         modifier = modifier
@@ -86,6 +93,19 @@ fun LeafDocumentRow(
             .graphicsLayer {
                 scaleX = if (pressed) LeafMotion.pressScale else 1f
                 scaleY = if (pressed) LeafMotion.pressScale else 1f
+            }
+            .drawWithContent {
+                drawContent()
+                if (pickingNewTab) {
+                    drawRoundRect(
+                        color = MaterialTheme.colorScheme.outline,
+                        cornerRadius = CornerRadius(LeafMetrics.cardRadius.toPx()),
+                        style = Stroke(
+                            width = 1.5.dp.toPx(),
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(7.dp.toPx(), 5.dp.toPx()))
+                        )
+                    )
+                }
             }
             .semantics {
                 contentDescription = doc.document.name
@@ -186,7 +206,23 @@ fun LeafDocumentRow(
                     }
                 }
             }
-            LeafStarButton(favorite = doc.document.favorite, onClick = onStar)
+            if (pickingNewTab) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_plus),
+                        contentDescription = stringResource(R.string.reader_pick_document),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            } else {
+                LeafStarButton(favorite = doc.document.favorite, onClick = onStar)
+            }
         }
     }
 }

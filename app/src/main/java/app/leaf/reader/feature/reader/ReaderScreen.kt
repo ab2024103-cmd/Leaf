@@ -63,6 +63,9 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.isCtrlPressed as isKeyCtrlPressed
+import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.graphics.TransformOrigin
@@ -76,6 +79,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -83,6 +87,7 @@ import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -100,6 +105,7 @@ import app.leaf.reader.core.ui.theme.LeafType
 import app.leaf.reader.core.ui.theme.ReadingPalette
 import app.leaf.reader.core.ui.theme.currentReadingPalette
 import app.leaf.reader.core.ui.theme.resolve
+import app.leaf.reader.core.ui.util.quantityText
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
@@ -115,6 +121,9 @@ fun ReaderScreen(
     initialPage: Int? = null,
     initialFindQuery: String? = null,
     onClose: () -> Unit,
+    openTabCount: Int = 1,
+    onOpenTabs: () -> Unit = {},
+    onPickNewTab: () -> Unit = {},
     modifier: Modifier = Modifier.fillMaxSize(),
     viewModel: ReaderViewModel = koinViewModel()
 ) {
@@ -145,25 +154,56 @@ fun ReaderScreen(
 
     BackHandler(enabled = state.sheet == ReaderSheet.NONE) {
         when {
+            state.highlightMenuExpanded -> viewModel.dismissHighlightMenu()
             state.findBarVisible -> viewModel.closeFindBar()
             state.isFullScreen -> viewModel.toggleFullScreen()
-            else -> viewModel.closeReader(onClose)
+            else -> viewModel.leaveReader(onClose)
         }
+    }
+    DisposableEffect(viewModel) {
+        onDispose { viewModel.leaveReader {} }
     }
 
     val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
     val palette = remember(state.readingTheme, systemDark) { state.readingTheme.resolve(systemDark) }
     val keyboardModifier = modifier.onPreviewKeyEvent { event ->
-        if (event.type == KeyEventType.KeyUp && event.key == Key.Escape) {
-            when {
-                state.sheet != ReaderSheet.NONE -> viewModel.setSheet(ReaderSheet.NONE)
-                state.findBarVisible -> viewModel.closeFindBar()
-                state.isFullScreen -> viewModel.toggleFullScreen()
-                else -> viewModel.closeReader(onClose)
-            }
-            true
-        } else {
+        if (event.type != KeyEventType.KeyUp) {
             false
+        } else {
+            val command = event.isKeyCtrlPressed || event.isMetaPressed
+            when {
+                event.key == Key.Escape -> {
+                    when {
+                        state.sheet != ReaderSheet.NONE -> viewModel.setSheet(ReaderSheet.NONE)
+                        state.highlightMenuExpanded -> viewModel.dismissHighlightMenu()
+                        state.findBarVisible -> viewModel.closeFindBar()
+                        state.isFullScreen -> viewModel.toggleFullScreen()
+                        else -> viewModel.leaveReader(onClose)
+                    }
+                    true
+                }
+                command && state.sheet == ReaderSheet.NONE && event.key == Key.B -> {
+                    viewModel.toggleBookmarkCurrentPage()
+                    true
+                }
+                command && state.sheet == ReaderSheet.NONE && event.key == Key.Z && event.isShiftPressed -> {
+                    viewModel.redoAnnotation()
+                    true
+                }
+                command && state.sheet == ReaderSheet.NONE && event.key == Key.Z -> {
+                    viewModel.undoAnnotation()
+                    true
+                }
+                command && state.sheet == ReaderSheet.NONE && event.key == Key.Y -> {
+                    viewModel.redoAnnotation()
+                    true
+                }
+                command && state.sheet == ReaderSheet.NONE && event.key == Key.T -> {
+                    onPickNewTab()
+                    true
+                }
+                else -> false
+            }
         }
     }.focusable()
     CompositionLocalProvider(LocalReadingPalette provides palette) {
@@ -172,6 +212,9 @@ fun ReaderScreen(
             viewModel = viewModel,
             palette = palette,
             onClose = onClose,
+            openTabCount = openTabCount,
+            onOpenTabs = onOpenTabs,
+            onPickNewTab = onPickNewTab,
             modifier = keyboardModifier
         )
     }
@@ -183,15 +226,33 @@ private fun ReaderContent(
     viewModel: ReaderViewModel,
     palette: ReadingPalette,
     onClose: () -> Unit,
+    openTabCount: Int,
+    onOpenTabs: () -> Unit,
+    onPickNewTab: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val clipboard = LocalClipboardManager.current
     Box(modifier.background(palette.surfaceAlt)) {
         when {
             state.isLoading -> ReaderLoading()
-            state.error != null -> ReaderError(state.error) { viewModel.closeReader(onClose) }
+            state.error != null -> ReaderError(state.error) { viewModel.leaveReader(onClose) }
             state.document != null && state.engine != null -> {
                 Column(Modifier.fillMaxSize()) {
-                    if (!state.isFullScreen) ReaderAppBar(state, onBack = { viewModel.closeReader(onClose) }, onLayout = { viewModel.setSheet(ReaderSheet.VIEW_LAYOUT) })
+                    if (!state.isFullScreen) {
+                        ReaderAppBar(
+                            state = state,
+                            openTabCount = openTabCount,
+                            onBack = { viewModel.leaveReader(onClose) },
+                            onOpenTabs = onOpenTabs,
+                            onToggleBookmark = viewModel::toggleBookmarkCurrentPage,
+                            onLayout = { viewModel.setSheet(ReaderSheet.VIEW_LAYOUT) },
+                            onBookmarks = { viewModel.setSheet(ReaderSheet.BOOKMARKS) },
+                            onHighlights = { viewModel.setSheet(ReaderSheet.HIGHLIGHTS) },
+                            onJump = { viewModel.setSheet(ReaderSheet.JUMP_TO_PAGE) },
+                            onPickNewDocument = onPickNewTab,
+                            onClearPageHighlights = viewModel::clearPageHighlights
+                        )
+                    }
                     if (!state.isFullScreen && state.findBarVisible) {
                         ReaderFindBar(
                             state = state,
@@ -207,25 +268,48 @@ private fun ReaderContent(
                         engine = state.engine,
                         viewModel = viewModel,
                         modifier = Modifier.weight(1f).fillMaxWidth(),
-                        onPageTap = { if (state.isFullScreen) viewModel.toggleFullScreen() }
+                        onPageTap = { if (state.isFullScreen) viewModel.toggleFullScreen() },
+                        onTapAnnotation = viewModel::tapPage,
+                        onLongPressText = viewModel::selectTextAt,
+                        onSelectionHandleDrag = viewModel::moveSelectionHandle
                     )
                     Column(Modifier.navigationBarsPadding()) {
                         ReaderFooter(
                             state = state,
                             palette = palette,
                             onJump = { viewModel.setSheet(ReaderSheet.JUMP_TO_PAGE) },
+                            onToggleBookmark = viewModel::toggleBookmarkCurrentPage,
                             onWake = { if (state.isFullScreen) viewModel.toggleFullScreen() },
                             modifier = Modifier.fillMaxWidth()
                         )
                         if (!state.isFullScreen) {
-                            ReaderToolbar(
-                                state = state,
-                                onLayout = { viewModel.setSheet(ReaderSheet.VIEW_LAYOUT) },
-                                onFind = viewModel::toggleFindBar,
-                                onZoom = viewModel::stepZoom,
-                                onFullScreen = viewModel::toggleFullScreen,
-                                modifier = Modifier.fillMaxWidth()
-                            )
+                            val selectedHighlight = state.highlights.firstOrNull { it.id == state.selectedHighlightId }
+                            if (selectedHighlight != null) {
+                                HighlightContextBar(
+                                    highlight = selectedHighlight,
+                                    onColor = { color -> viewModel.recolorHighlight(selectedHighlight.id, color) },
+                                    onRemove = { viewModel.removeHighlight(selectedHighlight.id) },
+                                    onCopy = {
+                                        clipboard.setText(AnnotatedString(selectedHighlight.text))
+                                        viewModel.showCopiedMessage()
+                                    },
+                                    onDone = { viewModel.setSelectedHighlight(null) }
+                                )
+                            } else {
+                                ReaderToolbar(
+                                    state = state,
+                                    onLayout = { viewModel.setSheet(ReaderSheet.VIEW_LAYOUT) },
+                                    onFind = viewModel::toggleFindBar,
+                                    onZoom = viewModel::stepZoom,
+                                    onFullScreen = viewModel::toggleFullScreen,
+                                    onUndo = viewModel::undoAnnotation,
+                                    onRedo = viewModel::redoAnnotation,
+                                    onHighlightMenu = viewModel::toggleHighlightMenu,
+                                    onHighlightColor = viewModel::selectHighlightColor,
+                                    onHighlights = { viewModel.setSheet(ReaderSheet.HIGHLIGHTS) },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
                         }
                     }
                 }
@@ -249,8 +333,26 @@ private fun ReaderContent(
             onDirection = viewModel::setScrollDirection,
             onTheme = viewModel::setReadingTheme,
             onZoom = viewModel::setZoom,
-            onFullScreen = { viewModel.setSheet(ReaderSheet.NONE); viewModel.toggleFullScreen() }
+            onFullScreen = { viewModel.setSheet(ReaderSheet.NONE); viewModel.toggleFullScreen() },
+            onAddCurrentBookmark = viewModel::toggleBookmarkCurrentPage,
+            onJumpBookmark = viewModel::jumpToBookmark,
+            onDeleteBookmark = viewModel::deleteBookmark,
+            onJumpHighlight = viewModel::jumpToHighlight,
+            onDeleteHighlight = viewModel::removeHighlight,
+            onRequestClearAllHighlights = { viewModel.setSheet(ReaderSheet.CONFIRM_CLEAR_HIGHLIGHTS) },
+            onClearAllHighlights = viewModel::clearAllHighlights
         )
+        state.snackbar?.let { message ->
+            androidx.compose.runtime.key(message.message) {
+                app.leaf.reader.core.ui.components.LeafSnackbar(
+                    message = message.message,
+                    actionLabel = if (message.canUndo) stringResource(R.string.action_undo) else null,
+                    onAction = if (message.canUndo) viewModel::undoAnnotation else null,
+                    onDismiss = viewModel::dismissSnackbar,
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 14.dp)
+                )
+            }
+        }
     }
 }
 
@@ -285,7 +387,10 @@ private fun ReaderViewport(
     engine: DocumentEngine,
     viewModel: ReaderViewModel,
     modifier: Modifier,
-    onPageTap: () -> Unit
+    onPageTap: () -> Unit,
+    onTapAnnotation: (Int, Float, Float) -> Unit,
+    onLongPressText: (Int, Float, Float) -> Unit,
+    onSelectionHandleDrag: (Boolean, Float, Float) -> Unit
 ) {
     var viewportBounds by remember { mutableStateOf<Rect?>(null) }
     Box(modifier.onGloballyPositioned { viewportBounds = it.boundsInWindow() }) {
@@ -344,9 +449,16 @@ private fun ReaderViewport(
                         findMatches = state.findMatches,
                         activeFindIndex = state.findIndex,
                         findQuery = state.findQuery,
+                        highlights = state.highlights,
+                        selection = state.selection,
+                        selectedHighlightId = state.selectedHighlightId,
+                        highlightColor = state.highlightColor,
                         onZoom = viewModel::setZoom,
                         onPan = viewModel::updatePan,
                         onPageTap = onPageTap,
+                        onAnnotationTap = { x, y -> onTapAnnotation(page, x, y) },
+                        onLongPressText = { x, y -> onLongPressText(page, x, y) },
+                        onSelectionHandleDrag = onSelectionHandleDrag,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -407,9 +519,16 @@ private fun HorizontalReaderPager(
                 findMatches = state.findMatches,
                 activeFindIndex = state.findIndex,
                 findQuery = state.findQuery,
+                highlights = state.highlights,
+                selection = state.selection,
+                selectedHighlightId = state.selectedHighlightId,
+                highlightColor = state.highlightColor,
                 onZoom = viewModel::setZoom,
                 onPan = viewModel::updatePan,
                 onPageTap = onPageTap,
+                onAnnotationTap = { x, y -> viewModel.tapPage(page, x, y) },
+                onLongPressText = { x, y -> viewModel.selectTextAt(page, x, y) },
+                onSelectionHandleDrag = viewModel::moveSelectionHandle,
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -428,9 +547,16 @@ private fun PdfPageSlot(
     findMatches: List<ReaderFindMatch>,
     activeFindIndex: Int,
     findQuery: String,
+    highlights: List<app.leaf.reader.core.model.Highlight>,
+    selection: ReaderSelection?,
+    selectedHighlightId: String?,
+    highlightColor: app.leaf.reader.core.model.HighlightColor,
     onZoom: (Float) -> Unit,
     onPan: (Float, Float) -> Unit,
     onPageTap: () -> Unit,
+    onAnnotationTap: (Float, Float) -> Unit,
+    onLongPressText: (Float, Float) -> Unit,
+    onSelectionHandleDrag: (Boolean, Float, Float) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var metrics by remember(engine, pageIndex) { mutableStateOf<PageMetrics?>(null) }
@@ -476,9 +602,16 @@ private fun PdfPageSlot(
                 findMatches = findMatches,
                 activeFindIndex = activeFindIndex,
                 findQuery = findQuery,
+                highlights = highlights,
+                selection = selection,
+                selectedHighlightId = selectedHighlightId,
+                highlightColor = highlightColor,
                 onZoom = onZoom,
                 onPan = onPan,
                 onPageTap = onPageTap,
+                onAnnotationTap = onAnnotationTap,
+                onLongPressText = onLongPressText,
+                onSelectionHandleDrag = onSelectionHandleDrag,
                 modifier = Modifier.width(pageWidth).height(pageHeight).align(Alignment.Center)
             )
         }
@@ -501,9 +634,16 @@ private fun PdfPageCanvas(
     findMatches: List<ReaderFindMatch>,
     activeFindIndex: Int,
     findQuery: String,
+    highlights: List<app.leaf.reader.core.model.Highlight>,
+    selection: ReaderSelection?,
+    selectedHighlightId: String?,
+    highlightColor: app.leaf.reader.core.model.HighlightColor,
     onZoom: (Float) -> Unit,
     onPan: (Float, Float) -> Unit,
     onPageTap: () -> Unit,
+    onAnnotationTap: (Float, Float) -> Unit,
+    onLongPressText: (Float, Float) -> Unit,
+    onSelectionHandleDrag: (Boolean, Float, Float) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val density = LocalDensity.current
@@ -588,10 +728,18 @@ private fun PdfPageCanvas(
             .onGloballyPositioned { pageBounds = it.boundsInWindow() }
             .clip(RoundedCornerShape(16.dp))
             .background(androidx.compose.ui.graphics.Color.White)
-            .pointerInput(transformState, zoom) {
+            .pointerInput(transformState, zoom, panOffset, baseWidthPx, baseHeightPx) {
                 detectTapGestures(
                     onDoubleTap = { onZoom(if (zoom < 1.05f) 1.6f else 1f) },
-                    onTap = { onPageTap() }
+                    onTap = { position ->
+                        val point = normalizedPagePoint(position, baseWidthPx, baseHeightPx, zoom, panOffset)
+                        onPageTap()
+                        onAnnotationTap(point.x, point.y)
+                    },
+                    onLongPress = { position ->
+                        val point = normalizedPagePoint(position, baseWidthPx, baseHeightPx, zoom, panOffset)
+                        onLongPressText(point.x, point.y)
+                    }
                 )
             }
             .pointerInput(zoom) {
@@ -651,6 +799,14 @@ private fun PdfPageCanvas(
                 matches = findMatches,
                 activeIndex = activeFindIndex,
                 query = findQuery
+            )
+            AnnotationOverlay(
+                pageIndex = pageIndex,
+                highlights = highlights,
+                selection = selection,
+                selectedHighlightId = selectedHighlightId,
+                highlightColor = highlightColor,
+                onHandleDrag = onSelectionHandleDrag
             )
         }
         if ((previewError && preview == null) || tileError) {
@@ -714,6 +870,21 @@ private fun FindMatchOverlay(
     }
 }
 
+private fun normalizedPagePoint(
+    position: Offset,
+    baseWidth: Float,
+    baseHeight: Float,
+    zoom: Float,
+    pan: Offset
+): Offset {
+    val contentLeft = (baseWidth - baseWidth * zoom) / 2f + pan.x
+    val contentTop = (baseHeight - baseHeight * zoom) / 2f + pan.y
+    return Offset(
+        ((position.x - contentLeft) / (baseWidth * zoom).coerceAtLeast(1f)).coerceIn(0f, 1f),
+        ((position.y - contentTop) / (baseHeight * zoom).coerceAtLeast(1f)).coerceIn(0f, 1f)
+    )
+}
+
 private fun visiblePageRegion(
     pageBounds: Rect?,
     viewportBounds: Rect?,
@@ -748,6 +919,7 @@ private fun ReaderFooter(
     state: ReaderContentState,
     palette: ReadingPalette,
     onJump: () -> Unit,
+    onToggleBookmark: () -> Unit,
     onWake: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -797,53 +969,22 @@ private fun ReaderFooter(
             style = LeafType.supporting,
             color = palette.text
         )
-    }
-}
-
-@Composable
-private fun ReaderToolbar(
-    state: ReaderContentState,
-    onLayout: () -> Unit,
-    onFind: () -> Unit,
-    onZoom: (Int) -> Unit,
-    onFullScreen: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    BoxWithConstraints(
-        modifier = modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainer).padding(horizontal = 10.dp, vertical = 4.dp)
-    ) {
-        val showZoom = maxWidth >= 380.dp
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            ReaderControl(R.drawable.ic_nav_search, stringResource(R.string.reader_find_hint), onFind)
-            ReaderControl(R.drawable.ic_view_layout, stringResource(R.string.reader_view_layout_title), onLayout)
-            Spacer(Modifier.weight(1f))
-            if (showZoom) {
-                ReaderControl(R.drawable.ic_zoom_out, stringResource(R.string.reader_zoom_out), { onZoom(-1) })
-                Text(
-                    stringResource(R.string.reader_zoom_value, (state.zoom * 100).roundToInt()),
-                    style = LeafType.supporting,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                )
-                ReaderControl(R.drawable.ic_zoom_in, stringResource(R.string.reader_zoom_in), { onZoom(1) })
-            }
-            Spacer(Modifier.weight(1f))
-            ReaderControl(
-                if (state.isFullScreen) R.drawable.ic_fullscreen_exit else R.drawable.ic_fullscreen,
-                stringResource(if (state.isFullScreen) R.string.reader_exit_fullscreen else R.string.reader_fullscreen),
-                onFullScreen
+        IconButton(onClick = onToggleBookmark, modifier = Modifier.size(40.dp)) {
+            Icon(
+                painter = painterResource(if (state.isCurrentPageBookmarked) R.drawable.ic_bookmark_filled else R.drawable.ic_bookmark),
+                contentDescription = stringResource(
+                    if (state.isCurrentPageBookmarked) R.string.reader_bookmark_remove
+                    else R.string.reader_bookmark_add
+                ),
+                tint = if (state.isCurrentPageBookmarked) MaterialTheme.colorScheme.primary else palette.textMuted,
+                modifier = Modifier.size(18.dp)
             )
         }
-    }
-}
-
-@Composable
-private fun ReaderControl(icon: Int, description: String, onClick: () -> Unit) {
-    IconButton(onClick = onClick, modifier = Modifier.size(48.dp)) {
-        Icon(painterResource(icon), contentDescription = description, modifier = Modifier.size(20.dp))
+        Text(
+            text = quantityText(R.plurals.n_bookmarks, state.bookmarks.size),
+            style = LeafType.chipLabel,
+            color = palette.textMuted,
+            maxLines = 1
+        )
     }
 }

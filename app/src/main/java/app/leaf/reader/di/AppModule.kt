@@ -7,11 +7,13 @@ import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room.Room
 import app.leaf.reader.core.data.db.DatabaseSeeder
 import app.leaf.reader.core.data.db.LeafDatabase
+import app.leaf.reader.core.data.repo.AnnotationRepository
 import app.leaf.reader.core.data.repo.PdfIntakeHandler
 import app.leaf.reader.core.data.repo.ReaderRepository
 import app.leaf.reader.core.format.DocumentEngineFactory
 import app.leaf.reader.core.format.PdfBitmapCache
 import app.leaf.reader.core.format.PdfDocumentEngineFactory
+import app.leaf.reader.core.data.prefs.ReaderTabsStore
 import app.leaf.reader.core.data.prefs.SettingsStore
 import app.leaf.reader.core.data.repo.DocumentRepository
 import app.leaf.reader.core.data.repo.FolderRepository
@@ -21,6 +23,7 @@ import app.leaf.reader.core.data.repo.SmartCollectionRepository
 import app.leaf.reader.core.data.repo.TagRepository
 import app.leaf.reader.core.util.LeafClock
 import app.leaf.reader.feature.reader.ReaderViewModel
+import app.leaf.reader.feature.reader.ReaderTabsViewModel
 import app.leaf.reader.feature.search.SearchViewModel
 import app.leaf.reader.core.util.SystemLeafClock
 import app.leaf.reader.feature.library.LibraryViewModel
@@ -56,6 +59,7 @@ val appModule = module {
     singleOf(::SmartCollectionRepository)
     singleOf(::RecentRepository)
     singleOf(::ReaderRepository)
+    singleOf(::AnnotationRepository)
     singleOf(::SearchRepository)
     single { PdfIntakeHandler(androidContext(), get(), get(), get(), get()) }
     single { PdfBitmapCache() }
@@ -67,12 +71,14 @@ val appModule = module {
         }
     }
     singleOf(::SettingsStore)
+    singleOf(::ReaderTabsStore)
     singleOf(::DatabaseSeeder)
     single<LeafClock> { SystemLeafClock }
 
     // AndroidViewModel: the application is needed for the resource strings the
     // snackbars, subtitles and headers are built from (§1.10).
     viewModel { LibraryViewModel(androidApplication(), get(), get(), get(), get(), get(), get()) }
-    viewModel { ReaderViewModel(androidApplication(), get(), get(), get(), get()) }
+    viewModel { ReaderViewModel(androidApplication(), get(), get(), get(), get(), get(), get()) }
+    viewModel { ReaderTabsViewModel(androidApplication(), get(), get(), get(), get()) }
     viewModel { SearchViewModel(androidApplication(), get(), get(), get()) }
 }

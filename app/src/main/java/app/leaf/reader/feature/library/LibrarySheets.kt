@@ -147,8 +147,7 @@ private fun SortFieldRow(
 /**
  * §6.7 long-press actions.
  *
- * M3 adds the live PDF Open action. Open-in-new-tab and Share stay out of the sheet until
- * their planned milestones; non-PDF Open is omitted until its M6 engine exists.
+ * PDF actions are live for M5. Share and non-PDF opening remain in their later milestone.
  */
 @Composable
 fun ActionsSheetContent(
@@ -164,6 +163,12 @@ fun ActionsSheetContent(
                 title = stringResource(R.string.action_open),
                 subtitle = stringResource(R.string.action_open_sub, doc.page + 1),
                 onClick = { onAction(DocumentAction.Open(doc.id)) }
+            )
+            LeafSheetItem(
+                icon = R.drawable.ic_tab_new,
+                title = stringResource(R.string.action_open_new_tab),
+                subtitle = stringResource(R.string.action_open_new_tab_sub),
+                onClick = { onAction(DocumentAction.OpenInNewTab(doc.id)) }
             )
         }
         LeafSheetItem(

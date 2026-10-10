@@ -10,11 +10,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -23,6 +26,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -54,6 +58,8 @@ import app.leaf.reader.core.ui.components.LeafTopAppBar
 import app.leaf.reader.core.ui.components.TagDot
 import app.leaf.reader.core.ui.components.swatchColor
 import app.leaf.reader.core.ui.theme.LeafSpacing
+import app.leaf.reader.core.ui.theme.LeafType
+import app.leaf.reader.feature.reader.OpenTabsButton
 import app.leaf.reader.core.ui.util.groupTitle
 import app.leaf.reader.core.ui.util.quantityText
 import app.leaf.reader.core.ui.util.shortDate
@@ -81,9 +87,19 @@ fun LibraryContent(
     handlers: LibraryHandlers,
     modifier: Modifier = Modifier,
     /** 1 column on compact, 2 on medium, 3 on expanded (§5). Group cards cap at 2. */
-    columns: Int = 1
+    columns: Int = 1,
+    openTabCount: Int = 0,
+    onOpenDocuments: () -> Unit = {},
+    pickingNewTab: Boolean = false,
+    tabsInUse: Int = 0,
+    tabLimit: Int = 6,
+    onCancelPickingNewTab: () -> Unit = {},
+    onOpenNewTab: (String) -> Unit = {}
 ) {
     val listState = rememberLazyListState()
+    LaunchedEffect(pickingNewTab) {
+        if (pickingNewTab) listState.animateScrollToItem(0)
+    }
     val scrolled by remember(listState) {
         derivedStateOf { listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 8 }
     }
@@ -98,6 +114,7 @@ fun LibraryContent(
                 showBrand = true,
                 scrolled = scrolled,
                 actions = {
+                    OpenTabsButton(count = openTabCount, onClick = onOpenDocuments)
                     LeafIconButton(
                         icon = R.drawable.ic_folder,
                         contentDescription = stringResource(R.string.action_folders),
@@ -116,6 +133,17 @@ fun LibraryContent(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(LeafSpacing.listGap)
             ) {
+                if (pickingNewTab) {
+                    item(key = "pick-new-tab-banner") {
+                        PickDocumentBanner(
+                            tabsInUse = tabsInUse,
+                            tabLimit = tabLimit,
+                            onCancel = onCancelPickingNewTab,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+
                 // The three rails describe the filter, so they have nothing to say on the
                 // overview — there, the cards *are* the navigation (§6.1).
                 if (!view.showGroups) {
@@ -208,11 +236,16 @@ fun LibraryContent(
                             onStar = { handlers.onStar(doc.id) },
                             onLongPress = { handlers.onRowLongPress(doc.id) },
                             onTap = if (doc.document.type == DocType.PDF) {
-                                { handlers.onOpenDocument(doc.id) }
+                                if (pickingNewTab) {
+                                    { onOpenNewTab(doc.id) }
+                                } else {
+                                    { handlers.onOpenDocument(doc.id) }
+                                }
                             } else {
                                 null
                             },
-                            modifier = Modifier.padding(horizontal = 12.dp)
+                            modifier = Modifier.padding(horizontal = 12.dp),
+                            pickingNewTab = pickingNewTab
                         )
                     }
                 }
@@ -224,13 +257,15 @@ fun LibraryContent(
             }
         }
 
-        LeafFab(
-            label = stringResource(R.string.fab_new_folder),
-            onClick = handlers.onNewFolder,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-        )
+        if (!pickingNewTab) {
+            LeafFab(
+                label = stringResource(R.string.fab_new_folder),
+                onClick = handlers.onNewFolder,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+            )
+        }
 
         state.message?.let { message ->
             // Keyed on the message id so posting the same text twice restarts the timer.
@@ -259,17 +294,36 @@ fun LibraryScreen(
     onOpenDocument: (String) -> Unit,
     viewModel: LibraryViewModel = koinViewModel(),
     /** 1 column on compact, 2 on medium, 3 on expanded (§5). */
-    columns: Int = 1
+    columns: Int = 1,
+    openTabCount: Int = 0,
+    onOpenDocuments: () -> Unit = {},
+    pickingNewTab: Boolean = false,
+    tabsInUse: Int = 0,
+    tabLimit: Int = 6,
+    onCancelPickingNewTab: () -> Unit = {},
+    onOpenNewTab: (String) -> Unit = {}
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    LaunchedEffect(viewModel, onOpenDocument) {
+    LaunchedEffect(viewModel, onOpenDocument, onOpenNewTab) {
         viewModel.events.collect { event ->
             when (event) {
                 is LibraryEvent.OpenDocument -> onOpenDocument(event.documentId)
+                is LibraryEvent.OpenNewTab -> onOpenNewTab(event.documentId)
             }
         }
     }
-    LibraryContent(state = state, handlers = viewModel.handlers, columns = columns)
+    LibraryContent(
+        state = state,
+        handlers = viewModel.handlers,
+        columns = columns,
+        openTabCount = openTabCount,
+        onOpenDocuments = onOpenDocuments,
+        pickingNewTab = pickingNewTab,
+        tabsInUse = tabsInUse,
+        tabLimit = tabLimit,
+        onCancelPickingNewTab = onCancelPickingNewTab,
+        onOpenNewTab = onOpenNewTab
+    )
 }
 
 // ── the three filter rails ──────────────────────────────────────────────────────

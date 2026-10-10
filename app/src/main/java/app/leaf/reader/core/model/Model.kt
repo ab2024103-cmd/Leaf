@@ -147,5 +147,18 @@ data class ReaderTab(
     val page: Int,
     val zoom: Float,
     val scrollDir: ScrollDir,
-    val findQuery: String?
+    val findQuery: String?,
+    val scrollFraction: Float = 0f,
+    val readingTheme: ReadingTheme = ReadingTheme.PAPER,
+    val panX: Float = 0f,
+    val panY: Float = 0f
 )
+
+/** Ordered, process-persistent reader tabs; exactly one tab is active when non-empty. */
+data class ReaderTabsState(
+    val tabs: List<ReaderTab> = emptyList(),
+    val activeDocId: String? = null
+) {
+    val activeTab: ReaderTab?
+        get() = tabs.firstOrNull { it.docId == activeDocId }
+}

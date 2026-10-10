@@ -178,6 +178,8 @@ sealed interface TagAction {
 sealed interface DocumentAction {
     data class Open(val id: String) : DocumentAction
 
+    data class OpenInNewTab(val id: String) : DocumentAction
+
     data class Rename(val id: String) : DocumentAction
 
     data class Favorite(val id: String) : DocumentAction
@@ -209,6 +211,7 @@ sealed interface RuleChoice {
 /** The screen's whole event surface: one lambda per user action, none optional. */
 sealed interface LibraryEvent {
     data class OpenDocument(val documentId: String) : LibraryEvent
+    data class OpenNewTab(val documentId: String) : LibraryEvent
 }
 
 data class LibraryHandlers(

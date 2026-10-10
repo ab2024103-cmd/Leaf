@@ -41,7 +41,14 @@ fun ReaderSheetHost(
     onDirection: (ScrollDir) -> Unit,
     onTheme: (ReadingTheme) -> Unit,
     onZoom: (Float) -> Unit,
-    onFullScreen: () -> Unit
+    onFullScreen: () -> Unit,
+    onAddCurrentBookmark: () -> Unit,
+    onJumpBookmark: (app.leaf.reader.core.model.Bookmark) -> Unit,
+    onDeleteBookmark: (String) -> Unit,
+    onJumpHighlight: (app.leaf.reader.core.model.Highlight) -> Unit,
+    onDeleteHighlight: (String) -> Unit,
+    onRequestClearAllHighlights: () -> Unit,
+    onClearAllHighlights: () -> Unit
 ) {
     when (state.sheet) {
         ReaderSheet.NONE -> Unit
@@ -62,6 +69,31 @@ fun ReaderSheetHost(
                 onFullScreen = onFullScreen
             )
         }
+        ReaderSheet.BOOKMARKS -> LeafSheetOverlay(onDismiss = onDismiss) {
+            BookmarksSheet(
+                bookmarks = state.bookmarks,
+                currentPage = state.pageIndex,
+                pageCount = state.pageCount,
+                onAddCurrentPage = onAddCurrentBookmark,
+                onJump = onJumpBookmark,
+                onDelete = onDeleteBookmark
+            )
+        }
+        ReaderSheet.HIGHLIGHTS -> LeafSheetOverlay(onDismiss = onDismiss) {
+            HighlightsSheet(
+                highlights = state.highlights,
+                onJump = onJumpHighlight,
+                onDelete = onDeleteHighlight,
+                onClearAll = onRequestClearAllHighlights
+            )
+        }
+        ReaderSheet.CONFIRM_CLEAR_HIGHLIGHTS -> app.leaf.reader.core.ui.components.LeafConfirmDialogOverlay(
+            title = stringResource(R.string.reader_clear_highlights_title),
+            body = stringResource(R.string.reader_clear_highlights_body),
+            confirmLabel = stringResource(R.string.action_delete),
+            onConfirm = { onClearAllHighlights(); onDismiss() },
+            onDismiss = onDismiss
+        )
     }
 }
 
