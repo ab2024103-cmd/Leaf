@@ -115,6 +115,8 @@ class ReaderViewModel(
                 activeEngine = engine
                 val pageCount = engine.pageCount
                 if (document.pageCount != pageCount) repository.updatePageCount(documentId, pageCount)
+                val savedBookmarks = annotations.bookmarks(documentId)
+                val savedHighlights = annotations.highlights(documentId)
                 val page = initialPage?.coerceIn(0, pageCount - 1)
                     ?: tab.page.coerceIn(0, pageCount - 1)
                 val initialQuery = initialFindQuery?.takeIf(String::isNotBlank)
@@ -131,6 +133,8 @@ class ReaderViewModel(
                     readingTheme = tab.readingTheme,
                     panX = tab.panX,
                     panY = tab.panY,
+                    bookmarks = savedBookmarks,
+                    highlights = savedHighlights,
                     highlightColor = prefs.highlightColor,
                     warning = if (pageCount > MAX_PAGES) getApplication<Application>().getString(R.string.reader_warning_page_limit) else null,
                     findBarVisible = initialQuery.isNotEmpty(),
