@@ -115,6 +115,7 @@ class ReaderViewModelTest {
                 .allowMainThreadQueries()
                 .build()
             repository = readerRepository(database)
+            annotationRepository = AnnotationRepository(database.bookmarkDao(), database.highlightDao())
             val reopenedViewModel = ReaderViewModel(application, repository, annotationRepository, tabsStore, settings, factory, clock)
             reopenedViewModel.openDocument("d1")
             val restored = withTimeout(10_000) { reopenedViewModel.state.first { it.document?.id == "d1" } }
