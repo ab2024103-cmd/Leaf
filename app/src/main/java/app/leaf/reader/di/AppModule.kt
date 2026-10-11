@@ -8,11 +8,11 @@ import androidx.room.Room
 import app.leaf.reader.core.data.db.DatabaseSeeder
 import app.leaf.reader.core.data.db.LeafDatabase
 import app.leaf.reader.core.data.repo.AnnotationRepository
-import app.leaf.reader.core.data.repo.PdfIntakeHandler
+import app.leaf.reader.core.data.repo.DocumentIntakeHandler
 import app.leaf.reader.core.data.repo.ReaderRepository
 import app.leaf.reader.core.format.DocumentEngineFactory
 import app.leaf.reader.core.format.PdfBitmapCache
-import app.leaf.reader.core.format.PdfDocumentEngineFactory
+import app.leaf.reader.core.format.MultiFormatDocumentEngineFactory
 import app.leaf.reader.core.data.prefs.ReaderTabsStore
 import app.leaf.reader.core.data.prefs.SettingsStore
 import app.leaf.reader.core.data.repo.DocumentRepository
@@ -61,9 +61,9 @@ val appModule = module {
     singleOf(::ReaderRepository)
     singleOf(::AnnotationRepository)
     singleOf(::SearchRepository)
-    single { PdfIntakeHandler(androidContext(), get(), get(), get(), get()) }
+    single { DocumentIntakeHandler(androidContext(), get(), get(), get(), get()) }
     single { PdfBitmapCache() }
-    single<DocumentEngineFactory> { PdfDocumentEngineFactory(androidContext(), get()) }
+    single<DocumentEngineFactory> { MultiFormatDocumentEngineFactory(androidContext(), get()) }
 
     single<DataStore<Preferences>> {
         PreferenceDataStoreFactory.create {

@@ -54,8 +54,19 @@ class ReaderRepository(
         recents.keepNewest(60)
     }
 
-    suspend fun registerPdf(uri: String, name: String, sizeBytes: Long, pageCount: Int, now: Long): String {
-        val id = "pdf-${UUID.nameUUIDFromBytes(uri.toByteArray(Charsets.UTF_8))}"
+    suspend fun registerPdf(uri: String, name: String, sizeBytes: Long, pageCount: Int, now: Long): String =
+        registerDocument(uri, name, DocType.PDF, sizeBytes, pageCount, now)
+
+    suspend fun registerDocument(
+        uri: String,
+        name: String,
+        type: DocType,
+        sizeBytes: Long,
+        pageCount: Int,
+        now: Long
+    ): String {
+        val prefix = type.label.lowercase()
+        val id = "$prefix-${UUID.nameUUIDFromBytes(uri.toByteArray(Charsets.UTF_8))}"
         val existing = documents.get(id)
         if (existing == null) {
             documents.insert(
@@ -63,7 +74,7 @@ class ReaderRepository(
                     id = id,
                     name = name,
                     uri = uri,
-                    type = DocType.PDF,
+                    type = type,
                     sizeBytes = sizeBytes.coerceAtLeast(0L),
                     pageCount = pageCount,
                     dateAdded = now,
@@ -86,7 +97,11 @@ class ReaderRepository(
 
     suspend fun cachedText(id: String): List<ExtractedTextEntity> = extractedText.pagesForDocument(id)
 
+    suspend fun cachedPageText(id: String, pageIndex: Int): String? =
+        extractedText.page(id, pageIndex)?.text
+
     suspend fun cacheText(id: String, pages: List<String>) {
+        extractedText.clearForDocument(id)
         extractedText.insertAll(pages.mapIndexed { index, text -> ExtractedTextEntity(id, index, text) })
     }
 

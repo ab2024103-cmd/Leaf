@@ -144,33 +144,28 @@ private fun SortFieldRow(
 
 // ── long-press actions ───────────────────────────────────────────────────────────
 
-/**
- * §6.7 long-press actions.
- *
- * PDF actions are live for M5. Share and non-PDF opening remain in their later milestone.
- */
+/** §6.7 long-press actions for every format handled by the shared reader. */
 @Composable
 fun ActionsSheetContent(
     doc: LibraryDoc,
     summary: String,
     onAction: (DocumentAction) -> Unit,
+    onShare: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     LeafSheetSurface(title = doc.document.name, subtitle = summary, modifier = modifier) {
-        if (doc.document.type == DocType.PDF) {
-            LeafSheetItem(
-                icon = R.drawable.ic_document,
-                title = stringResource(R.string.action_open),
-                subtitle = stringResource(R.string.action_open_sub, doc.page + 1),
-                onClick = { onAction(DocumentAction.Open(doc.id)) }
-            )
-            LeafSheetItem(
-                icon = R.drawable.ic_tab_new,
-                title = stringResource(R.string.action_open_new_tab),
-                subtitle = stringResource(R.string.action_open_new_tab_sub),
-                onClick = { onAction(DocumentAction.OpenInNewTab(doc.id)) }
-            )
-        }
+        LeafSheetItem(
+            icon = R.drawable.ic_document,
+            title = stringResource(R.string.action_open),
+            subtitle = stringResource(R.string.action_open_sub, doc.page + 1),
+            onClick = { onAction(DocumentAction.Open(doc.id)) }
+        )
+        LeafSheetItem(
+            icon = R.drawable.ic_tab_new,
+            title = stringResource(R.string.action_open_new_tab),
+            subtitle = stringResource(R.string.action_open_new_tab_sub),
+            onClick = { onAction(DocumentAction.OpenInNewTab(doc.id)) }
+        )
         LeafSheetItem(
             icon = R.drawable.ic_rename,
             title = stringResource(R.string.action_rename),
@@ -202,6 +197,11 @@ fun ActionsSheetContent(
             icon = R.drawable.ic_folder,
             title = stringResource(R.string.action_move_to_folder),
             onClick = { onAction(DocumentAction.Move(doc.id)) }
+        )
+        LeafSheetItem(
+            icon = R.drawable.ic_share,
+            title = stringResource(R.string.action_share),
+            onClick = onShare
         )
         LeafSheetItem(
             icon = R.drawable.ic_info,

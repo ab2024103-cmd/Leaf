@@ -8,11 +8,15 @@ import kotlin.math.min
 /** Geometry-backed word used by the pragmatic PDF selection layer (§7.4). */
 data class SelectableWord(
     val text: String,
-    val bounds: List<NormalizedRect>
+    val bounds: List<NormalizedRect>,
+    val startOffset: Int = 0,
+    /** Exclusive end offset in the page's newline-joined source text. */
+    val endOffset: Int = 0
 )
 
 fun List<TextRun>.selectableWords(): List<SelectableWord> = buildList {
-    this@selectableWords.forEach { run ->
+    var offset = 0
+    this@selectableWords.forEachIndexed { runIndex, run ->
         val ranges = wordRanges(run.text)
         ranges.forEach { range ->
             val glyphBounds = run.characterBounds
@@ -25,8 +29,17 @@ fun List<TextRun>.selectableWords(): List<SelectableWord> = buildList {
             } else {
                 estimateWordBounds(run, range.first, range.last + 1)
             }
-            if (wordBounds.isNotEmpty()) add(SelectableWord(run.text.substring(range), wordBounds))
+            add(
+                SelectableWord(
+                    text = run.text.substring(range),
+                    bounds = wordBounds,
+                    startOffset = offset + range.first,
+                    endOffset = offset + range.last + 1
+                )
+            )
         }
+        offset += run.text.length
+        if (runIndex < lastIndex) offset++ // pageText joins TextRuns with a newline.
     }
 }
 

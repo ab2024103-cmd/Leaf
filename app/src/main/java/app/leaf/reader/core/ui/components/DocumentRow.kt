@@ -63,7 +63,7 @@ data class RowMeta(
  * padding, a 40 × 48 dp file icon, then name · meta · tags · progress · star.
  *
  * Long-press (470 ms) opens the actions sheet with a pressed state and a haptic (§8.9).
- * PDF taps open the M3 reader; unsupported formats have no dead click target until M6.
+ * Supported format taps open the shared reader; unsupported formats stay non-tappable.
  */
 @Composable
 fun LeafDocumentRow(

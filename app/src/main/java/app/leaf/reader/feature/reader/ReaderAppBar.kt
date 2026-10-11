@@ -41,7 +41,8 @@ internal fun ReaderAppBar(
     onHighlights: () -> Unit,
     onJump: () -> Unit,
     onPickNewDocument: () -> Unit,
-    onClearPageHighlights: () -> Unit
+    onClearPageHighlights: () -> Unit,
+    onShare: () -> Unit
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     Row(
@@ -68,8 +69,11 @@ internal fun ReaderAppBar(
                 text = stringResource(
                     R.string.reader_subtitle,
                     state.pageCount,
-                    if (state.scrollDir == ScrollDir.VERTICAL) stringResource(R.string.reader_vertical_lower)
-                    else stringResource(R.string.reader_horizontal_lower)
+                    state.document?.type?.label.orEmpty(),
+                    if (state.reflow || state.scrollDir == ScrollDir.VERTICAL) stringResource(R.string.reader_vertical_lower)
+                    else stringResource(R.string.reader_horizontal_lower),
+                    if (state.reflow) stringResource(R.string.reader_reflow_suffix) else "",
+                    if (state.isCurrentPageBookmarked) stringResource(R.string.reader_bookmarked_suffix) else ""
                 ),
                 style = LeafType.listMeta,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -98,6 +102,10 @@ internal fun ReaderAppBar(
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.action_open_new_tab)) },
                     onClick = { menuExpanded = false; onPickNewDocument() }
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.action_share)) },
+                    onClick = { menuExpanded = false; onShare() }
                 )
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.reader_view_layout_title)) },

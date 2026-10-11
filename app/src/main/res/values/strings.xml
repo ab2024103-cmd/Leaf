@@ -188,6 +188,7 @@
     <string name="action_no_tags">No tags yet</string>
     <string name="action_move_to_folder">Move to folder</string>
     <string name="action_share">Share</string>
+    <string name="action_copy">Copy</string>
     <string name="action_file_info">File info</string>
     <string name="action_file_info_sub">Size, dates, page count, highlights</string>
     <string name="action_delete_document">Delete document</string>
@@ -402,10 +403,12 @@
     <string name="settings_about_seed">Seed #2B7A5B · targets Android 6.0 (API 23) → latest · phone, foldable &amp; tablet layouts</string>
     <!-- Reader core (M3) -->
     <string name="reader_loading">Opening PDF…</string>
-    <string name="reader_error_title">This PDF could not be opened</string>
+    <string name="reader_error_title">This document could not be opened</string>
     <string name="reader_page_render_error">This page could not be rendered</string>
     <string name="reader_back_to_library">Back to library</string>
-    <string name="reader_subtitle">%1$d pages · PDF · %2$s</string>
+    <string name="reader_subtitle">%1$d pages · %2$s · %3$s%4$s%5$s</string>
+    <string name="reader_reflow_suffix"> · reflow</string>
+    <string name="reader_bookmarked_suffix"> · bookmarked</string>
     <string name="reader_vertical_lower">vertical</string>
     <string name="reader_horizontal_lower">horizontal</string>
     <string name="reader_page_accessibility">Page %1$d</string>
@@ -480,7 +483,20 @@
     <string name="reader_error_missing_document">This document is no longer in the library</string>
     <string name="reader_error_pdf_only">Only PDF reading is available in this milestone</string>
     <string name="reader_error_empty_pdf">The PDF contains no readable pages</string>
-    <string name="reader_warning_page_limit">This PDF has over 2,000 pages; only visible pages are rendered.</string>
+    <string name="reader_error_empty_document">This document contains no readable pages</string>
+    <string name="reader_warning_page_limit">This document has over 2,000 pages; only visible pages are rendered.</string>
+    <string name="reader_reflow">Text reflow</string>
+    <string name="reader_typeface">Reading typeface</string>
+    <string name="reader_typeface_serif">Serif</string>
+    <string name="reader_typeface_sans">Sans</string>
+    <string name="reader_share_title">Share</string>
+    <string name="reader_share_document">Share document</string>
+    <string name="reader_share_page_image">Share page as image</string>
+    <string name="reader_share_selected_text">Share selected text</string>
+    <string name="reader_copy_file_path">Copy file path</string>
+    <string name="reader_copy_page_text">Copy page text</string>
+    <string name="reader_share_chooser">Share with</string>
+    <string name="reader_share_failed">Could not share this item</string>
 
     <string name="reader_more_actions">More reader actions</string>
     <string name="reader_bookmarks_title">Bookmarks</string>
@@ -540,6 +556,6 @@
     <string name="snack_redone">Redid %1$s</string>
     <string name="snack_copied">Copied to clipboard</string>
 
-    <string name="pdf_intake_missing">No PDF was included in that share.</string>
-    <string name="pdf_intake_failed">Leaf could not open this PDF.</string>
+    <string name="document_intake_missing">No document was included in that share.</string>
+    <string name="document_intake_failed">Leaf could not open this document.</string>
 </resources>

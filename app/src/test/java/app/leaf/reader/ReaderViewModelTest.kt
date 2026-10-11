@@ -35,6 +35,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -372,6 +373,88 @@ class ReaderViewModelTest {
         recents = database.recentDao(),
         extractedText = database.extractedTextDao()
     )
+
+    @Test
+    fun non_pdf_reader_uses_engine_text_instead_of_stale_seed_cache_for_reflow_and_find() = runBlocking {
+        Dispatchers.setMain(Dispatchers.Unconfined)
+        try {
+            DatabaseSeeder(database).seed(FIXED_NOW)
+            val staleSeedText = repository.cachedPageText("d4", 0)
+            assertTrue(!staleSeedText.isNullOrBlank())
+            val viewModel = ReaderViewModel(
+                application,
+                repository,
+                annotationRepository,
+                tabsStore,
+                settings,
+                DocumentEngineFactory { NativeTextReaderEngine() },
+                LeafClock { FIXED_NOW + 1 }
+            )
+            viewModel.openDocument("d4")
+            viewModel.state.first { it.document?.id == "d4" }
+
+            assertEquals("Fresh native text with stable anchors", viewModel.reflowPageText(0))
+            withTimeout(10_000) {
+                while (repository.cachedPageText("d4", 0) != "Fresh native text with stable anchors") {
+                    delay(10)
+                }
+            }
+            viewModel.setFindQuery("native text")
+            val found = withTimeout(10_000) {
+                viewModel.state.first { it.findQuery == "native text" && it.findMatches.isNotEmpty() }
+            }
+            assertEquals(0, found.findMatches.first().pageIndex)
+
+            viewModel.closeFindBar()
+            viewModel.updatePosition(1, 0.4f)
+            val closed = CompletableDeferred<Unit>()
+            viewModel.leaveReader { closed.complete(Unit) }
+            withTimeout(10_000) { closed.await() }
+
+            val reopenedViewModel = ReaderViewModel(
+                application,
+                repository,
+                annotationRepository,
+                tabsStore,
+                settings,
+                DocumentEngineFactory { NativeTextReaderEngine() },
+                LeafClock { FIXED_NOW + 2 }
+            )
+            reopenedViewModel.openDocument("d4")
+            val restored = withTimeout(10_000) {
+                reopenedViewModel.state.first { it.document?.id == "d4" && !it.isLoading }
+            }
+            assertEquals(1, restored.pageIndex)
+            assertEquals(0.4f, restored.scrollFraction, 0.01f)
+            val reopenedClosed = CompletableDeferred<Unit>()
+            reopenedViewModel.leaveReader { reopenedClosed.complete(Unit) }
+            withTimeout(10_000) { reopenedClosed.await() }
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    private class NativeTextReaderEngine : DocumentEngine {
+        private val pages = listOf(
+            listOf(TextRun("Fresh native text with stable anchors")),
+            listOf(TextRun("Second native page"))
+        )
+        override val pageCount: Int = pages.size
+        override suspend fun pageMetrics(pageIndex: Int) = PageMetrics(900, 1200)
+        override suspend fun renderPreview(pageIndex: Int, maxEdgePixels: Int): Bitmap = error("Not rendered in this test")
+        override suspend fun renderTile(pageIndex: Int, scale: Float, tile: RenderTile): Bitmap = error("Not rendered in this test")
+        override suspend fun pageText(pageIndex: Int): List<TextRun> = pages[pageIndex]
+        override suspend fun findInPage(pageIndex: Int, query: String): List<MatchRect> =
+            if (pages[pageIndex].any { it.text.contains(query, ignoreCase = true) }) {
+                listOf(MatchRect(query, listOf(NormalizedRect(0.1f, 0.1f, 0.8f, 0.2f))))
+            } else emptyList()
+        override suspend fun extractAllText(onProgress: suspend (Int, Int) -> Unit): List<List<TextRun>> =
+            pages.mapIndexed { index, runs ->
+                onProgress(index + 1, pages.size)
+                runs
+            }
+        override fun close() = Unit
+    }
 
     private class TestReaderEngine : DocumentEngine {
         override val pageCount: Int = 6

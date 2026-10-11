@@ -43,6 +43,7 @@ internal fun ReaderToolbar(
     onFind: () -> Unit,
     onZoom: (Int) -> Unit,
     onFullScreen: () -> Unit,
+    onShare: () -> Unit,
     onUndo: () -> Unit,
     onRedo: () -> Unit,
     onHighlightMenu: () -> Unit,
@@ -114,6 +115,7 @@ internal fun ReaderToolbar(
                 stringResource(if (state.isFullScreen) R.string.reader_exit_fullscreen else R.string.reader_fullscreen),
                 onFullScreen
             )
+            ReaderControl(R.drawable.ic_share, stringResource(R.string.action_share), onShare)
         }
     }
 }

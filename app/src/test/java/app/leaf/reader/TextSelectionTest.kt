@@ -42,6 +42,14 @@ class TextSelectionTest {
     }
 
     @Test
+    fun reflow_word_offsets_follow_newline_joined_page_text_across_runs() {
+        val words = listOf(TextRun("One two"), TextRun("three four")).selectableWords()
+
+        assertEquals(listOf("One", "two", "three", "four"), words.map { it.text })
+        assertEquals(listOf(0 to 3, 4 to 7, 8 to 13, 14 to 18), words.map { it.startOffset to it.endOffset })
+    }
+
+    @Test
     fun text_without_character_geometry_uses_a_normalized_line_estimate() {
         val words = listOf(
             TextRun("chapter notes", listOf(NormalizedRect(0.2f, 0.4f, 0.8f, 0.44f)))

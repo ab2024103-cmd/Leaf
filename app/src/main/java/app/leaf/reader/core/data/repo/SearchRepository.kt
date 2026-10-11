@@ -60,8 +60,7 @@ class SearchRepository(
         }
         val searchable = documentRows.map { row ->
             val document = row.toModel(tagsByDocument[row.id].orEmpty().sorted())
-            // The M4 reader opens PDFs only. Non-PDF demo records retain their seeded text
-            // for future format support, but are not offered as unopenable in-file hits.
+            // The approved M4 search boundary remains cached PDF text. Reader Find is format-neutral.
             val pages = if (document.type == DocType.PDF) pagesByDocument[row.id].orEmpty() else emptyList()
             SearchableDocument(document, pages)
         }

@@ -8,16 +8,21 @@ import app.leaf.reader.core.model.HighlightColor
 import app.leaf.reader.core.model.NormalizedRect
 import app.leaf.reader.core.model.ReadingTheme
 import app.leaf.reader.core.model.ScrollDir
+import app.leaf.reader.core.model.Typeface
 
 /** A sheet is present only while it has a live reader action. */
-enum class ReaderSheet { NONE, JUMP_TO_PAGE, VIEW_LAYOUT, BOOKMARKS, HIGHLIGHTS, CONFIRM_CLEAR_HIGHLIGHTS }
+enum class ReaderSheet { NONE, JUMP_TO_PAGE, VIEW_LAYOUT, BOOKMARKS, HIGHLIGHTS, SHARE, CONFIRM_CLEAR_HIGHLIGHTS }
 
 data class ReaderSelection(
     val pageIndex: Int,
     val text: String,
     val bounds: List<NormalizedRect>,
     val startWord: Int,
-    val endWord: Int
+    val endWord: Int,
+    /** Character offsets in the original page text; used for reflow highlights. */
+    val textRange: IntRange? = null,
+    /** Serialized Readium Locator for EPUB CFI/text-range highlights. */
+    val cfiRange: String? = null
 )
 
 data class ReaderSnackbarState(
@@ -43,6 +48,9 @@ data class ReaderContentState(
     val zoom: Float = 1f,
     val scrollDir: ScrollDir = ScrollDir.VERTICAL,
     val readingTheme: ReadingTheme = ReadingTheme.PAPER,
+    val typeface: Typeface = Typeface.SERIF,
+    val reflow: Boolean = false,
+    val pageLabel: String? = null,
     val panX: Float = 0f,
     val panY: Float = 0f,
     val isFullScreen: Boolean = false,

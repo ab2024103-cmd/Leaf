@@ -21,6 +21,7 @@ import app.leaf.reader.core.model.Progress
 import app.leaf.reader.core.model.ReaderTab
 import app.leaf.reader.core.model.ReadingTheme
 import app.leaf.reader.core.model.ScrollDir
+import app.leaf.reader.core.model.Typeface
 import app.leaf.reader.core.util.LeafClock
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
@@ -38,7 +39,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
-/** Reader orchestration: PDF lifecycle, Page Stay, tabs and persistent annotations. */
+/** Reader orchestration: document lifecycle, Page Stay, tabs and persistent annotations. */
 class ReaderViewModel(
     application: Application,
     private val repository: ReaderRepository,
@@ -56,6 +57,7 @@ class ReaderViewModel(
     private var progressJob: Job? = null
     private var extractionJob: Job? = null
     private var findJob: Job? = null
+    private var pageLabelJob: Job? = null
     private var annotationJob: Job? = null
     private var session = 0
     private val annotationMutationMutex = Mutex()
@@ -76,6 +78,7 @@ class ReaderViewModel(
         progressJob?.cancel()
         extractionJob?.cancel()
         findJob?.cancel()
+        pageLabelJob?.cancel()
         annotationJob?.cancel()
         activeEngine = null
         activeDocumentId = documentId
@@ -90,9 +93,6 @@ class ReaderViewModel(
                 previousEngine?.let { withContext(Dispatchers.IO) { it.close() } }
                 val document = repository.document(documentId)
                     ?: throw IllegalStateException(getApplication<Application>().getString(R.string.reader_error_missing_document))
-                if (document.type != DocType.PDF) {
-                    throw UnsupportedOperationException(getApplication<Application>().getString(R.string.reader_error_pdf_only))
-                }
                 val prefs = settings.current()
                 val stored = repository.progress(documentId)
                 val savedTab = tabs.current().tabs.firstOrNull { it.docId == documentId }
@@ -104,14 +104,14 @@ class ReaderViewModel(
                     tabs.activate(documentId)
                     savedTab
                 }
-                val engine = engines.open(document.uri)
+                val engine = engines.open(document.uri, document.type)
                 if (request != session) {
                     withContext(Dispatchers.IO) { engine.close() }
                     return@launch
                 }
                 if (engine.pageCount <= 0) {
                     withContext(Dispatchers.IO) { engine.close() }
-                    throw IllegalStateException(getApplication<Application>().getString(R.string.reader_error_empty_pdf))
+                    throw IllegalStateException(getApplication<Application>().getString(R.string.reader_error_empty_document))
                 }
                 activeEngine = engine
                 val pageCount = engine.pageCount
@@ -133,6 +133,9 @@ class ReaderViewModel(
                     zoom = tab.zoom.coerceIn(LeafSettings.ZOOM_MIN, LeafSettings.ZOOM_MAX),
                     scrollDir = tab.scrollDir,
                     readingTheme = tab.readingTheme,
+                    typeface = prefs.typeface,
+                    reflow = prefs.reflow,
+                    pageLabel = engine.pageLabel(page),
                     panX = tab.panX,
                     panY = tab.panY,
                     bookmarks = savedBookmarks,
@@ -149,7 +152,7 @@ class ReaderViewModel(
                 if (request != session) return@launch
                 refreshHistoryState(documentId)
                 observeAnnotations(documentId, engine, request)
-                extractTextIfNeeded(documentId, engine, pageCount, request)
+                extractTextIfNeeded(documentId, document.type, engine, pageCount, request)
                 schedulePersist(immediate = true)
                 if (initialQuery.isNotEmpty()) setFindQuery(initialQuery)
             } catch (error: Exception) {
@@ -201,7 +204,7 @@ class ReaderViewModel(
         request: Int
     ) {
         highlights.asSequence()
-            .filter { it.bounds.isEmpty() && it.text.isNotBlank() && it.id !in unresolvedHighlightIds }
+            .filter { it.bounds.isEmpty() && it.cfiRange.isNullOrBlank() && it.text.isNotBlank() && it.id !in unresolvedHighlightIds }
             .forEach { highlight ->
                 if (request != session) return
                 unresolvedHighlightIds += highlight.id
@@ -220,10 +223,16 @@ class ReaderViewModel(
             }
     }
 
-    private fun extractTextIfNeeded(documentId: String, engine: DocumentEngine, pageCount: Int, request: Int) {
+    private fun extractTextIfNeeded(
+        documentId: String,
+        type: DocType,
+        engine: DocumentEngine,
+        pageCount: Int,
+        request: Int
+    ) {
         extractionJob = viewModelScope.launch(Dispatchers.IO) {
-            val cached = repository.cachedText(documentId)
-            if (cached.size >= pageCount || request != session) return@launch
+            if (request != session) return@launch
+            if (type == DocType.PDF && repository.cachedText(documentId).size >= pageCount) return@launch
             mutableState.update { if (request == session) it.copy(textExtractionProgress = 0f) else it }
             try {
                 val pages = engine.extractAllText { completed, total ->
@@ -238,8 +247,11 @@ class ReaderViewModel(
             } catch (error: kotlinx.coroutines.CancellationException) {
                 throw error
             } catch (_: Exception) {
-                // Raster reading remains available for scanned, encrypted, or text-incompatible PDFs.
-                if (request == session) mutableState.update { it.copy(textExtractionProgress = null) }
+                // Page rendering remains available when a format's text extraction fails.
+                if (request == session) {
+                    if (type != DocType.PDF) repository.cacheText(documentId, emptyList())
+                    mutableState.update { it.copy(textExtractionProgress = null) }
+                }
             }
         }
     }
@@ -258,6 +270,7 @@ class ReaderViewModel(
                 }
             )
         }
+        if (safePage != current.pageIndex) refreshPageLabel(safePage)
         schedulePersist()
     }
 
@@ -268,13 +281,35 @@ class ReaderViewModel(
         mutableState.update {
             it.copy(
                 pageIndex = page,
+                pageLabel = null,
                 scrollFraction = 0f,
                 selection = null,
                 selectedHighlightId = null,
                 positionRequestId = it.positionRequestId + 1
             )
         }
+        refreshPageLabel(page)
         schedulePersist()
+    }
+
+    private fun refreshPageLabel(pageIndex: Int) {
+        val engine = activeEngine ?: return
+        val request = session
+        pageLabelJob?.cancel()
+        pageLabelJob = viewModelScope.launch {
+            val label = try {
+                withContext(Dispatchers.IO) { engine.pageLabel(pageIndex) }
+            } catch (error: kotlinx.coroutines.CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                null
+            }
+            if (request == session) {
+                mutableState.update { current ->
+                    if (current.pageIndex == pageIndex) current.copy(pageLabel = label) else current
+                }
+            }
+        }
     }
 
     fun toggleFindBar() {
@@ -297,7 +332,7 @@ class ReaderViewModel(
             if (request != session || current.findQuery != query) return@launch
 
             var pages = repository.cachedText(documentId)
-            if (pages.size < current.pageCount) {
+            if (current.document?.type != DocType.PDF || pages.size < current.pageCount) {
                 extractionJob?.join()
                 if (request != session) return@launch
                 pages = repository.cachedText(documentId)
@@ -338,6 +373,7 @@ class ReaderViewModel(
                     )
                 }
             }
+            found.firstOrNull()?.let { refreshPageLabel(it.pageIndex) }
             if (found.isNotEmpty()) schedulePersist(immediate = true)
         }
     }
@@ -370,6 +406,7 @@ class ReaderViewModel(
                 positionRequestId = it.positionRequestId + 1
             )
         }
+        refreshPageLabel(match.pageIndex)
         schedulePersist()
     }
 
@@ -400,6 +437,28 @@ class ReaderViewModel(
     fun setReadingTheme(theme: ReadingTheme) {
         mutableState.update { it.copy(readingTheme = theme) }
         schedulePersist(immediate = true)
+    }
+
+    fun setReflow(enabled: Boolean) {
+        mutableState.update { it.copy(reflow = enabled, selection = null, selectedHighlightId = null) }
+        viewModelScope.launch { settings.update { it.copy(reflow = enabled) } }
+    }
+
+    fun setTypeface(typeface: Typeface) {
+        mutableState.update { it.copy(typeface = typeface) }
+        viewModelScope.launch { settings.update { it.copy(typeface = typeface) } }
+    }
+
+    /** Returns native page text (or its persistent text index) for the reflow surface. */
+    suspend fun reflowPageText(pageIndex: Int): String {
+        val document = mutableState.value.document ?: return ""
+        val engine = activeEngine ?: return ""
+        if (document.type == DocType.PDF) {
+            repository.cachedPageText(document.id, pageIndex)?.let { return it }
+        }
+        return withContext(Dispatchers.IO) {
+            engine.pageText(pageIndex).joinToString("\n") { it.text }
+        }
     }
 
     /** Pan fractions are relative to the fit page, so Page Stay survives density changes. */
@@ -504,7 +563,9 @@ class ReaderViewModel(
         val documentId = activeDocumentId ?: return
         viewModelScope.launch {
             val engine = activeEngine
-            val resolvedBounds = if (engine != null && selection.text.isNotBlank()) {
+            val resolvedBounds = if (
+                engine != null && selection.text.isNotBlank() && selection.cfiRange.isNullOrBlank()
+            ) {
                 try {
                     withContext(Dispatchers.IO) {
                         val candidates = engine.findInPage(selection.pageIndex, selection.text)
@@ -525,8 +586,8 @@ class ReaderViewModel(
                 color = color,
                 text = selection.text,
                 bounds = resolvedBounds?.takeIf { it.isNotEmpty() } ?: selection.bounds,
-                textRange = null,
-                cfiRange = null,
+                textRange = selection.textRange,
+                cfiRange = selection.cfiRange,
                 createdAt = clock.nowMillis()
             )
             annotationMutationMutex.withLock {
@@ -635,12 +696,14 @@ class ReaderViewModel(
         mutableState.update {
             it.copy(
                 pageIndex = highlight.page.coerceIn(0, (it.pageCount - 1).coerceAtLeast(0)),
+                pageLabel = null,
                 scrollFraction = highlight.bounds.minOfOrNull(NormalizedRect::top) ?: 0f,
                 selection = null,
                 selectedHighlightId = highlight.id,
                 positionRequestId = it.positionRequestId + 1
             )
         }
+        refreshPageLabel(highlight.page.coerceIn(0, (mutableState.value.pageCount - 1).coerceAtLeast(0)))
         schedulePersist(immediate = true)
     }
 
@@ -650,8 +713,31 @@ class ReaderViewModel(
         }
     }
 
+    fun tapReflowText(pageIndex: Int, textOffset: Int) {
+        val highlight = mutableState.value.highlights.firstOrNull { item ->
+            item.page == pageIndex && item.textRange?.contains(textOffset) == true
+        }
+        if (highlight != null) setSelectedHighlight(highlight.id) else clearSelection()
+    }
+
     fun clearSelection() {
         mutableState.update { it.copy(selection = null, selectedHighlightId = null) }
+    }
+
+    fun setEpubSelection(selection: ReaderSelection) {
+        if (selection.pageIndex !in 0 until mutableState.value.pageCount) return
+        val previousPage = mutableState.value.pageIndex
+        selectionWordsPage = null
+        selectionWords = emptyList()
+        mutableState.update {
+            it.copy(
+                pageIndex = selection.pageIndex,
+                selection = selection,
+                selectedHighlightId = null,
+                highlightMenuExpanded = false
+            )
+        }
+        if (previousPage != selection.pageIndex) refreshPageLabel(selection.pageIndex)
     }
 
     fun selectTextAt(pageIndex: Int, normalizedX: Float, normalizedY: Float) {
@@ -678,10 +764,53 @@ class ReaderViewModel(
                 text = selectionText(selectionWords, index, index),
                 bounds = selectionBounds(selectionWords, index, index),
                 startWord = index,
-                endWord = index
+                endWord = index,
+                textRange = selectionWords[index].takeIf { it.endOffset > it.startOffset }
+                    ?.let { it.startOffset until it.endOffset }?.let { it.first..it.last }
             )
             mutableState.update {
                 it.copy(selection = selection, selectedHighlightId = null, highlightMenuExpanded = false)
+            }
+        }
+    }
+
+    fun selectTextRange(pageIndex: Int, startOffset: Int, endOffsetExclusive: Int) {
+        if (endOffsetExclusive <= startOffset) return
+        val request = session
+        viewModelScope.launch {
+            val engine = activeEngine ?: return@launch
+            val runs = try {
+                withContext(Dispatchers.IO) { engine.pageText(pageIndex) }
+            } catch (error: kotlinx.coroutines.CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                emptyList()
+            }
+            if (request != session) return@launch
+            val words = runs.selectableWords()
+            val first = words.indexOfFirst { it.endOffset > startOffset }
+            val last = words.indexOfLast { it.startOffset < endOffsetExclusive }
+            if (first < 0 || last < first) {
+                mutableState.update { it.copy(selection = null, selectedHighlightId = null) }
+                return@launch
+            }
+            selectionWordsPage = pageIndex
+            selectionWords = words
+            mutableState.update {
+                it.copy(
+                    selection = ReaderSelection(
+                        pageIndex = pageIndex,
+                        text = selectionText(words, first, last),
+                        bounds = selectionBounds(words, first, last),
+                        startWord = first,
+                        endWord = last,
+                        textRange = words.subList(first, last + 1)
+                            .let { selected -> selected.first().startOffset until selected.last().endOffset }
+                            .let { range -> range.first..range.last }
+                    ),
+                    selectedHighlightId = null,
+                    highlightMenuExpanded = false
+                )
             }
         }
     }
@@ -696,7 +825,10 @@ class ReaderViewModel(
             text = selectionText(selectionWords, start, end),
             bounds = selectionBounds(selectionWords, start, end),
             startWord = start,
-            endWord = end
+            endWord = end,
+            textRange = selectionWords.subList(minOf(start, end), maxOf(start, end) + 1)
+                .let { words -> words.first().startOffset until words.last().endOffset }
+                .let { range -> range.first..range.last }
         )
         mutableState.update { it.copy(selection = selection) }
     }
@@ -837,11 +969,12 @@ class ReaderViewModel(
         val request = ++session
         val snapshot = mutableState.value
         val engine = activeEngine
-        val jobsToStop = listOfNotNull(progressJob, extractionJob, findJob, annotationJob)
+        val jobsToStop = listOfNotNull(progressJob, extractionJob, findJob, pageLabelJob, annotationJob)
         jobsToStop.forEach { it.cancel() }
         progressJob = null
         extractionJob = null
         findJob = null
+        pageLabelJob = null
         annotationJob = null
         activeEngine = null
         viewModelScope.launch {
@@ -897,6 +1030,7 @@ class ReaderViewModel(
         progressJob?.cancel()
         extractionJob?.cancel()
         findJob?.cancel()
+        pageLabelJob?.cancel()
         annotationJob?.cancel()
         activeEngine?.close()
         activeEngine = null

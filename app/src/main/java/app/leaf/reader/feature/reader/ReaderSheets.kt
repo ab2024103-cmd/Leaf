@@ -11,6 +11,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.foundation.text.KeyboardOptions
@@ -27,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import app.leaf.reader.R
 import app.leaf.reader.core.model.ReadingTheme
 import app.leaf.reader.core.model.ScrollDir
+import app.leaf.reader.core.model.Typeface
 import app.leaf.reader.core.ui.components.LeafSegmented
 import app.leaf.reader.core.ui.components.LeafSheetOverlay
 import app.leaf.reader.core.ui.components.LeafSheetSurface
@@ -41,7 +43,14 @@ fun ReaderSheetHost(
     onDirection: (ScrollDir) -> Unit,
     onTheme: (ReadingTheme) -> Unit,
     onZoom: (Float) -> Unit,
+    onReflow: (Boolean) -> Unit,
+    onTypeface: (Typeface) -> Unit,
     onFullScreen: () -> Unit,
+    onShareDocument: () -> Unit,
+    onSharePageImage: () -> Unit,
+    onShareSelection: () -> Unit,
+    onCopyFilePath: () -> Unit,
+    onCopyPageText: () -> Unit,
     onAddCurrentBookmark: () -> Unit,
     onJumpBookmark: (app.leaf.reader.core.model.Bookmark) -> Unit,
     onDeleteBookmark: (String) -> Unit,
@@ -66,6 +75,8 @@ fun ReaderSheetHost(
                 onDirection = onDirection,
                 onTheme = onTheme,
                 onZoom = onZoom,
+                onReflow = onReflow,
+                onTypeface = onTypeface,
                 onFullScreen = onFullScreen
             )
         }
@@ -85,6 +96,16 @@ fun ReaderSheetHost(
                 onJump = onJumpHighlight,
                 onDelete = onDeleteHighlight,
                 onClearAll = onRequestClearAllHighlights
+            )
+        }
+        ReaderSheet.SHARE -> LeafSheetOverlay(onDismiss = onDismiss) {
+            ShareSheet(
+                hasSelection = !state.selection?.text.isNullOrBlank(),
+                onShareDocument = onShareDocument,
+                onSharePageImage = onSharePageImage,
+                onShareSelection = onShareSelection,
+                onCopyFilePath = onCopyFilePath,
+                onCopyPageText = onCopyPageText
             )
         }
         ReaderSheet.CONFIRM_CLEAR_HIGHLIGHTS -> app.leaf.reader.core.ui.components.LeafConfirmDialogOverlay(
@@ -173,6 +194,8 @@ private fun ViewLayoutSheet(
     onDirection: (ScrollDir) -> Unit,
     onTheme: (ReadingTheme) -> Unit,
     onZoom: (Float) -> Unit,
+    onReflow: (Boolean) -> Unit,
+    onTypeface: (Typeface) -> Unit,
     onFullScreen: () -> Unit
 ) {
     LeafSheetSurface(
@@ -202,6 +225,23 @@ private fun ViewLayoutSheet(
                 selectedIndex = if (state.scrollDir == ScrollDir.VERTICAL) 0 else 1,
                 onSelect = { onDirection(if (it == 0) ScrollDir.VERTICAL else ScrollDir.HORIZONTAL) }
             )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                Text(stringResource(R.string.reader_reflow), style = LeafType.body, fontWeight = FontWeight.SemiBold)
+                androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+                Switch(checked = state.reflow, onCheckedChange = onReflow)
+            }
+            Text(stringResource(R.string.reader_typeface), style = LeafType.body, fontWeight = FontWeight.SemiBold)
+            LeafSegmented(
+                labels = listOf(
+                    stringResource(R.string.reader_typeface_serif),
+                    stringResource(R.string.reader_typeface_sans)
+                ),
+                selectedIndex = if (state.typeface == Typeface.SERIF) 0 else 1,
+                onSelect = { onTypeface(if (it == 0) Typeface.SERIF else Typeface.SANS) }
+            )
             Text(stringResource(R.string.reader_zoom_label, (state.zoom * 100).toInt()), style = LeafType.body, fontWeight = FontWeight.SemiBold)
             Slider(
                 value = state.zoom,
@@ -211,6 +251,43 @@ private fun ViewLayoutSheet(
             TextButton(onClick = { onZoom(1f) }) { Text(stringResource(R.string.reader_zoom_reset)) }
             Button(onClick = onFullScreen, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(if (state.isFullScreen) R.string.reader_exit_fullscreen else R.string.reader_fullscreen))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ShareSheet(
+    hasSelection: Boolean,
+    onShareDocument: () -> Unit,
+    onSharePageImage: () -> Unit,
+    onShareSelection: () -> Unit,
+    onCopyFilePath: () -> Unit,
+    onCopyPageText: () -> Unit
+) {
+    LeafSheetSurface(title = stringResource(R.string.reader_share_title)) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 22.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            TextButton(onClick = onShareDocument, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.reader_share_document), modifier = Modifier.fillMaxWidth())
+            }
+            TextButton(onClick = onSharePageImage, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.reader_share_page_image), modifier = Modifier.fillMaxWidth())
+            }
+            TextButton(
+                onClick = onShareSelection,
+                enabled = hasSelection,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.reader_share_selected_text), modifier = Modifier.fillMaxWidth())
+            }
+            TextButton(onClick = onCopyFilePath, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.reader_copy_file_path), modifier = Modifier.fillMaxWidth())
+            }
+            TextButton(onClick = onCopyPageText, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.reader_copy_page_text), modifier = Modifier.fillMaxWidth())
             }
         }
     }

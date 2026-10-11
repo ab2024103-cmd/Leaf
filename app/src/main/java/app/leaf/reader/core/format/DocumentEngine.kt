@@ -42,10 +42,13 @@ data class RenderTile(
 
 /**
  * Format-neutral contract from §7. PDF is the only production implementation in M3;
- * the other formats are deliberately added in M6, not represented by placeholders.
+ * the shared ReaderScreen uses this contract for all six supported formats.
  */
 interface DocumentEngine : AutoCloseable {
     val pageCount: Int
+
+    /** Optional label such as a worksheet name or slide number, without changing the page anchor. */
+    suspend fun pageLabel(pageIndex: Int): String? = null
 
     suspend fun pageMetrics(pageIndex: Int): PageMetrics
 
@@ -54,6 +57,9 @@ interface DocumentEngine : AutoCloseable {
 
     /** Render only [tile] at the requested PDF-point-to-output-pixel scale. */
     suspend fun renderTile(pageIndex: Int, scale: Float, tile: RenderTile): Bitmap
+
+    /** Apply Leaf's resolved reading canvas colours to formats with a native raster renderer. */
+    fun setReaderColors(background: Int, surfaceAlt: Int, text: Int, outlineVariant: Int) = Unit
 
     /** Hold a rendered bitmap while a Compose surface is drawing it. */
     fun retainBitmap(bitmap: Bitmap) = Unit
@@ -80,4 +86,7 @@ interface DocumentEngine : AutoCloseable {
 
 fun interface DocumentEngineFactory {
     suspend fun open(uri: String): DocumentEngine
+
+    /** Existing factories remain source-compatible; format-aware factories override this overload. */
+    suspend fun open(uri: String, type: app.leaf.reader.core.model.DocType): DocumentEngine = open(uri)
 }

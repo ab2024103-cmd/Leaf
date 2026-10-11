@@ -46,8 +46,8 @@ internal suspend fun PointerInputScope.detectLeafPress(
 }
 
 /**
- * Row press handling for the library (§6.1). Non-PDF rows keep [onTap] null until their
- * format engine lands; PDF rows get a real open action in M3.
+ * Row press handling for the library (§6.1). Callers leave [onTap] null only for formats
+ * that have no registered reader engine.
  */
 fun Modifier.leafPressable(
     onPressChange: (Boolean) -> Unit,

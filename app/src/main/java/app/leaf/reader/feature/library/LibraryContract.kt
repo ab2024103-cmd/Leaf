@@ -174,7 +174,7 @@ sealed interface TagAction {
     data class Toggle(val docId: String, val name: String) : TagAction
 }
 
-/** The nine long-press actions (§6.7), minus the row-level ones. */
+/** Long-press actions routed through Library state; Share is delegated to the host. */
 sealed interface DocumentAction {
     data class Open(val id: String) : DocumentAction
 

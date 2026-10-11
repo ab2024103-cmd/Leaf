@@ -1,5 +1,6 @@
 package app.leaf.reader.navigation
 
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -19,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -35,6 +37,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import app.leaf.reader.R
 import app.leaf.reader.core.data.prefs.ClosedTab
+import app.leaf.reader.core.format.DocumentEngineFactory
 import app.leaf.reader.core.ui.components.LeafConfirmDialogOverlay
 import app.leaf.reader.core.ui.components.LeafNavBar
 import app.leaf.reader.core.ui.components.LeafNavRail
@@ -46,10 +49,14 @@ import app.leaf.reader.feature.reader.ReaderScreen
 import app.leaf.reader.feature.reader.ReaderTabsEvent
 import app.leaf.reader.feature.reader.ReaderTabsUiState
 import app.leaf.reader.feature.reader.ReaderTabsViewModel
+import app.leaf.reader.feature.reader.shareDocument
 import app.leaf.reader.feature.recents.RecentsScreen
 import app.leaf.reader.feature.search.SearchScreen
 import app.leaf.reader.feature.settings.SettingsScreen
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinInject
 import org.koin.androidx.compose.koinViewModel
 
 /**
@@ -238,6 +245,8 @@ fun LeafShell(
                     modifier = Modifier.weight(1f)
                 ) {
                     composable(LeafDestination.LIBRARY.route) {
+                        val documentEngines: DocumentEngineFactory = koinInject()
+                        val shareScope = rememberCoroutineScope()
                         LibraryScreen(
                             onOpenDocument = { documentId ->
                                 readerStartPage = null
@@ -255,6 +264,17 @@ fun LeafShell(
                                 readerStartPage = null
                                 readerInitialFindQuery = null
                                 tabsViewModel?.openDocument(documentId, newTab = true)
+                            },
+                            onShareDocument = { document ->
+                                shareScope.launch {
+                                    try {
+                                        shareDocument(context, document, engineFactory = documentEngines)
+                                    } catch (error: CancellationException) {
+                                        throw error
+                                    } catch (_: Exception) {
+                                        Toast.makeText(context, R.string.reader_share_failed, Toast.LENGTH_SHORT).show()
+                                    }
+                                }
                             }
                         )
                     }

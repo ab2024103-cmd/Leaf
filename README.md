@@ -13,13 +13,13 @@ The design contract lives in [`design/`](design/): `LEAF-MASTER-PROMPT.md` (the 
 
 ---
 
-## Status · Milestones 1–5 — Foundation + Library + Reader + Search + Annotations & tabs
+## Status · Milestones 1–6 — Foundation + Library + Reader + Search + Annotations, tabs, formats & sharing
 
 M1 established the Android foundation; M2 completed the Library and organisation flows; M3 added a
-real PDF reading path; M4 delivered advanced search over cached PDF text; and M5 adds persistent
-highlights, bookmarks and multi-tab reading with a document picker. The milestone boundary remains
-explicit: unsupported formats and later-milestone controls are omitted rather than presented as dead
-buttons.
+real PDF reading path; M4 delivered advanced search over cached PDF text; M5 added persistent
+highlights, bookmarks and multi-tab reading; M6 adds TXT, DOCX, XLSX, PPTX and EPUB engines,
+page-anchored reflow and the specified share/clipboard actions. Later-milestone controls remain out
+of scope rather than appearing as stubs.
 
 **In this build**
 
@@ -61,25 +61,34 @@ buttons.
 - **PDF engine** — `PdfRenderer` serialized per open document, progressive preview + 512 px tiles with
   one-tile overdraw, a memory-bounded/recycling LRU and trim-memory cleanup. API 35+ platform text
   extraction and API 23–34 PDFBox fallback cache extracted page text in Room.
-- **Demo and external PDFs** — five generated demo PDFs from the existing seed content; external
-  `ACTION_VIEW` / `ACTION_SEND` PDF intake retains a durable URI grant or copies the file privately.
-  There is no Import screen.
+- **Demo and external documents** — five generated demo PDFs plus deterministic native fixtures for
+  the seeded text/Office records; `ACTION_VIEW` / `ACTION_SEND` intake resolves supported formats and
+  retains a durable URI grant or copies the file privately. There is no Import screen.
 - **M4 advanced Search** — five scopes, combined filters, history, cached-PDF-text excerpts and
-  counts, and open-at-page handoff into Reader find. Full-text search is deliberately limited to
-  cached Room PDF text; non-PDF engines remain in M6.
-- **M5 annotations** — select PDF text, apply/recolour/remove/copy highlights, view saved quotes in
-  the highlights sheet, and undo/redo up to 50 annotation changes. “Clear highlights on this page”
-  affects only the current page and supports Undo; full-clear is confirmed in the highlights flow and
-  also supports Undo. Bookmarks can be toggled for the current page, revisited from their sheet, and
-  jumped to from Reader.
+  counts, and open-at-page handoff into Reader find. Full-text Search remains deliberately limited to
+  cached Room PDF text; M6 Reader Find is format-neutral without broadening Search indexing.
+- **M5 annotations + M6 format support** — PDF highlights retain normalized geometry; TXT, DOCX,
+  XLSX, PPTX and EPUB selections store text offsets and/or Readium CFI locators. Highlights can be
+  applied, recoloured, removed, copied, listed and undone/redone up to 50 changes. Page-only clear
+  and confirmed full-clear support Undo. Bookmarks remain page-anchored across formats.
 - **M5 multi-tab Reader** — process-persistent per-document reader state, active/neighbor selection,
   per-row close with Undo, close-all, configurable tab limit and the first-use “kept open” hint.
   Reader overflow and Ctrl/⌘+T open the Library document picker; Ctrl/⌘+B opens bookmarks,
   Ctrl/⌘+Z / Ctrl/⌘+Shift+Z / Ctrl/⌘+Y undo and redo annotations.
 
-**Not in this build** — non-PDF engines, reflow and sharing (M6), full Settings controls (M7) and the
-remaining M8 scope. Recents, Favorites and Settings still show their M1 scaffolds until their
-milestones.
+- **M6 formats and reflow** — TXT pages are measured from Android layout; DOCX uses streaming OOXML
+  paragraph/list/table/image-alt parsing; XLSX renders paginated worksheet grids; PPTX renders ordered
+  slide cards with layout-text fallback; EPUB uses Readium 3.1.0 with Leaf-mapped preferences and
+  CFI-backed selection/highlights. Reader Find, annotations, bookmarks, tabs and Page Stay share the
+  common page-anchor contract. Reflow uses the same page text and keeps the page anchor.
+- **M6 sharing** — document, visible page image and selected text use Android’s system share sheet;
+  file path and page text copy to the clipboard. The library long-press Share action shares the
+  document directly. Seeded non-PDF demo entries have no original package, so they share their
+  extracted text as `.txt`; imported documents share their original URI. No export-highlights list,
+  share-a-link or Duplicate action was added.
+
+**Not in this build** — full Settings controls (M7) and the remaining M8 scope. Recents, Favorites
+and Settings still show their M1 scaffolds until their milestones.
 
 ## Build & verify
 
@@ -122,7 +131,7 @@ by running it.
 |---|---|---|---|
 | 1 | Recents — auto tracking, hero, continue grid, today/earlier, per-entry remove, clear today, clear all, badge | Mockup §6.2 | ☐ |
 | 2 | Favorites — star toggle, own sort (name/added/opened) | §6.3 | 🟨 partial — the Library star toggle is live; Favorites screen and its independent sort are later |
-| 3 | Page Stay — position, offset, zoom, scroll dir, theme, orientation; progress everywhere | §2.2 | 🟨 partial — PDF position/offset/zoom/direction/theme restore through Room and Library progress updates; the existing orientation field has no M3 control |
+| 3 | Page Stay — position, offset, zoom, scroll dir, theme, orientation; progress everywhere | §2.2 | 🟨 partial — PDF restore is persisted; M6 adds page anchors for all formats, with cross-format UI/restore QA still pending |
 | 4 | Folders — create, rename, recolour, delete, nesting, counts | §6.1 | ✅ M2 |
 | 5 | Smart collections — 7 rules, addable | §6.1 | ✅ M2 — all seven rules and their composer |
 | 6 | Tags — create, rename (cascade), recolour, delete, AND filtering, manager | §6.1 | ✅ M2 |
@@ -134,19 +143,19 @@ by running it.
 | 12 | Highlights summary panel — quote, page, jump, delete, clear all | §6.7 | ✅ M5 — current-page clear and confirmed full-clear both support Undo |
 | 13 | Bookmarks — page flag, toolbar, shortcut, sheet, count | §6.6 | ✅ M5 |
 | 14 | Multi-tab — Open documents sheet + badge, pick-a-document mode, per-tab state, close any row incl. the active/last one, close all from n≥1, undo, configurable limit, back keeps tabs | §6.6 | ✅ M5 |
-| 15 | Share — document, page image, selection, copy path, copy page text | §6.7 | ☐ |
-| 16 | File actions — rename, delete (+undo), move, tags, favorite, info | §6.7 | 🟨 partial — M2 actions and PDF Open work; the M5 new-tab picker is live; non-PDF Open and Share are M6 |
+| 15 | Share — document, page image, selection, copy path, copy page text | §6.7 | ☐ — M6 implementation; awaiting CI/UI verification |
+| 16 | File actions — rename, delete (+undo), move, tags, favorite, info | §6.7 | 🟨 partial — M2 actions plus M6 Open/Share across supported formats; awaiting verification |
 | 17 | Reading themes — Paper, Sepia, Night, OLED, Auto | §4.2 | 🟨 partial — all five are live and saved in PDF Page Stay; global default control remains M7 |
 | 18 | Scroll modes — vertical, horizontal with snap+page-turn | §6.6 | 🟨 implemented — continuous vertical list and snapping horizontal pager; reader screenshot matrix and API 23/36 PDF tests pass in M3 CI |
 | 19 | Zoom & pan — pinch, double-tap, buttons, ctrl-wheel, drag-pan, 70–250 % | §6.6 | 🟨 implemented — pinch, double-tap, toolbar/sheet zoom, ctrl-wheel and drag-pan; M3 CI passes |
-| 20 | Text reflow — all formats, anchored to pages | §7.2 | ☐ |
+| 20 | Text reflow — all formats, anchored to pages | §7.2 | ☐ — M6 implementation; awaiting CI/UI verification |
 | 21 | Full screen — hides all chrome, dim footer, Esc/tap exit | §6.6 | 🟨 implemented — system bars/app bar/toolbar hide; dim footer, Escape/back and tap exit; M3 CI passes |
 | 22 | Rotate — auto toggle, per-document lock (auto/portrait/landscape) | §5 | ☐ |
 | 23 | Settings — appearance, reading, device, data, about | §6.5 | ☐ |
 | 24 | Responsive + platform — bar/rail, 2/3-col, foldable, toolbar priority ladder, API 23 → 36, i18n, a11y | §5, §9, §10 | 🟨 partial — bar/rail, 2-col grid metrics and API 23 → 36 support are in; 2-col *lists*, the toolbar ladder, i18n and the a11y pass land with their screens |
 | 25 | Highlight colour menu — expanding labelled palette, live swatch, selection-aware hint, dismiss rules | §6.6 | ✅ M5 |
-| 26 | Excel `.xlsx` — sheet-per-page grid rendering, text, find, highlights, reflow | §7.3 | ☐ |
-| 27 | PowerPoint `.pptx` — slide-per-page card rendering, text, find, highlights, reflow | §7.3 | ☐ |
+| 26 | Excel `.xlsx` — sheet-per-page grid rendering, text, find, highlights, reflow | §7.3 | ☐ — M6 implementation; awaiting CI/UI verification |
+| 27 | PowerPoint `.pptx` — slide-per-page card rendering, text, find, highlights, reflow | §7.3 | ☐ — M6 implementation; awaiting CI/UI verification |
 
 ## Verification
 
@@ -177,6 +186,11 @@ recreation with a fresh ViewModel; they are not OS-level forced-process-kill tes
 ## Deviations from the mockup and the spec
 
 Every deviation is a decision, not an accident.
+
+- **Text selection trade-off (§7.4).** Before API 35, PDF selection uses the pragmatic custom layer:
+  a long-press selects the nearest extracted word and shows drag handles. Native text formats use
+  measured text offsets; EPUB uses Readium's own selection and CFI. Geometry for some imported
+  Office content is approximate because the renderer intentionally handles the specified text subset.
 
 1. **Some non-Library destinations remain M1 scaffolds.** The M2 Library is populated and
    functional; M4 Search is complete, while Recents, Favorites and Settings remain on their honest
@@ -212,26 +226,23 @@ Every deviation is a decision, not an accident.
    the mockup does not have. It exists in settings as `matchSystemColors`, default **off**, and is
    wired to `LeafTheme`; the Settings row that flips it lands in M7.
 9. **Demo documents keep their stable `leaf-demo://` URI.** M3 generates a real PDF asset for each
-   of the five seeded PDF rows and materializes it into app cache for `PdfRenderer`; the other seeded
-   formats continue to use their existing text cache until M6. No Import screen or fake SAF result is
-   added.
+   of the five seeded PDF rows and materializes it into app cache for `PdfRenderer`; M6 uses the
+   seeded text/Office metadata for deterministic native reader fixtures. Imported files use their
+   real source content. No Import screen or fake SAF result is added.
 10. **No `design/leaf_tokens.json` in this repo.** The token set was re-derived from the mockup's CSS
     and compared against §4; the two agree everywhere except deviation 4.
-11. **Only seeded PDFs open in M3.** PDF row taps and the PDF-only Open action launch the reader;
-    non-PDF demo rows remain available for Library organization but have no fake reader target. The
-    M2 long-press actions sheet remains intact.
-12. **Later actions are omitted rather than stubbed.** M5 adds the Reader-to-Library document picker
-    for new tabs; Share remains deferred to M6. Incoming external PDF VIEW/SEND intents work in M3.
-    Non-PDF open, reflow, export-highlights-as-list, share-a-link, Duplicate and an Import screen are
-    not added.
+11. **The M3 reader initially opened seeded PDFs only.** M6 enables row taps and the Open/Open in
+    new tab actions for all six formats, backed by the native/Readium engines rather than a placeholder.
+12. **Scope remains bounded.** M6 adds the specified document/page-image/selection share and clipboard
+    actions. Export-highlights-as-list, share-a-link, Duplicate and an Import screen remain excluded.
 13. **The §6.1 filter glyph is decorative in M2.** The advanced filter panel is part of the later
     Search scope; no inert tappable filter button is exposed.
 14. **Sort direction follows the labels.** “Ascending” shows A–Z / Newest / Recent / Largest, matching
     the mockup's visible sort copy. The mockup's comparator reverses the three numeric/time fields
     against those labels; Leaf keeps the labels and makes the order agree with what the user sees.
 15. **Milestone branch naming is session-pinned.** The Arena session is fixed to
-    `arena/ceade348-leaf`; the existing draft PR carries M1–M5 rather than creating a separate
-    milestone branch.
+    `arena/ceade348-leaf`; the existing draft PR remains the milestone vehicle rather than creating a
+    separate branch.
 16. **Local Gradle verification is unavailable.** The editing environment has no Java runtime, so
     Gradle could not start locally. CI run 38070557916 for `5e08214` passed build/lint/JVM tests,
     screenshot parity, and real-PDF instrumentation on API 23 and API 36; its debug APK and rendered
@@ -249,7 +260,7 @@ Every deviation is a decision, not an accident.
     pinned release preserves the required PDFBox fallback and passes the real-PDF matrix on API 23
     and API 36.
 
-## What's next — M6 · Document formats, reflow & sharing
+## What's next — M7 · Settings
 
-Add non-PDF reading engines, anchored text reflow and the approved sharing actions, without moving
-broader Settings controls (M7) or the remaining M8 scope forward.
+M6 formats, reflow and sharing are implemented in this branch. Continue with the next approved
+milestone plan; keep the remaining M8 scope out of this change.

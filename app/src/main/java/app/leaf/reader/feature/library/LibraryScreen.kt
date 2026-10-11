@@ -34,7 +34,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.leaf.reader.R
 import app.leaf.reader.core.domain.LibraryDoc
 import app.leaf.reader.core.domain.TypeGroupCard
-import app.leaf.reader.core.model.DocType
+import app.leaf.reader.core.model.Document
 import app.leaf.reader.core.model.Folder
 import app.leaf.reader.core.model.SmartCollection
 import app.leaf.reader.core.model.SortField
@@ -79,7 +79,7 @@ import org.koin.androidx.compose.koinViewModel
  * be rendered (and screenshot-tested) without a database, and every behaviour lives in
  * the ViewModel.
  *
- * PDF row taps open the M3 reader; formats without an engine remain untappable until M6.
+ * Supported row taps open the shared reader; the long-press actions also expose sharing.
  */
 @Composable
 fun LibraryContent(
@@ -94,7 +94,8 @@ fun LibraryContent(
     tabsInUse: Int = 0,
     tabLimit: Int = 6,
     onCancelPickingNewTab: () -> Unit = {},
-    onOpenNewTab: (String) -> Unit = {}
+    onOpenNewTab: (String) -> Unit = {},
+    onShareDocument: (Document) -> Unit = {}
 ) {
     val listState = rememberLazyListState()
     LaunchedEffect(pickingNewTab) {
@@ -235,14 +236,10 @@ fun LibraryContent(
                             },
                             onStar = { handlers.onStar(doc.id) },
                             onLongPress = { handlers.onRowLongPress(doc.id) },
-                            onTap = if (doc.document.type == DocType.PDF) {
-                                if (pickingNewTab) {
-                                    { onOpenNewTab(doc.id) }
-                                } else {
-                                    { handlers.onOpenDocument(doc.id) }
-                                }
+                            onTap = if (pickingNewTab) {
+                                { onOpenNewTab(doc.id) }
                             } else {
-                                null
+                                { handlers.onOpenDocument(doc.id) }
                             },
                             modifier = Modifier.padding(horizontal = 12.dp),
                             pickingNewTab = pickingNewTab
@@ -283,7 +280,7 @@ fun LibraryContent(
             }
         }
 
-        LibrarySheetHost(state = state, handlers = handlers)
+        LibrarySheetHost(state = state, handlers = handlers, onShareDocument = onShareDocument)
         LibraryDialogHost(state = state, handlers = handlers)
     }
 }
@@ -301,7 +298,8 @@ fun LibraryScreen(
     tabsInUse: Int = 0,
     tabLimit: Int = 6,
     onCancelPickingNewTab: () -> Unit = {},
-    onOpenNewTab: (String) -> Unit = {}
+    onOpenNewTab: (String) -> Unit = {},
+    onShareDocument: (Document) -> Unit = {}
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(viewModel, onOpenDocument, onOpenNewTab) {
@@ -322,7 +320,8 @@ fun LibraryScreen(
         tabsInUse = tabsInUse,
         tabLimit = tabLimit,
         onCancelPickingNewTab = onCancelPickingNewTab,
-        onOpenNewTab = onOpenNewTab
+        onOpenNewTab = onOpenNewTab,
+        onShareDocument = onShareDocument
     )
 }
 
@@ -568,7 +567,11 @@ private fun EmptyLibrary() {
 
 /** The sheet the Library is currently showing, if any. */
 @Composable
-fun LibrarySheetHost(state: LibraryContentState, handlers: LibraryHandlers) {
+fun LibrarySheetHost(
+    state: LibraryContentState,
+    handlers: LibraryHandlers,
+    onShareDocument: (Document) -> Unit = {}
+) {
     val usage = remember(state.docs) {
         state.docs.flatMap { it.document.tags }.groupBy { it }.mapValues { it.value.size }
     }
@@ -636,7 +639,11 @@ fun LibrarySheetHost(state: LibraryContentState, handlers: LibraryHandlers) {
                     ActionsSheetContent(
                         doc = doc,
                         summary = actionSummary(doc, state),
-                        onAction = handlers.onDocumentAction
+                        onAction = handlers.onDocumentAction,
+                        onShare = {
+                            handlers.onDismissSheet()
+                            onShareDocument(doc.document)
+                        }
                     )
                 }
             }
