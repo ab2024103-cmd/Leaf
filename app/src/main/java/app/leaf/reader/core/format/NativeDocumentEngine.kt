@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.Typeface
+import android.graphics.text.LineBreaker
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
@@ -473,7 +474,7 @@ private fun measuredTextPages(
             .setAlignment(Layout.Alignment.ALIGN_NORMAL)
             .setIncludePad(false)
             .setLineSpacing(0f, TEXT_LINE_SPACING)
-            .setBreakStrategy(android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY)
+            .setBreakStrategy(LineBreaker.BREAK_STRATEGY_HIGH_QUALITY)
             .setHyphenationFrequency(android.text.Layout.HYPHENATION_FREQUENCY_NONE)
             .build()
         for (lineIndex in 0 until layout.lineCount) {
