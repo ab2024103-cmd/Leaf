@@ -46,6 +46,10 @@ interface DocumentDao {
     @Query("UPDATE documents SET lastOpened = :openedAt WHERE id = :id")
     suspend fun updateLastOpened(id: String, openedAt: Long)
 
+    /** Per-document orientation, applied when the Lock orientation setting is on (§5). */
+    @Query("UPDATE documents SET orientation = :orientation WHERE id = :id")
+    suspend fun setOrientation(id: String, orientation: app.leaf.reader.core.model.Orientation)
+
     @Query("UPDATE documents SET pageCount = :pageCount WHERE id = :id")
     suspend fun updatePageCount(id: String, pageCount: Int)
 

@@ -2,6 +2,8 @@ package app.leaf.reader.feature.reader
 
 import android.app.Activity
 import android.content.ClipData
+import android.content.ContextWrapper
+import android.content.pm.ActivityInfo
 import android.content.Intent
 import android.graphics.Paint
 import android.graphics.Typeface
@@ -112,6 +114,7 @@ import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
@@ -135,9 +138,11 @@ import app.leaf.reader.core.format.RenderTile
 import app.leaf.reader.core.model.DocType
 import app.leaf.reader.core.model.Highlight
 import app.leaf.reader.core.model.HighlightColor
+import app.leaf.reader.core.model.Orientation
 import app.leaf.reader.core.model.ScrollDir
 import app.leaf.reader.core.model.Typeface as ReadingTypeface
 import app.leaf.reader.core.ui.theme.HighlightSwatches
+import app.leaf.reader.core.ui.util.rememberHaptics
 import app.leaf.reader.core.ui.theme.LocalReadingPalette
 import app.leaf.reader.core.ui.theme.LeafType
 import app.leaf.reader.core.ui.theme.ReadingPalette
@@ -294,6 +299,7 @@ private fun ReaderContent(
 ) {
     val clipboard = LocalClipboardManager.current
     val context = LocalContext.current
+    ReaderOrientationEffect(state)
     val scope = rememberCoroutineScope()
     val epubImageProvider = remember { ReaderImageProvider() }
     val shareCurrentDocument: () -> Unit = {
@@ -395,6 +401,7 @@ private fun ReaderContent(
                         state = state,
                         engine = state.engine,
                         viewModel = viewModel,
+                        palette = palette,
                         epubImageProvider = epubImageProvider,
                         modifier = Modifier.weight(1f).fillMaxWidth(),
                         onPageTap = { if (state.isFullScreen) viewModel.toggleFullScreen() },
@@ -465,6 +472,8 @@ private fun ReaderContent(
             onZoom = viewModel::setZoom,
             onReflow = viewModel::setReflow,
             onTypeface = viewModel::setTypeface,
+            onPageNumbers = viewModel::setShowPageNumbers,
+            onOrientation = viewModel::cycleOrientation,
             onFullScreen = { viewModel.setSheet(ReaderSheet.NONE); viewModel.toggleFullScreen() },
             onShareDocument = shareCurrentDocument,
             onSharePageImage = sharePageImage,
@@ -561,6 +570,7 @@ private fun ReaderViewport(
     state: ReaderContentState,
     engine: DocumentEngine,
     viewModel: ReaderViewModel,
+    palette: ReadingPalette,
     epubImageProvider: ReaderImageProvider,
     modifier: Modifier,
     onPageTap: () -> Unit,
@@ -569,6 +579,7 @@ private fun ReaderViewport(
     onSelectionHandleDrag: (Boolean, Float, Float) -> Unit
 ) {
     var viewportBounds by remember { mutableStateOf<Rect?>(null) }
+    val haptics = rememberHaptics()
     Box(modifier.onGloballyPositioned { viewportBounds = it.boundsInWindow() }) {
         when {
             state.document?.type == DocType.EPUB && engine is EpubDocumentEngine -> {
@@ -617,33 +628,50 @@ private fun ReaderViewport(
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(state.pageCount, key = { "pdf-page-$it" }) { page ->
-                    PdfPageSlot(
-                        engine = engine,
-                        pageIndex = page,
-                        viewportBounds = viewportBounds,
-                        renderTiles = if (state.pageCount > ReaderViewModel.MAX_PAGES) {
-                            page == state.pageIndex
-                        } else {
-                            page in (state.pageIndex - 1..state.pageIndex + 1)
-                        },
-                        zoom = state.zoom,
-                        panX = state.panX,
-                        panY = state.panY,
-                        findMatches = state.findMatches,
-                        activeFindIndex = state.findIndex,
-                        findQuery = state.findQuery,
-                        highlights = state.highlights,
-                        selection = state.selection,
-                        selectedHighlightId = state.selectedHighlightId,
-                        highlightColor = state.highlightColor,
-                        onZoom = viewModel::setZoom,
-                        onPan = viewModel::updatePan,
-                        onPageTap = onPageTap,
-                        onAnnotationTap = { x, y -> onTapAnnotation(page, x, y) },
-                        onLongPressText = { x, y -> onLongPressText(page, x, y) },
-                        onSelectionHandleDrag = onSelectionHandleDrag,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        PdfPageSlot(
+                            engine = engine,
+                            pageIndex = page,
+                            viewportBounds = viewportBounds,
+                            renderTiles = if (state.pageCount > ReaderViewModel.MAX_PAGES) {
+                                page == state.pageIndex
+                            } else {
+                                page in (state.pageIndex - 1..state.pageIndex + 1)
+                            },
+                            zoom = state.zoom,
+                            panX = state.panX,
+                            panY = state.panY,
+                            findMatches = state.findMatches,
+                            activeFindIndex = state.findIndex,
+                            findQuery = state.findQuery,
+                            highlights = state.highlights,
+                            selection = state.selection,
+                            selectedHighlightId = state.selectedHighlightId,
+                            highlightColor = state.highlightColor,
+                            onZoom = viewModel::setZoom,
+                            onPan = viewModel::updatePan,
+                            onPageTap = onPageTap,
+                            onAnnotationTap = { x, y -> onTapAnnotation(page, x, y) },
+                            onLongPressText = { x, y ->
+                                haptics.longPress()
+                                onLongPressText(page, x, y)
+                            },
+                            onSelectionHandleDrag = onSelectionHandleDrag,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        // §10: page-number caption in vertical cards, when Page numbers on pages is on.
+                        if (state.showPageNumbers) {
+                            Text(
+                                text = stringResource(R.string.reader_page_of, page + 1, state.pageCount),
+                                style = LeafType.supporting,
+                                color = palette.textMuted,
+                                modifier = Modifier.padding(top = 6.dp, bottom = 2.dp)
+                            )
+                        }
+                    }
                 }
             }
             }
@@ -1645,4 +1673,30 @@ private fun ReaderFooter(
             maxLines = 1
         )
     }
+}
+
+/**
+ * Applies Settings → Device to this activity while the reader is on screen (§5, §6.5):
+ * a per-document lock wins when Lock orientation per document is on; otherwise Auto-rotate off holds the
+ * current orientation and Auto-rotate on follows the device. The request is released when the reader leaves.
+ */
+@Composable
+private fun ReaderOrientationEffect(state: ReaderContentState) {
+    val activity = LocalContext.current.findActivity() ?: return
+    val requested = when {
+        state.orientationLock && state.document?.orientation == Orientation.PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        state.orientationLock && state.document?.orientation == Orientation.LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        !state.autoRotate -> ActivityInfo.SCREEN_ORIENTATION_LOCKED
+        else -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+    }
+    DisposableEffect(activity, requested) {
+        activity.requestedOrientation = requested
+        onDispose { activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED }
+    }
+}
+
+private tailrec fun android.content.Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }

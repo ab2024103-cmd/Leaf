@@ -11,6 +11,8 @@ import app.leaf.reader.core.model.SmartRule
 import app.leaf.reader.core.model.Tag
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 
 /**
  * The demo library: 10 documents (including the .xlsx and .pptx), 5 folders with one
@@ -102,6 +104,16 @@ class DatabaseSeeder(private val db: LeafDatabase) {
         if (db.documentDao().count() > 0) return@withLock false
         seed(now)
         true
+    }
+
+    /**
+     * Settings → Data & storage → Reset demo library (§6.5): wipes every table, then writes
+     * the sample data again. Settings-level keys in DataStore are not touched by this.
+     */
+    suspend fun reset(now: Long = System.currentTimeMillis()) = seedMutex.withLock {
+        // Room's clearAllTables() is blocking and must stay off the main thread.
+        withContext(Dispatchers.IO) { db.clearAllTables() }
+        seed(now)
     }
 
     suspend fun seed(now: Long = System.currentTimeMillis()) {

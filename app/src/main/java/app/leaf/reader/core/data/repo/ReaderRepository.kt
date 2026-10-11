@@ -95,6 +95,12 @@ class ReaderRepository(
 
     suspend fun updatePageCount(id: String, pageCount: Int) = documents.updatePageCount(id, pageCount)
 
+    suspend fun setOrientation(id: String, orientation: app.leaf.reader.core.model.Orientation) =
+        documents.setOrientation(id, orientation)
+
+    /** Settings → Data & storage: every document reopens at page 1 (§6.5). */
+    suspend fun clearPositions() = positions.clear()
+
     suspend fun cachedText(id: String): List<ExtractedTextEntity> = extractedText.pagesForDocument(id)
 
     suspend fun cachedPageText(id: String, pageIndex: Int): String? =

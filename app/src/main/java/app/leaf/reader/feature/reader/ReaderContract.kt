@@ -6,6 +6,7 @@ import app.leaf.reader.core.model.Document
 import app.leaf.reader.core.model.Highlight
 import app.leaf.reader.core.model.HighlightColor
 import app.leaf.reader.core.model.NormalizedRect
+import app.leaf.reader.core.model.Orientation
 import app.leaf.reader.core.model.ReadingTheme
 import app.leaf.reader.core.model.ScrollDir
 import app.leaf.reader.core.model.Typeface
@@ -71,6 +72,12 @@ data class ReaderContentState(
     val canUndoAnnotation: Boolean = false,
     val canRedoAnnotation: Boolean = false,
     val snackbar: ReaderSnackbarState? = null,
+    /** Settings → Reading → Page numbers on pages; also toggled in View & layout (§6.5, §6.6). */
+    val showPageNumbers: Boolean = true,
+    /** Settings → Device → Lock orientation per document. Gates the orientation row in View & layout. */
+    val orientationLock: Boolean = false,
+    /** Settings → Device → Auto-rotate. When off, the reader holds the current orientation. */
+    val autoRotate: Boolean = true,
     /** Changed only for explicit jumps so ordinary scrolling is never pulled back. */
     val positionRequestId: Int = 0
 ) {

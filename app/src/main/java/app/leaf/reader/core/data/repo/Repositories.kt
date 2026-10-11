@@ -247,6 +247,9 @@ class SmartCollectionRepository(private val collections: SmartCollectionDao) {
 
 /** Recents (§2.1): unique per document, newest first, capped at 60. */
 class RecentRepository(private val recents: RecentDao) {
+    /** Settings → Data & storage: empties the history list only (§6.5). */
+    suspend fun clear() = recents.clear()
+
     fun observeRecents(): Flow<List<RecentEntry>> =
         recents.observeAll().map { list -> list.map { RecentEntry(it.docId, it.openedAt) } }
 

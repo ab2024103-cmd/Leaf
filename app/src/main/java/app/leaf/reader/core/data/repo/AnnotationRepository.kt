@@ -41,6 +41,15 @@ class AnnotationRepository(
     suspend fun replaceHighlights(docId: String, rows: List<Highlight>) =
         highlights.replaceForDocument(docId, rows.map { it.toEntity() })
 
+    /** Live total across the library, for the Settings counts (§6.5). */
+    fun observeHighlightTotal(): Flow<Int> = highlights.observeAll().map { it.size }
+
+    /** Total highlights across the library, for the Settings counts (§6.5). */
+    suspend fun highlightCount(): Int = highlights.count()
+
+    /** Settings → Data & storage: removes every highlight in every document (§6.5). */
+    suspend fun clearAllHighlights() = highlights.clearAll()
+
     private fun BookmarkEntity.toModel() = Bookmark(
         id = id,
         docId = docId,

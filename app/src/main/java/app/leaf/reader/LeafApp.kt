@@ -4,6 +4,8 @@ import android.app.Application
 import app.leaf.reader.core.data.db.DatabaseSeeder
 import app.leaf.reader.core.data.prefs.SettingsStore
 import app.leaf.reader.core.format.PdfBitmapCache
+import app.leaf.reader.core.util.LeafLocale
+import android.content.Context
 import app.leaf.reader.di.appModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,6 +29,10 @@ class LeafApp : Application(), KoinComponent {
     private val seeder: DatabaseSeeder by inject()
     private val settings: SettingsStore by inject()
     private val pdfBitmapCache: PdfBitmapCache by inject()
+
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(LeafLocale.wrap(base))
+    }
 
     override fun onCreate() {
         super.onCreate()

@@ -558,4 +558,132 @@
 
     <string name="document_intake_missing">No document was included in that share.</string>
     <string name="document_intake_failed">Leaf could not open this document.</string>
+
+    <!-- M7 · Settings, polish, i18n -->
+    <string name="settings_group_appearance">Appearance</string>
+    <string name="settings_group_reading">Reading</string>
+    <string name="settings_group_data">Data &amp; storage</string>
+    <string name="settings_app_theme">App theme</string>
+    <string name="settings_app_theme_desc">Light, dark or follow the system</string>
+    <string name="settings_app_theme_sheet_sub">Applies to the whole app. The reading canvas has its own theme.</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_reading_theme">Default reading theme</string>
+    <string name="settings_reading_theme_desc">Applies to the document canvas</string>
+    <string name="settings_animations">Animations</string>
+    <string name="settings_animations_desc">Page-turn and shared-axis transitions</string>
+    <string name="settings_haptics">Haptic feedback</string>
+    <string name="settings_haptics_desc">Vibrate on highlight and long-press</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_desc">Interface language</string>
+    <string name="settings_language_sheet_sub">Interface language — the sample documents stay in English.</string>
+    <string name="settings_scroll_direction">Default scroll direction</string>
+    <string name="settings_scroll_vertical_desc">Continuous scroll down the page</string>
+    <string name="settings_scroll_horizontal_desc">Swipe left / right like a book</string>
+    <string name="settings_reflow">Text reflow by default</string>
+    <string name="settings_reflow_desc">Reflows PDF text to the screen width</string>
+    <string name="settings_zoom">Default zoom</string>
+    <string name="settings_zoom_desc">Text size when a document opens</string>
+    <string name="settings_zoom_sheet_title">Default zoom</string>
+    <string name="settings_zoom_sheet_sub">You can still pinch or use A− / A+ inside the reader.</string>
+    <string name="settings_zoom_reset">Reset</string>
+    <string name="settings_typeface">Reading typeface</string>
+    <string name="settings_typeface_desc">Serif for long reads, sans to match the UI</string>
+    <string name="settings_remember_page">Remember last page</string>
+    <string name="settings_remember_page_desc">Reopen every document exactly where you stopped</string>
+    <string name="settings_page_numbers">Page numbers on pages</string>
+    <string name="settings_page_numbers_desc">Show “Page n of m” on each page</string>
+    <string name="settings_auto_rotate">Auto-rotate</string>
+    <string name="settings_auto_rotate_desc">Let the screen rotate with the device</string>
+    <string name="settings_lock_orientation">Lock orientation per document</string>
+    <string name="settings_lock_orientation_desc">Remember portrait / landscape for each file</string>
+    <string name="settings_maximum_open_tabs_desc">How many documents can stay open at once</string>
+    <string name="settings_clear_recents">Clear recents</string>
+    <string name="settings_clear_search">Clear search history</string>
+    <string name="settings_clear_positions">Clear reading positions</string>
+    <string name="settings_clear_positions_desc">Every document reopens at page 1</string>
+    <string name="settings_clear_highlights">Clear all highlights</string>
+    <string name="settings_reset_library">Reset demo library</string>
+    <string name="settings_reset_library_desc">Restore the sample documents</string>
+    <string name="settings_action_clear">Clear</string>
+    <string name="settings_action_reset">Reset</string>
+    <string name="settings_spec_coverage">Spec coverage</string>
+    <string name="settings_spec_coverage_desc">Every feature in this build, at a glance</string>
+    <string name="settings_library_summary">%1$s · %2$s</string>
+    <string name="settings_dialog_clear_recents_title">Clear all recents?</string>
+    <string name="settings_dialog_clear_recents_body">The history list is emptied. Documents, highlights and reading positions are kept.</string>
+    <string name="settings_dialog_clear_recents_confirm">Clear recents</string>
+    <string name="settings_dialog_clear_search_title">Clear search history?</string>
+    <string name="settings_dialog_clear_search_body">Saved search terms are removed. Your documents are untouched.</string>
+    <string name="settings_dialog_clear_search_confirm">Clear history</string>
+    <string name="settings_dialog_clear_positions_title">Clear reading positions?</string>
+    <string name="settings_dialog_clear_positions_body">Every document reopens at page 1. Bookmarks, tags and highlights stay.</string>
+    <string name="settings_dialog_clear_positions_confirm">Clear positions</string>
+    <string name="settings_dialog_clear_highlights_title">Clear every highlight?</string>
+    <string name="settings_dialog_clear_highlights_confirm">Clear highlights</string>
+    <string name="settings_dialog_reset_title">Reset demo library?</string>
+    <string name="settings_dialog_reset_body">Your library, folders, tags and highlights are replaced with the sample data.</string>
+    <string name="settings_dialog_reset_confirm">Reset everything</string>
+    <string name="snack_recents_cleared">Recents cleared</string>
+    <string name="snack_reading_positions_cleared">Reading positions cleared</string>
+    <string name="snack_library_reset">Library reset to the sample data</string>
+    <plurals name="settings_recents_count">
+        <item quantity="one">%1$d entry in your history</item>
+        <item quantity="other">%1$d entries in your history</item>
+    </plurals>
+    <plurals name="settings_search_count">
+        <item quantity="one">%1$d saved search</item>
+        <item quantity="other">%1$d saved searches</item>
+    </plurals>
+    <plurals name="settings_highlights_count">
+        <item quantity="one">%1$d highlight across your library</item>
+        <item quantity="other">%1$d highlights across your library</item>
+    </plurals>
+    <plurals name="settings_documents_count">
+        <item quantity="one">%1$d document</item>
+        <item quantity="other">%1$d documents</item>
+    </plurals>
+    <plurals name="settings_dialog_clear_highlights_body">
+        <item quantity="one">All %1$d highlight across the library is removed.</item>
+        <item quantity="other">All %1$d highlights across the library are removed.</item>
+    </plurals>
+    <string-array name="settings_coverage_items">
+        <item>Recents — auto tracking, hero, continue grid, today/earlier, per-entry remove, clear today, clear all, badge</item>
+        <item>Favorites — star toggle, own sort (name/added/opened)</item>
+        <item>Page Stay — position, offset, zoom, scroll dir, theme, orientation; progress everywhere</item>
+        <item>Folders — create, rename, recolour, delete, nesting, counts</item>
+        <item>Smart collections — 7 rules, addable</item>
+        <item>Tags — create, rename (cascade), recolour, delete, AND filtering, manager</item>
+        <item>Advanced search — 5 scopes, combined filters, summary, snippets, open-at-page</item>
+        <item>Search history — chips, per-item delete, clear, re-run</item>
+        <item>Sorting — 4 fields × direction, independent favorites sort, applies to the open file-type group</item>
+        <item>Highlighting — 5 colours, selection, recolour, remove, copy</item>
+        <item>Highlight undo/redo — 50-step, labels, snackbars</item>
+        <item>Highlights summary panel — quote, page, jump, delete, clear all</item>
+        <item>Bookmarks — page flag, toolbar, shortcut, sheet, count</item>
+        <item>Multi-tab — Open documents sheet + badge, pick-a-document mode, per-tab state, close any row incl. the active/last one, close all from n≥1, undo, configurable limit, back keeps tabs</item>
+        <item>Share — document, page image, selection, copy path, copy page text</item>
+        <item>File actions — rename, delete (+undo), move, tags, favorite, info</item>
+        <item>Reading themes — Paper, Sepia, Night, OLED, Auto</item>
+        <item>Scroll modes — vertical, horizontal with snap+page-turn</item>
+        <item>Zoom &amp; pan — pinch, double-tap, buttons, ctrl-wheel, drag-pan, 70–250 %</item>
+        <item>Text reflow — all formats, anchored to pages</item>
+        <item>Full screen — hides all chrome, dim footer, Esc/tap exit</item>
+        <item>Rotate — auto toggle, per-document lock (auto/portrait/landscape)</item>
+        <item>Settings — appearance, reading, device, data, about</item>
+        <item>Responsive + platform — bar/rail, 2/3-col, foldable, toolbar priority ladder, API 23 → 36, i18n, a11y</item>
+        <item>Highlight colour menu — expanding labelled palette, live swatch, selection-aware hint, dismiss rules</item>
+        <item>Excel `.xlsx` — sheet-per-page grid rendering, text, find, highlights, reflow</item>
+        <item>PowerPoint `.pptx` — slide-per-page card rendering, text, find, highlights, reflow</item>
+    </string-array>
+    <!-- M7 · reader orientation and page numbers -->
+    <string name="reader_orientation_label">Orientation for this document</string>
+    <string name="reader_orientation_auto">Auto</string>
+    <string name="reader_orientation_portrait">Portrait</string>
+    <string name="reader_orientation_landscape">Landscape</string>
+    <string name="reader_orientation_portrait_lower">portrait</string>
+    <string name="reader_orientation_landscape_lower">landscape</string>
+    <string name="snack_orientation_follows">Orientation follows the device</string>
+    <string name="snack_orientation_locked">Orientation locked: %1$s</string>
 </resources>

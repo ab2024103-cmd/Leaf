@@ -2,6 +2,9 @@ package app.leaf.reader.core.ui.components
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -57,6 +60,7 @@ import app.leaf.reader.core.ui.theme.LeafMetrics
 import app.leaf.reader.core.ui.theme.LeafMotion
 import app.leaf.reader.core.ui.theme.LeafShape
 import app.leaf.reader.core.ui.theme.LeafType
+import app.leaf.reader.core.ui.theme.LocalLeafMotion
 
 /**
  * The sheet surface itself (§4.6): 28 dp top corners, `surfaceContainerLow`, a 32 × 4 dp
@@ -120,10 +124,17 @@ fun LeafSheetOverlay(
     sheet: @Composable () -> Unit
 ) {
     BackHandler(onBack = onDismiss)
+    // Animations switch (§4.5, §6.5): with motion off the sheet and scrim appear at once.
+    val motion = LocalLeafMotion.current
     val visible = remember { MutableTransitionState(false).apply { targetState = true } }
+    val scrimSpec: AnimationSpec<Float> = if (motion) {
+        tween(durationMillis = LeafMotion.sheet, easing = LeafMotion.easeEmphasized)
+    } else {
+        snap()
+    }
     val scrimAlpha by animateFloatAsState(
         targetValue = if (visible.targetState) LeafMetrics.scrimAlpha else 0f,
-        animationSpec = tween(durationMillis = LeafMotion.sheet, easing = LeafMotion.easeEmphasized),
+        animationSpec = scrimSpec,
         label = "scrim"
     )
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
@@ -136,9 +147,13 @@ fun LeafSheetOverlay(
         AnimatedVisibility(
             visibleState = visible,
             modifier = Modifier.align(Alignment.BottomCenter),
-            enter = slideInVertically(
-                animationSpec = tween(durationMillis = LeafMotion.sheet, easing = LeafMotion.easeEmphasized)
-            ) { fullHeight -> fullHeight } + fadeIn()
+            enter = if (motion) {
+                slideInVertically(
+                    animationSpec = tween(durationMillis = LeafMotion.sheet, easing = LeafMotion.easeEmphasized)
+                ) { fullHeight -> fullHeight } + fadeIn()
+            } else {
+                EnterTransition.None
+            }
         ) {
             Box(
                 modifier = Modifier

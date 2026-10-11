@@ -1,6 +1,12 @@
 package app.leaf.reader.feature.search
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +39,7 @@ import app.leaf.reader.core.ui.components.LeafIconButton
 import app.leaf.reader.core.ui.components.LeafSnackbar
 import app.leaf.reader.core.ui.components.LeafTopAppBar
 import app.leaf.reader.core.ui.theme.LeafType
+import app.leaf.reader.core.ui.theme.LocalLeafMotion
 import app.leaf.reader.core.ui.util.annotated
 import app.leaf.reader.core.ui.util.quantityText
 import org.koin.androidx.compose.koinViewModel
@@ -81,7 +88,13 @@ fun SearchScreen(
                 onSelect = viewModel::setScope,
                 onFilters = viewModel::toggleFilterPanel
             )
-            AnimatedVisibility(visible = state.filterPanelOpen) {
+            // Animations switch (§6.5): the filter panel opens instantly when motion is off.
+            val motion = LocalLeafMotion.current
+            AnimatedVisibility(
+                visible = state.filterPanelOpen,
+                enter = if (motion) fadeIn() + expandVertically() else EnterTransition.None,
+                exit = if (motion) fadeOut() + shrinkVertically() else ExitTransition.None
+            ) {
                 SearchFilterPanel(
                     filters = state.draftFilters,
                     folders = state.folders,

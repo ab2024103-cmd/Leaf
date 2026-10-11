@@ -15,6 +15,7 @@ import app.leaf.reader.core.model.Bookmark
 import app.leaf.reader.core.model.DocType
 import app.leaf.reader.core.model.Highlight
 import app.leaf.reader.core.model.HighlightColor
+import app.leaf.reader.core.model.Orientation
 import app.leaf.reader.core.model.LeafSettings
 import app.leaf.reader.core.model.NormalizedRect
 import app.leaf.reader.core.model.Progress
@@ -135,6 +136,9 @@ class ReaderViewModel(
                     readingTheme = tab.readingTheme,
                     typeface = prefs.typeface,
                     reflow = prefs.reflow,
+                    showPageNumbers = prefs.showPageNumbers,
+                    orientationLock = prefs.orientationLock,
+                    autoRotate = prefs.autoRotate,
                     pageLabel = engine.pageLabel(page),
                     panX = tab.panX,
                     panY = tab.panY,
@@ -447,6 +451,35 @@ class ReaderViewModel(
     fun setTypeface(typeface: Typeface) {
         mutableState.update { it.copy(typeface = typeface) }
         viewModelScope.launch { settings.update { it.copy(typeface = typeface) } }
+    }
+
+    /** View & layout → Page numbers switch. Also the default for the next document (§6.5). */
+    fun setShowPageNumbers(show: Boolean) {
+        mutableState.update { it.copy(showPageNumbers = show) }
+        viewModelScope.launch { settings.update { it.copy(showPageNumbers = show) } }
+    }
+
+    /**
+     * View & layout → orientation cycle: auto → portrait → landscape → auto. The value is stored on the
+     * document (§2.2, §6.6) and applied only while Settings → Lock orientation per document is on.
+     */
+    fun cycleOrientation() {
+        val document = mutableState.value.document ?: return
+        val next = when (document.orientation) {
+            Orientation.AUTO -> Orientation.PORTRAIT
+            Orientation.PORTRAIT -> Orientation.LANDSCAPE
+            Orientation.LANDSCAPE -> Orientation.AUTO
+        }
+        mutableState.update { it.copy(document = it.document?.copy(orientation = next)) }
+        viewModelScope.launch { repository.setOrientation(document.id, next) }
+        val app = getApplication<Application>()
+        showSnackbar(
+            when (next) {
+                Orientation.AUTO -> app.getString(R.string.snack_orientation_follows)
+                Orientation.PORTRAIT -> app.getString(R.string.snack_orientation_locked, app.getString(R.string.reader_orientation_portrait_lower))
+                Orientation.LANDSCAPE -> app.getString(R.string.snack_orientation_locked, app.getString(R.string.reader_orientation_landscape_lower))
+            }
+        )
     }
 
     /** Returns native page text (or its persistent text index) for the reflow surface. */

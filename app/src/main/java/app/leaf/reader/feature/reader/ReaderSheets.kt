@@ -1,5 +1,6 @@
 package app.leaf.reader.feature.reader
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -21,6 +22,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -45,6 +48,8 @@ fun ReaderSheetHost(
     onZoom: (Float) -> Unit,
     onReflow: (Boolean) -> Unit,
     onTypeface: (Typeface) -> Unit,
+    onPageNumbers: (Boolean) -> Unit,
+    onOrientation: () -> Unit,
     onFullScreen: () -> Unit,
     onShareDocument: () -> Unit,
     onSharePageImage: () -> Unit,
@@ -77,6 +82,8 @@ fun ReaderSheetHost(
                 onZoom = onZoom,
                 onReflow = onReflow,
                 onTypeface = onTypeface,
+                onPageNumbers = onPageNumbers,
+                onOrientation = onOrientation,
                 onFullScreen = onFullScreen
             )
         }
@@ -196,6 +203,8 @@ private fun ViewLayoutSheet(
     onZoom: (Float) -> Unit,
     onReflow: (Boolean) -> Unit,
     onTypeface: (Typeface) -> Unit,
+    onPageNumbers: (Boolean) -> Unit,
+    onOrientation: () -> Unit,
     onFullScreen: () -> Unit
 ) {
     LeafSheetSurface(
@@ -232,6 +241,31 @@ private fun ViewLayoutSheet(
                 Text(stringResource(R.string.reader_reflow), style = LeafType.body, fontWeight = FontWeight.SemiBold)
                 androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
                 Switch(checked = state.reflow, onCheckedChange = onReflow)
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                Text(stringResource(R.string.settings_page_numbers), style = LeafType.body, fontWeight = FontWeight.SemiBold)
+                androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+                Switch(checked = state.showPageNumbers, onCheckedChange = onPageNumbers)
+            }
+            if (state.orientationLock) {
+                // Stored per document; the lock setting decides whether it is applied (§6.6, §6.5).
+                val orientation = state.document?.orientation ?: app.leaf.reader.core.model.Orientation.AUTO
+                val orientationValue = stringResource(orientationLabel(orientation))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onOrientation)
+                        .semantics { stateDescription = orientationValue }
+                        .padding(vertical = 12.dp),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Text(stringResource(R.string.reader_orientation_label), style = LeafType.body, fontWeight = FontWeight.SemiBold)
+                    androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+                    Text(orientationValue, style = LeafType.supporting, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                }
             }
             Text(stringResource(R.string.reader_typeface), style = LeafType.body, fontWeight = FontWeight.SemiBold)
             LeafSegmented(
@@ -291,6 +325,12 @@ private fun ShareSheet(
             }
         }
     }
+}
+
+private fun orientationLabel(orientation: app.leaf.reader.core.model.Orientation): Int = when (orientation) {
+    app.leaf.reader.core.model.Orientation.AUTO -> R.string.reader_orientation_auto
+    app.leaf.reader.core.model.Orientation.PORTRAIT -> R.string.reader_orientation_portrait
+    app.leaf.reader.core.model.Orientation.LANDSCAPE -> R.string.reader_orientation_landscape
 }
 
 private fun ReadingTheme.labelRes(): Int = when (this) {

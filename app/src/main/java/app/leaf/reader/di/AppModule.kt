@@ -27,6 +27,7 @@ import app.leaf.reader.feature.reader.ReaderTabsViewModel
 import app.leaf.reader.feature.search.SearchViewModel
 import app.leaf.reader.core.util.SystemLeafClock
 import app.leaf.reader.feature.library.LibraryViewModel
+import app.leaf.reader.feature.settings.SettingsDataController
 import org.koin.android.ext.koin.androidApplication
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
@@ -71,6 +72,7 @@ val appModule = module {
         }
     }
     singleOf(::SettingsStore)
+    singleOf(::SettingsDataController)
     singleOf(::ReaderTabsStore)
     singleOf(::DatabaseSeeder)
     single<LeafClock> { SystemLeafClock }

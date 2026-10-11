@@ -18,7 +18,10 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import app.leaf.reader.core.data.prefs.SettingsStore
 import app.leaf.reader.core.model.LeafSettings
+import app.leaf.reader.core.ui.theme.LeafPreferences
 import app.leaf.reader.core.ui.theme.LeafTheme
+import app.leaf.reader.core.util.LeafLocale
+import android.content.Context
 import app.leaf.reader.navigation.LeafShell
 import org.koin.android.ext.android.inject
 
@@ -33,6 +36,11 @@ class MainActivity : FragmentActivity() {
     private val documentIntakeHandler: DocumentIntakeHandler by inject()
     private var externalDocumentId by mutableStateOf<String?>(null)
 
+    /** The saved interface language is applied before any string is resolved (§10). */
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LeafLocale.wrap(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
@@ -40,16 +48,18 @@ class MainActivity : FragmentActivity() {
             val settings by settingsStore.settings.collectAsStateWithLifecycle(
                 initialValue = LeafSettings()
             )
-            LeafTheme(
-                appTheme = settings.appTheme,
-                dynamicColor = settings.matchSystemColors,
-                readingTheme = settings.readingTheme
-            ) {
-                LeafShell(
-                    windowSizeClass = calculateWindowSizeClass(this),
-                    externalDocumentId = externalDocumentId,
-                    onExternalDocumentConsumed = { externalDocumentId = null }
-                )
+            LeafPreferences(settings = settings) {
+                LeafTheme(
+                    appTheme = settings.appTheme,
+                    dynamicColor = settings.matchSystemColors,
+                    readingTheme = settings.readingTheme
+                ) {
+                    LeafShell(
+                        windowSizeClass = calculateWindowSizeClass(this),
+                        externalDocumentId = externalDocumentId,
+                        onExternalDocumentConsumed = { externalDocumentId = null }
+                    )
+                }
             }
         }
         handleExternalIntent(intent)

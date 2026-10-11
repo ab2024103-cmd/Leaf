@@ -10,6 +10,7 @@
         android:icon="@mipmap/ic_launcher"
         android:theme="@style/Theme.Leaf"
         android:largeHeap="false"
+        android:supportsRtl="true"
         android:hardwareAccelerated="true"
         android:requestLegacyExternalStorage="false"
         android:enableOnBackInvokedCallback="true">

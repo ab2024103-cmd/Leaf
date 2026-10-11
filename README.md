@@ -87,8 +87,14 @@ of scope rather than appearing as stubs.
   extracted text as `.txt`; imported documents share their original URI. No export-highlights list,
   share-a-link or Duplicate action was added.
 
-**Not in this build** — full Settings controls (M7) and the remaining M8 scope. Recents, Favorites
-and Settings still show their M1 scaffolds until their milestones.
+**M7 settings and i18n** — the Settings screen has all five groups (Appearance, Reading, Device,
+Data & storage, About). Reader defaults flow from Settings; the per-document orientation lock and
+page-number caption are wired into the reader. Animations and haptics switches are honoured, and
+`ANIMATOR_DURATION_SCALE` is respected. The app ships in nine languages (English, Español, Français,
+Deutsch, Português, العربية, Yoruba, हिन्दी, 日本語), switchable in-app; translations are drafts awaiting
+native-speaker review. TalkBack has not been run on a device yet.
+
+**Not in this build** — the remaining M8 scope.
 
 ## Build & verify
 
@@ -151,8 +157,8 @@ by running it.
 | 20 | Text reflow — all formats, anchored to pages | §7.2 | ☐ — M6 implementation; awaiting CI/UI verification |
 | 21 | Full screen — hides all chrome, dim footer, Esc/tap exit | §6.6 | 🟨 implemented — system bars/app bar/toolbar hide; dim footer, Escape/back and tap exit; M3 CI passes |
 | 22 | Rotate — auto toggle, per-document lock (auto/portrait/landscape) | §5 | ☐ |
-| 23 | Settings — appearance, reading, device, data, about | §6.5 | ☐ |
-| 24 | Responsive + platform — bar/rail, 2/3-col, foldable, toolbar priority ladder, API 23 → 36, i18n, a11y | §5, §9, §10 | 🟨 partial — bar/rail, 2-col grid metrics and API 23 → 36 support are in; 2-col *lists*, the toolbar ladder, i18n and the a11y pass land with their screens |
+| 23 | Settings — appearance, reading, device, data, about | §6.5 | 🟨 implemented — all five groups, confirmations with §11 copy, live counts, Spec coverage sheet; Robolectric screenshot (360/412/700 light/dark, Arabic RTL) and semantics tests pending CI; TalkBack pass on a device pending |
+| 24 | Responsive + platform — bar/rail, 2/3-col, foldable, toolbar priority ladder, API 23 → 36, i18n, a11y | §5, §9, §10 | 🟨 partial — bar/rail, 2-col grid metrics and API 23 → 36 support are in; M7 adds 9-language in-app switching with plurals, `supportsRtl`, motion and haptics switches and content descriptions. The toolbar ladder and 2-col *lists* remain open |
 | 25 | Highlight colour menu — expanding labelled palette, live swatch, selection-aware hint, dismiss rules | §6.6 | ✅ M5 |
 | 26 | Excel `.xlsx` — sheet-per-page grid rendering, text, find, highlights, reflow | §7.3 | ☐ — M6 implementation; awaiting CI/UI verification |
 | 27 | PowerPoint `.pptx` — slide-per-page card rendering, text, find, highlights, reflow | §7.3 | ☐ — M6 implementation; awaiting CI/UI verification |
