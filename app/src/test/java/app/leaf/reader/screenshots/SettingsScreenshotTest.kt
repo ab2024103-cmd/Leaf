@@ -67,7 +67,10 @@ class SettingsScreenshotTest {
     @Config(qualifiers = "w700dp-h900dp-normal-long-notround-any-320dpi-keyshidden-nonav")
     fun settings_700_light() = capture("settings_700_light", dark = false, widthDp = 700, heightDp = 900)
 
-    /** Arabic: right-to-left layout with the Arabic string table (§10, verifies RTL). */
+    /**
+     * Arabic locale: verifies the right-to-left layout (§10). Only English string tables ship in M7,
+     * so the text itself stays English until the Arabic table lands.
+     */
     @Test
     @Config(qualifiers = "ar-ldrtl-w412dp-h892dp-normal-long-notround-any-320dpi-keyshidden-nonav")
     fun settings_412_arabic_rtl() = capture("settings_412_arabic_rtl", dark = false, widthDp = 412, heightDp = 892)
