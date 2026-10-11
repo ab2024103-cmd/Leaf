@@ -153,7 +153,7 @@ internal object OoxmlDocumentParser {
         if (inTable && row?.isNotEmpty() == true) {
             blocks += TextBlock(row!!.joinToString("  |  "), BlockStyle.TABLE_ROW)
         }
-        blocks
+        return blocks
     }
 
     private data class SheetRef(val name: String, val relationshipId: String)
@@ -222,7 +222,7 @@ internal object OoxmlDocumentParser {
                 XmlPullParser.START_TAG -> when (parser.name.localTag()) {
                     "row" -> {
                         currentRowNumber = attribute(parser, "r")?.toIntOrNull() ?: (rows.size + 1)
-                        while (rows.size < currentRowNumber) rows += mutableListOf()
+                        while (rows.size < currentRowNumber) rows.add(mutableListOf())
                         currentRow = rows[currentRowNumber - 1]
                     }
                     "c" -> {
@@ -230,7 +230,7 @@ internal object OoxmlDocumentParser {
                         cellType = attribute(parser, "t").orEmpty()
                         cellValue = StringBuilder()
                         val row = currentRow ?: run {
-                            rows += mutableListOf()
+                            rows.add(mutableListOf())
                             rows.last().also { currentRow = it }
                         }
                         while (row.size <= cellColumn) row += ""

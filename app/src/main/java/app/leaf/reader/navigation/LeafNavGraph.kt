@@ -56,7 +56,7 @@ import app.leaf.reader.feature.settings.SettingsScreen
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
-import org.koin.androidx.compose.koinInject
+import org.koin.compose.koinInject
 import org.koin.androidx.compose.koinViewModel
 
 /**

@@ -345,7 +345,7 @@ internal class NativeDocumentEngine(
                     )
                 }
             }
-            return NativeDocumentEngine(type, pages.ifEmpty { measuredTextPages(listOf(TextBlock(" "))) }, onClose)
+            return NativeDocumentEngine(type, pages.ifEmpty { measuredTextPages(listOf(TextBlock(" ")), null) }, onClose)
         }
 
         fun docx(blocks: List<TextBlock>, onClose: () -> Unit = {}): NativeDocumentEngine =
@@ -438,8 +438,8 @@ private fun measuredTextPages(
     var y = marginY.toFloat()
 
     fun startPage() {
-        pageLineLists += mutableListOf()
-        pageRuns += mutableListOf()
+        pageLineLists.add(mutableListOf())
+        pageRuns.add(mutableListOf())
         pageIndex += 1
         y = marginY.toFloat()
     }
@@ -560,7 +560,7 @@ private fun gridRuns(grid: GridPage, metrics: PageMetrics): List<TextRun> {
                 val y = top + headerHeight + rowIndex * rowHeight
                 val visibleWidth = (columnWidth - GRID_CELL_PADDING * 2).coerceAtLeast(1f)
                 val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = GRID_TEXT_SIZE }
-                val visibleLength = value.takeWhileWithWidth(textPaint, visibleWidth)
+                val visibleLength = takeWhileWithWidth(value, textPaint, visibleWidth)
                 val glyphWidth = visibleWidth / visibleLength.coerceAtLeast(1)
                 val chars = value.indices.map { charIndex ->
                     if (charIndex >= visibleLength) NormalizedRect(0f, 0f, 0f, 0f)
