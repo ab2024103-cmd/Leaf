@@ -1,5 +1,6 @@
 package app.leaf.reader.core.format
 
+import android.app.Application
 import java.io.File
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
@@ -11,7 +12,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(application = Application::class, sdk = [28])
 class OoxmlDocumentParserTest {
 
     @Test

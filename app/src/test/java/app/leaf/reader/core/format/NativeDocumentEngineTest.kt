@@ -1,5 +1,6 @@
 package app.leaf.reader.core.format
 
+import android.app.Application
 import android.graphics.Color
 import app.leaf.reader.core.model.DocType
 import kotlinx.coroutines.runBlocking
@@ -12,7 +13,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(application = Application::class, sdk = [28])
 class NativeDocumentEngineTest {
 
     @Test
