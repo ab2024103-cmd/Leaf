@@ -18,7 +18,7 @@ import org.junit.runner.RunWith
 /**
  * Crash sweep (M8), run on the API 23 and current emulators by the Real PDF job.
  *
- * Twenty rounds of: open the seeded demo PDF and back out, rotate, background then
+ * Twenty rounds of: open a seeded PDF from the first screen of the library and back out, rotate, background then
  * foreground, and visit Search and Settings. An uncaught exception fails the test.
  *
  * Not covered yet: annotate and share. Both need a text-selection gesture or the system
@@ -74,6 +74,6 @@ class AppCrashSweepInstrumentedTest {
     private companion object {
         const val ROUNDS = 20
         const val SEED_TIMEOUT_MS = 30_000L
-        const val DEMO_DOCUMENT = "The Art of Simple Living"
+        const val DEMO_DOCUMENT = "Designing Data-Intensive Applications"
     }
 }
