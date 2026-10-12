@@ -29,8 +29,9 @@ android {
             isMinifyEnabled = false
         }
         release {
-            // M8 enables R8 with the Room/Readium/PDFBox rules.
-            isMinifyEnabled = false
+            // M8: R8 shrinking and resource shrinking, with the rules in proguard-rules.pro.
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
