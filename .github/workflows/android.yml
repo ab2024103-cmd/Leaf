@@ -458,6 +458,30 @@ jobs:
           timeout 20s "$ADB" -s emulator-5554 shell settings put global animator_duration_scale 0.0
           timeout -k 10s 35m ./gradlew connectedDebugAndroidTest --stacktrace --console=plain 2>&1 | tee "$GRADLE_LOG"
 
+          # M8 release smoke: the R8-shrunk release build must install, launch and stay up
+          # on this API level. It is signed with the debug key only so the emulator accepts it.
+          ./gradlew assembleRelease --console=plain
+          RELEASE_APK="$(ls app/build/outputs/apk/release/*.apk | head -n 1)"
+          BUILD_TOOLS="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)"
+          "$BUILD_TOOLS/apksigner" sign --ks "$HOME/.android/debug.keystore" --ks-pass pass:android \
+            --key-pass pass:android --ks-key-alias androiddebugkey \
+            --out "$RUNNER_TEMP/leaf-release-smoke.apk" "$RELEASE_APK"
+          timeout 120s "$ADB" -s emulator-5554 install -r "$RUNNER_TEMP/leaf-release-smoke.apk"
+          timeout 20s "$ADB" -s emulator-5554 logcat -c
+          timeout 60s "$ADB" -s emulator-5554 shell am start -W -n app.leaf.reader/app.leaf.reader.MainActivity
+          sleep 20
+          if ! timeout 20s "$ADB" -s emulator-5554 shell pidof app.leaf.reader; then
+            echo "Release build is not running after launch."
+            timeout 20s "$ADB" -s emulator-5554 logcat -d | tail -n 200 || true
+            exit 1
+          fi
+          if timeout 20s "$ADB" -s emulator-5554 logcat -d | grep -q "FATAL EXCEPTION"; then
+            echo "Release build logged a fatal exception."
+            timeout 20s "$ADB" -s emulator-5554 logcat -d | grep -A 30 "FATAL EXCEPTION" | head -n 120 || true
+            exit 1
+          fi
+          timeout 20s "$ADB" -s emulator-5554 shell am force-stop app.leaf.reader || true
+
       - name: Upload emulator diagnostics on failure
         if: failure()
         uses: actions/upload-artifact@v4
