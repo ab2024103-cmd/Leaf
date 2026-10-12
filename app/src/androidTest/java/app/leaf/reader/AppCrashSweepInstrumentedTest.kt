@@ -1,11 +1,12 @@
 package app.leaf.reader
 
 import android.content.pm.ActivityInfo
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.performClick
 import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -38,8 +39,12 @@ class AppCrashSweepInstrumentedTest {
             }
         } catch (timeout: androidx.compose.ui.test.ComposeTimeoutException) {
             // Put the visible tree in the failure message so the CI annotation shows what was on screen.
-            val tree = composeRule.onRoot().printToString(maxDepth = 14)
-            throw AssertionError("Demo document '$DEMO_DOCUMENT' not on screen. Visible tree:\n$tree", timeout)
+            val visible = composeRule.onAllNodes(hasText("", substring = true)).fetchSemanticsNodes()
+                .mapNotNull { node -> node.config.getOrNull(SemanticsProperties.Text)?.joinToString(" | ") { it.text } }
+            throw AssertionError(
+                "Demo document '$DEMO_DOCUMENT' not on screen. Visible text (${visible.size}):\n" + visible.joinToString("\n"),
+                timeout
+            )
         }
         repeat(ROUNDS) {
             composeRule.onNodeWithText(DEMO_DOCUMENT, substring = true).performClick()
