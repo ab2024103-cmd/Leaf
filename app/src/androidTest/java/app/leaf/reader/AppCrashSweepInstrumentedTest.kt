@@ -50,12 +50,12 @@ class AppCrashSweepInstrumentedTest {
         repeat(ROUNDS) {
             composeRule.onNodeWithText(DEMO_DOCUMENT, substring = true).performClick()
             composeRule.waitForIdle()
-            composeRule.activity.onBackPressedDispatcher.onBackPressed()
+            composeRule.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
             composeRule.waitForIdle()
 
-            composeRule.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            composeRule.activityRule.scenario.onActivity { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE }
             composeRule.waitForIdle()
-            composeRule.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            composeRule.activityRule.scenario.onActivity { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT }
             composeRule.waitForIdle()
 
             composeRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
