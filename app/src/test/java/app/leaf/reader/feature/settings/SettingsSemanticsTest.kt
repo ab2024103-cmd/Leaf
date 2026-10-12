@@ -10,6 +10,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import app.leaf.reader.core.model.AppTheme
 import app.leaf.reader.core.ui.theme.LeafTheme
 import org.junit.Assert.assertTrue
@@ -57,7 +58,9 @@ class SettingsSemanticsTest {
     @Test
     fun destructive_rows_confirm_before_they_run() {
         render()
-        composeRule.onNode(hasText("Clear recents", substring = true) and hasClickAction()).performClick()
+        composeRule.onNode(hasText("Clear recents", substring = true) and hasClickAction())
+            .performScrollTo()
+            .performClick()
         // The confirmation is in the tree before anything is cleared. Existence is asserted rather
         // than on-screen bounds, which depend on the Robolectric window size.
         composeRule.onNodeWithText("Clear all recents?").assertExists()
