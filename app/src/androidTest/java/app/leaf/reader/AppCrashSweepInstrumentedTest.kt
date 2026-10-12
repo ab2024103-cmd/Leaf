@@ -6,7 +6,10 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNode
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.performClick
 import androidx.lifecycle.Lifecycle
@@ -42,7 +45,9 @@ class AppCrashSweepInstrumentedTest {
             throw AssertionError("Demo document '$DEMO_DOCUMENT' not on screen. Visible text:\n" + visibleText(), timeout)
         }
         repeat(ROUNDS) {
-            composeRule.onNodeWithText(DEMO_DOCUMENT, substring = true).performClick()
+            // Tap the merged document row (content description = name, with a click action),
+            // not its text child, so the press reaches the row's own clickable.
+            composeRule.onNode(hasContentDescription(DEMO_DOCUMENT, substring = true) and hasClickAction()).performClick()
             // The library header ("N DOCUMENTS") leaves the screen once the reader is open.
             // Only back out after confirming the reader opened; otherwise back would close the app.
             try {
