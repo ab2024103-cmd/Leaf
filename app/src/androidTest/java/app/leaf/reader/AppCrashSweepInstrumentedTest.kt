@@ -31,8 +31,14 @@ class AppCrashSweepInstrumentedTest {
     fun twenty_rounds_of_core_flows_do_not_crash() {
         composeRule.waitForIdle()
         // The demo library is seeded in the background at app start, so wait for its first row.
-        composeRule.waitUntil(timeoutMillis = SEED_TIMEOUT_MS) {
-            composeRule.onAllNodesWithText(DEMO_DOCUMENT, substring = true).fetchSemanticsNodes().isNotEmpty()
+        try {
+            composeRule.waitUntil(timeoutMillis = SEED_TIMEOUT_MS) {
+                composeRule.onAllNodesWithText(DEMO_DOCUMENT, substring = true).fetchSemanticsNodes().isNotEmpty()
+            }
+        } catch (timeout: androidx.compose.ui.test.ComposeTimeoutException) {
+            // Put the visible tree in the failure message so the CI annotation shows what was on screen.
+            val tree = composeRule.onRoot().printToString(maxDepth = 14)
+            throw AssertionError("Demo document '$DEMO_DOCUMENT' not on screen. Visible tree:\n$tree", timeout)
         }
         repeat(ROUNDS) {
             composeRule.onNodeWithText(DEMO_DOCUMENT, substring = true).performClick()
