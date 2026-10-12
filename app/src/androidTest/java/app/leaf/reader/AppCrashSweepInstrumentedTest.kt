@@ -30,6 +30,10 @@ class AppCrashSweepInstrumentedTest {
     @Test
     fun twenty_rounds_of_core_flows_do_not_crash() {
         composeRule.waitForIdle()
+        // The demo library is seeded in the background at app start, so wait for its first row.
+        composeRule.waitUntil(timeoutMillis = SEED_TIMEOUT_MS) {
+            composeRule.onAllNodesWithText(DEMO_DOCUMENT, substring = true).fetchSemanticsNodes().isNotEmpty()
+        }
         repeat(ROUNDS) {
             composeRule.onNodeWithText(DEMO_DOCUMENT, substring = true).performClick()
             composeRule.waitForIdle()
@@ -56,6 +60,7 @@ class AppCrashSweepInstrumentedTest {
 
     private companion object {
         const val ROUNDS = 20
+        const val SEED_TIMEOUT_MS = 30_000L
         const val DEMO_DOCUMENT = "The Art of Simple Living"
     }
 }
