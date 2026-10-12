@@ -456,8 +456,6 @@ jobs:
           timeout 20s "$ADB" -s emulator-5554 shell settings put global window_animation_scale 0.0
           timeout 20s "$ADB" -s emulator-5554 shell settings put global transition_animation_scale 0.0
           timeout 20s "$ADB" -s emulator-5554 shell settings put global animator_duration_scale 0.0
-          timeout -k 10s 35m ./gradlew connectedDebugAndroidTest --stacktrace --console=plain 2>&1 | tee "$GRADLE_LOG"
-
           # M8 release smoke: the R8-shrunk release build must install, launch and stay up
           # on this API level. It is signed with the debug key only so the emulator accepts it.
           ./gradlew assembleRelease --console=plain
@@ -481,6 +479,8 @@ jobs:
             exit 1
           fi
           timeout 20s "$ADB" -s emulator-5554 shell am force-stop app.leaf.reader || true
+
+          timeout -k 10s 35m ./gradlew connectedDebugAndroidTest --stacktrace --console=plain 2>&1 | tee "$GRADLE_LOG"
 
       - name: Upload emulator diagnostics on failure
         if: failure()
