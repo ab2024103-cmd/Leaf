@@ -47,10 +47,9 @@ class AppCrashSweepInstrumentedTest {
             // Tap the merged document row (content description = name, with a click action),
             // not its text child, so the press reaches the row's own clickable.
             composeRule.onNode(hasContentDescription(DEMO_DOCUMENT, substring = true) and hasClickAction()).performClick()
-            // The library header ("N DOCUMENTS") leaves the screen once the reader is open.
             // Only back out after confirming the reader opened; otherwise back would close the app.
             try {
-                composeRule.waitUntil(timeoutMillis = READER_TIMEOUT_MS) { !libraryVisible() }
+                composeRule.waitUntil(timeoutMillis = READER_TIMEOUT_MS) { readerVisible() }
             } catch (timeout: androidx.compose.ui.test.ComposeTimeoutException) {
                 throw AssertionError("Tapping '$DEMO_DOCUMENT' did not open the reader. Visible text:\n" + visibleText(), timeout)
             }
@@ -77,6 +76,10 @@ class AppCrashSweepInstrumentedTest {
 
     private fun libraryVisible(): Boolean =
         composeRule.onAllNodesWithText("DOCUMENTS", substring = true).fetchSemanticsNodes().isNotEmpty()
+
+    /** The reader's first page carries the content description "Page 1" (see SearchFlowTest). */
+    private fun readerVisible(): Boolean =
+        composeRule.onAllNodes(hasContentDescription("Page 1")).fetchSemanticsNodes().isNotEmpty()
 
     /** Every text node on screen, so a failure message shows what the test actually saw. */
     private fun visibleText(): String {
