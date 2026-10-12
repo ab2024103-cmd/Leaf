@@ -457,12 +457,15 @@ jobs:
           timeout 20s "$ADB" -s emulator-5554 shell settings put global transition_animation_scale 0.0
           timeout 20s "$ADB" -s emulator-5554 shell settings put global animator_duration_scale 0.0
           # M8 release smoke: the R8-shrunk release build must install, launch and stay up
-          # on this API level. It is signed with the debug key only so the emulator accepts it.
+          # on this API level. It is signed with a throwaway key (the debug keystore does not
+          # exist until the first debug build) and uninstalled before the debug tests run.
           ./gradlew assembleRelease --console=plain
           RELEASE_APK="$(ls app/build/outputs/apk/release/*.apk | head -n 1)"
           BUILD_TOOLS="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)"
-          "$BUILD_TOOLS/apksigner" sign --ks "$HOME/.android/debug.keystore" --ks-pass pass:android \
-            --key-pass pass:android --ks-key-alias androiddebugkey \
+          keytool -genkeypair -keystore "$RUNNER_TEMP/smoke.jks" -storepass android -keypass android \
+            -alias smoke -keyalg RSA -keysize 2048 -validity 10 -dname "CN=Leaf smoke" >/dev/null
+          "$BUILD_TOOLS/apksigner" sign --ks "$RUNNER_TEMP/smoke.jks" --ks-pass pass:android \
+            --key-pass pass:android --ks-key-alias smoke \
             --out "$RUNNER_TEMP/leaf-release-smoke.apk" "$RELEASE_APK"
           timeout 120s "$ADB" -s emulator-5554 install -r "$RUNNER_TEMP/leaf-release-smoke.apk"
           timeout 20s "$ADB" -s emulator-5554 logcat -c
@@ -479,6 +482,8 @@ jobs:
             exit 1
           fi
           timeout 20s "$ADB" -s emulator-5554 shell am force-stop app.leaf.reader || true
+          # The debug tests install their own build; remove the smoke build so signatures do not clash.
+          timeout 60s "$ADB" -s emulator-5554 uninstall app.leaf.reader || true
 
           timeout -k 10s 35m ./gradlew connectedDebugAndroidTest --stacktrace --console=plain 2>&1 | tee "$GRADLE_LOG"
 
