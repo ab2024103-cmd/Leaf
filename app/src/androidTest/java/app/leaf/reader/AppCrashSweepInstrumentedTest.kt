@@ -39,19 +39,19 @@ class AppCrashSweepInstrumentedTest {
                 composeRule.onAllNodesWithText(DEMO_DOCUMENT, substring = true).fetchSemanticsNodes().isNotEmpty()
             }
         } catch (timeout: androidx.compose.ui.test.ComposeTimeoutException) {
-            // Put the visible tree in the failure message so the CI annotation shows what was on screen.
-            val visible = composeRule.onAllNodes(hasText("", substring = true)).fetchSemanticsNodes()
-                .mapNotNull { node -> node.config.getOrNull(SemanticsProperties.Text)?.joinToString(" | ") { it.text } }
-            throw AssertionError(
-                "Demo document '$DEMO_DOCUMENT' not on screen. Visible text (${visible.size}):\n" + visible.joinToString("\n"),
-                timeout
-            )
+            throw AssertionError("Demo document '$DEMO_DOCUMENT' not on screen. Visible text:\n" + visibleText(), timeout)
         }
         repeat(ROUNDS) {
             composeRule.onNodeWithText(DEMO_DOCUMENT, substring = true).performClick()
-            composeRule.waitForIdle()
+            // The library header ("N DOCUMENTS") leaves the screen once the reader is open.
+            // Only back out after confirming the reader opened; otherwise back would close the app.
+            try {
+                composeRule.waitUntil(timeoutMillis = READER_TIMEOUT_MS) { !libraryVisible() }
+            } catch (timeout: androidx.compose.ui.test.ComposeTimeoutException) {
+                throw AssertionError("Tapping '$DEMO_DOCUMENT' did not open the reader. Visible text:\n" + visibleText(), timeout)
+            }
             composeRule.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
-            composeRule.waitForIdle()
+            composeRule.waitUntil(timeoutMillis = READER_TIMEOUT_MS) { libraryVisible() }
 
             composeRule.activityRule.scenario.onActivity { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE }
             composeRule.waitForIdle()
@@ -71,9 +71,20 @@ class AppCrashSweepInstrumentedTest {
         }
     }
 
+    private fun libraryVisible(): Boolean =
+        composeRule.onAllNodesWithText("DOCUMENTS", substring = true).fetchSemanticsNodes().isNotEmpty()
+
+    /** Every text node on screen, so a failure message shows what the test actually saw. */
+    private fun visibleText(): String {
+        val lines = composeRule.onAllNodes(hasText("", substring = true)).fetchSemanticsNodes()
+            .mapNotNull { node -> node.config.getOrNull(SemanticsProperties.Text)?.joinToString(" | ") { it.text } }
+        return "(${lines.size} nodes)\n" + lines.joinToString("\n")
+    }
+
     private companion object {
         const val ROUNDS = 20
         const val SEED_TIMEOUT_MS = 30_000L
+        const val READER_TIMEOUT_MS = 15_000L
         const val DEMO_DOCUMENT = "Designing Data-Intensive Applications"
     }
 }
