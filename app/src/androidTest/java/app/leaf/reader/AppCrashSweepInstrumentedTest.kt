@@ -59,6 +59,12 @@ class AppCrashSweepInstrumentedTest {
             composeRule.waitUntil(timeoutMillis = LIFECYCLE_TIMEOUT_MS) {
                 runCatching { composeRule.activityRule.scenario.state }.getOrNull() == Lifecycle.State.DESTROYED
             }
+            Thread.sleep(3_000)
+            val instances = shell("dumpsys activity activities").lines().count { "app.leaf.reader/.MainActivity" in it }
+            throw AssertionError(
+                "PROBE after finish: state=${runCatching { composeRule.activityRule.scenario.state }.getOrNull()} " +
+                    "instances=$instances resumed=${resumedActivity().takeLast(120)}"
+            )
         }
     }
 
