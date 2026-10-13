@@ -44,6 +44,22 @@ class AppCrashSweepInstrumentedTest {
             backgroundOnce(step = "round $it background")
             visitDestinations()
         }
+        finishWhileResumed()
+    }
+
+    /**
+     * Finishes the activity while it is still RESUMED. After the HOME-and-relaunch cycles the
+     * rule's teardown found the activity STOPPED or STARTED (CI runs 38458995331 and 38462283262),
+     * and it cannot close a stopped activity. A finished activity is already DESTROYED, so the
+     * teardown has nothing to move.
+     */
+    private fun finishWhileResumed() {
+        diagnose("finish after the sweep") {
+            composeRule.activityRule.scenario.onActivity { it.finish() }
+            composeRule.waitUntil(timeoutMillis = LIFECYCLE_TIMEOUT_MS) {
+                runCatching { composeRule.activityRule.scenario.state }.getOrNull() == Lifecycle.State.DESTROYED
+            }
+        }
     }
 
     /**
