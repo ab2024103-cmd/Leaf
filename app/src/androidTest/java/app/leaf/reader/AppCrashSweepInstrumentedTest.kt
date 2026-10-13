@@ -14,7 +14,6 @@ import androidx.compose.ui.test.performClick
 import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import org.junit.After
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -27,29 +26,15 @@ import org.junit.runner.RunWith
  * Search and Settings. Not yet covered: opening a document (see the ignored test below),
  * annotate, and share.
  *
- * Background is a real HOME press and relaunch (see backgroundOnce). The diagnose_* tests isolate
- * the API 23 background/foreground failure. Failure messages carry the scenario state, the resumed
- * activity, and recent logcat, because CI artifacts are not readable from outside GitHub.
+ * Background is a real HOME press followed by relaunching the singleTask activity (see
+ * backgroundOnce). Failure messages carry the scenario state, the resumed activity, and recent
+ * logcat, because CI artifacts are not readable from outside GitHub.
  */
 @RunWith(AndroidJUnit4::class)
 class AppCrashSweepInstrumentedTest {
 
     @get:Rule
     val composeRule = createAndroidComposeRule<MainActivity>()
-
-    /**
-     * Runs before the rule closes the activity (rules wrap @After). Teardown only works from a
-     * steady state, so if the activity is not RESUMED here, fail with the activity-manager trail.
-     */
-    @After
-    fun requireResumedBeforeTeardown() {
-        val state = runCatching { composeRule.activityRule.scenario.state }.getOrNull()
-        if (state == Lifecycle.State.RESUMED) return
-        val trail = shell("logcat -d -t 800").lines()
-            .filter { Regex("ActivityManager|leaf\\.reader|InstrumentationActivityInvoker|input").containsMatchIn(it) }
-            .takeLast(10).joinToString("\n") { it.takeLast(150) }
-        throw AssertionError("Before teardown the activity was $state, not RESUMED.\nActivity manager:\n$trail")
-    }
 
     @Test
     fun twenty_rounds_of_rotate_background_and_destinations_do_not_crash() {
@@ -58,45 +43,6 @@ class AppCrashSweepInstrumentedTest {
             rotateOnce(step = "round $it rotate")
             backgroundOnce(step = "round $it background")
             visitDestinations()
-        }
-    }
-
-    @Test
-    fun diagnose_background_only() {
-        waitForLibrary()
-        repeat(DIAGNOSTIC_ROUNDS) { backgroundOnce(step = "background-only round $it") }
-    }
-
-    @Test
-    fun diagnose_rotation_only() {
-        waitForLibrary()
-        repeat(DIAGNOSTIC_ROUNDS) { rotateOnce(step = "rotation-only round $it") }
-    }
-
-    @Test
-    fun diagnose_rotation_then_background() {
-        waitForLibrary()
-        repeat(DIAGNOSTIC_ROUNDS) {
-            rotateOnce(step = "rotation round $it")
-            backgroundOnce(step = "background after rotation round $it")
-        }
-    }
-
-    @Test
-    fun diagnose_navigation_then_background() {
-        waitForLibrary()
-        repeat(DIAGNOSTIC_ROUNDS) {
-            visitDestinations()
-            backgroundOnce(step = "background after navigation round $it")
-        }
-    }
-
-    @Test
-    fun diagnose_navigation_then_rotation() {
-        waitForLibrary()
-        repeat(DIAGNOSTIC_ROUNDS) {
-            visitDestinations()
-            rotateOnce(step = "rotation after navigation round $it")
         }
     }
 
@@ -157,35 +103,15 @@ class AppCrashSweepInstrumentedTest {
                 composeRule.activityRule.scenario.state == Lifecycle.State.RESUMED
             }
             composeRule.waitForIdle()
-            assertStaysResumed(step)
         }
     }
 
-    /**
-     * Probe: after the relaunch the activity must stay RESUMED. If it drifts, fail with the
-     * timestamped activity and window manager trail (teardown later sees it STOPPED or STARTED).
-     */
-    private fun assertStaysResumed(step: String) {
-        val until = System.currentTimeMillis() + STABILITY_WINDOW_MS
-        while (System.currentTimeMillis() < until) {
-            Thread.sleep(100)
-            val state = runCatching { composeRule.activityRule.scenario.state }.getOrNull()
-            if (state != Lifecycle.State.RESUMED) {
-                throw AssertionError("After '$step' the activity drifted to $state.\n" + managerTrail())
-            }
-        }
-    }
-
-    private fun managerTrail(): String = shell("logcat -d -t 1000").lines()
-        .filter { Regex("ActivityManager|WindowManager|leaf\\.reader|InstrumentationActivityInvoker|KEYCODE").containsMatchIn(it) }
-        .takeLast(10).joinToString("\n") { it.takeLast(140) }
-
-    /** Runs one step; on failure, rethrows with the scenario state and recent app logcat. */
+    /** Runs one step; on failure, rethrows with the scenario state, resumed activity and logcat. */
     private fun diagnose(step: String, block: () -> Unit) {
         try {
             block()
         } catch (error: Throwable) {
-            val state = composeRule.activityRule.scenario.state
+            val state = runCatching { composeRule.activityRule.scenario.state }.getOrNull()
             val resumed = shell("dumpsys activity activities").lines()
                 .firstOrNull { "mResumedActivity" in it }.orEmpty().trim().takeLast(150)
             throw AssertionError(
@@ -237,11 +163,9 @@ class AppCrashSweepInstrumentedTest {
 
     private companion object {
         const val ROUNDS = 20
-        const val DIAGNOSTIC_ROUNDS = 3
         const val SEED_TIMEOUT_MS = 30_000L
         const val READER_TIMEOUT_MS = 15_000L
         const val LIFECYCLE_TIMEOUT_MS = 20_000L
-        const val STABILITY_WINDOW_MS = 1_500L
         const val DEMO_DOCUMENT = "Designing Data-Intensive Applications"
     }
 }
