@@ -177,7 +177,7 @@ class AppCrashSweepInstrumentedTest {
     }
 
     private fun managerTrail(): String = shell("logcat -d -t 1000").lines()
-        .filter { Regex("ActivityManager|WindowManager|leaf\\\\.reader|InstrumentationActivityInvoker|KEYCODE").containsMatchIn(it) }
+        .filter { Regex("ActivityManager|WindowManager|leaf\\.reader|InstrumentationActivityInvoker|KEYCODE").containsMatchIn(it) }
         .takeLast(10).joinToString("\n") { it.takeLast(140) }
 
     /** Runs one step; on failure, rethrows with the scenario state and recent app logcat. */
