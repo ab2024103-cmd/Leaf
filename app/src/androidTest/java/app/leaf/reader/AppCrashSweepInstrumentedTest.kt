@@ -14,6 +14,7 @@ import androidx.compose.ui.test.performClick
 import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.After
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -35,6 +36,20 @@ class AppCrashSweepInstrumentedTest {
 
     @get:Rule
     val composeRule = createAndroidComposeRule<MainActivity>()
+
+    /**
+     * Runs before the rule closes the activity (rules wrap @After). Teardown only works from a
+     * steady state, so if the activity is not RESUMED here, fail with the activity-manager trail.
+     */
+    @After
+    fun requireResumedBeforeTeardown() {
+        val state = runCatching { composeRule.activityRule.scenario.state }.getOrNull()
+        if (state == Lifecycle.State.RESUMED) return
+        val trail = shell("logcat -d -t 800").lines()
+            .filter { Regex("ActivityManager|leaf\\.reader|InstrumentationActivityInvoker|input").containsMatchIn(it) }
+            .takeLast(10).joinToString("\n") { it.takeLast(150) }
+        throw AssertionError("Before teardown the activity was $state, not RESUMED.\nActivity manager:\n$trail")
+    }
 
     @Test
     fun twenty_rounds_of_rotate_background_and_destinations_do_not_crash() {
