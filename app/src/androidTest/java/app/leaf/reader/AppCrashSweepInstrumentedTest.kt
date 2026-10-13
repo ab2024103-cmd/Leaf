@@ -26,9 +26,9 @@ import org.junit.runner.RunWith
  * Search and Settings. Not yet covered: opening a document (see the ignored test below),
  * annotate, and share.
  *
- * The diagnose_* tests isolate the API 23 background/foreground failure: background only,
- * rotation only, and rotation followed by background. Failure messages carry the scenario
- * state and recent logcat, because CI artifacts are not readable from outside GitHub.
+ * Background is a real HOME press and relaunch (see backgroundOnce). The diagnose_* tests isolate
+ * the API 23 background/foreground failure. Failure messages carry the scenario state, the resumed
+ * activity, and recent logcat, because CI artifacts are not readable from outside GitHub.
  */
 @RunWith(AndroidJUnit4::class)
 class AppCrashSweepInstrumentedTest {
@@ -124,10 +124,23 @@ class AppCrashSweepInstrumentedTest {
         }
     }
 
+    /**
+     * A real background/foreground cycle: HOME stops the app, and relaunching its singleTask
+     * activity brings it back to the front. This replaces ActivityScenario.moveToState, which
+     * covers the activity with the test library's EmptyActivity and waits on its broadcast
+     * handshake. That handshake is the step that stalled on API 23 (run 38364775419).
+     */
     private fun backgroundOnce(step: String) {
         diagnose(step) {
-            composeRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
-            composeRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+            shell("input keyevent KEYCODE_HOME")
+            composeRule.waitUntil(timeoutMillis = LIFECYCLE_TIMEOUT_MS) {
+                composeRule.activityRule.scenario.state == Lifecycle.State.CREATED
+            }
+            val context = InstrumentationRegistry.getInstrumentation().targetContext
+            shell("am start -n ${context.packageName}/${MainActivity::class.java.name}")
+            composeRule.waitUntil(timeoutMillis = LIFECYCLE_TIMEOUT_MS) {
+                composeRule.activityRule.scenario.state == Lifecycle.State.RESUMED
+            }
             composeRule.waitForIdle()
         }
     }
@@ -138,21 +151,29 @@ class AppCrashSweepInstrumentedTest {
             block()
         } catch (error: Throwable) {
             val state = composeRule.activityRule.scenario.state
+            val resumed = shell("dumpsys activity activities").lines()
+                .firstOrNull { "mResumedActivity" in it }.orEmpty().trim().takeLast(150)
             throw AssertionError(
                 "Step '$step' failed on API ${android.os.Build.VERSION.SDK_INT}; scenario state=$state.\n" +
+                    "Resumed: $resumed\n" +
                     "Recent app logcat:\n" + recentLogcat(),
                 error
             )
         }
     }
 
-    private fun recentLogcat(): String {
+    /** Runs one shell command and returns its stdout. */
+    private fun shell(command: String): String {
         val descriptor: ParcelFileDescriptor = InstrumentationRegistry.getInstrumentation().uiAutomation
-            .executeShellCommand("logcat -d -t 1500")
-        val text = ParcelFileDescriptor.AutoCloseInputStream(descriptor).bufferedReader().use { it.readText() }
+            .executeShellCommand(command)
+        return ParcelFileDescriptor.AutoCloseInputStream(descriptor).bufferedReader().use { it.readText() }
+    }
+
+    private fun recentLogcat(): String {
+        val text = shell("logcat -d -t 1500")
         val keep = Regex("FATAL|AndroidRuntime|leaf\\.reader|ActivityScenario|LifecycleMonitor|ActivityManager: START|Exception")
         // Keep only the newest matches and trim each to its end, so the CI annotation keeps them.
-        return text.lines().filter { keep.containsMatchIn(it) }.takeLast(12).joinToString("\n") { it.takeLast(150) }
+        return text.lines().filter { keep.containsMatchIn(it) }.takeLast(8).joinToString("\n") { it.takeLast(150) }
     }
 
     /** The demo library is seeded in the background at app start, so wait for its first rows. */
@@ -184,6 +205,7 @@ class AppCrashSweepInstrumentedTest {
         const val DIAGNOSTIC_ROUNDS = 3
         const val SEED_TIMEOUT_MS = 30_000L
         const val READER_TIMEOUT_MS = 15_000L
+        const val LIFECYCLE_TIMEOUT_MS = 20_000L
         const val DEMO_DOCUMENT = "Designing Data-Intensive Applications"
     }
 }
