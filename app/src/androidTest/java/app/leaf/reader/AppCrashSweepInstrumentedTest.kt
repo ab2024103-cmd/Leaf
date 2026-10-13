@@ -42,12 +42,7 @@ class AppCrashSweepInstrumentedTest {
         repeat(ROUNDS) {
             rotateOnce(step = "round $it rotate")
             backgroundOnce(step = "round $it background")
-            composeRule.onAllNodesWithText("Search").onFirst().performClick()
-            composeRule.waitForIdle()
-            composeRule.onAllNodesWithText("Settings").onFirst().performClick()
-            composeRule.waitForIdle()
-            composeRule.onAllNodesWithText("Library").onFirst().performClick()
-            composeRule.waitForIdle()
+            visitDestinations()
         }
     }
 
@@ -72,6 +67,24 @@ class AppCrashSweepInstrumentedTest {
         }
     }
 
+    @Test
+    fun diagnose_navigation_then_background() {
+        waitForLibrary()
+        repeat(DIAGNOSTIC_ROUNDS) {
+            visitDestinations()
+            backgroundOnce(step = "background after navigation round $it")
+        }
+    }
+
+    @Test
+    fun diagnose_navigation_then_rotation() {
+        waitForLibrary()
+        repeat(DIAGNOSTIC_ROUNDS) {
+            visitDestinations()
+            rotateOnce(step = "rotation after navigation round $it")
+        }
+    }
+
     /**
      * Known gap: on the API 23 and 36 emulators, tapping a PDF row in the Library does not open
      * the reader (CI runs 38306305903 and 38298109977). Not yet diagnosed: it may be emulator
@@ -91,6 +104,15 @@ class AppCrashSweepInstrumentedTest {
             composeRule.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
             composeRule.waitUntil(timeoutMillis = READER_TIMEOUT_MS) { libraryVisible() }
         }
+    }
+
+    private fun visitDestinations() {
+        composeRule.onAllNodesWithText("Search").onFirst().performClick()
+        composeRule.waitForIdle()
+        composeRule.onAllNodesWithText("Settings").onFirst().performClick()
+        composeRule.waitForIdle()
+        composeRule.onAllNodesWithText("Library").onFirst().performClick()
+        composeRule.waitForIdle()
     }
 
     private fun rotateOnce(step: String) {
@@ -126,10 +148,11 @@ class AppCrashSweepInstrumentedTest {
 
     private fun recentLogcat(): String {
         val descriptor: ParcelFileDescriptor = InstrumentationRegistry.getInstrumentation().uiAutomation
-            .executeShellCommand("logcat -d -t 800")
+            .executeShellCommand("logcat -d -t 1500")
         val text = ParcelFileDescriptor.AutoCloseInputStream(descriptor).bufferedReader().use { it.readText() }
-        val keep = Regex("leaf|AndroidRuntime|ActivityManager|ActivityThread|Lifecycle|FATAL|Exception|WindowManager|ViewRootImpl")
-        return text.lines().filter { keep.containsMatchIn(it) }.takeLast(80).joinToString("\n")
+        val keep = Regex("FATAL|AndroidRuntime|leaf\\.reader|ActivityScenario|LifecycleMonitor|ActivityManager: START|Exception")
+        // Keep only the newest matches and trim each to its end, so the CI annotation keeps them.
+        return text.lines().filter { keep.containsMatchIn(it) }.takeLast(12).joinToString("\n") { it.takeLast(150) }
     }
 
     /** The demo library is seeded in the background at app start, so wait for its first rows. */
