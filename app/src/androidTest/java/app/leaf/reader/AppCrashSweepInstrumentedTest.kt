@@ -157,8 +157,28 @@ class AppCrashSweepInstrumentedTest {
                 composeRule.activityRule.scenario.state == Lifecycle.State.RESUMED
             }
             composeRule.waitForIdle()
+            assertStaysResumed(step)
         }
     }
+
+    /**
+     * Probe: after the relaunch the activity must stay RESUMED. If it drifts, fail with the
+     * timestamped activity and window manager trail (teardown later sees it STOPPED or STARTED).
+     */
+    private fun assertStaysResumed(step: String) {
+        val until = System.currentTimeMillis() + STABILITY_WINDOW_MS
+        while (System.currentTimeMillis() < until) {
+            Thread.sleep(100)
+            val state = runCatching { composeRule.activityRule.scenario.state }.getOrNull()
+            if (state != Lifecycle.State.RESUMED) {
+                throw AssertionError("After '$step' the activity drifted to $state.\n" + managerTrail())
+            }
+        }
+    }
+
+    private fun managerTrail(): String = shell("logcat -d -t 1000").lines()
+        .filter { Regex("ActivityManager|WindowManager|leaf\\\\.reader|InstrumentationActivityInvoker|KEYCODE").containsMatchIn(it) }
+        .takeLast(10).joinToString("\n") { it.takeLast(140) }
 
     /** Runs one step; on failure, rethrows with the scenario state and recent app logcat. */
     private fun diagnose(step: String, block: () -> Unit) {
@@ -221,6 +241,7 @@ class AppCrashSweepInstrumentedTest {
         const val SEED_TIMEOUT_MS = 30_000L
         const val READER_TIMEOUT_MS = 15_000L
         const val LIFECYCLE_TIMEOUT_MS = 20_000L
+        const val STABILITY_WINDOW_MS = 1_500L
         const val DEMO_DOCUMENT = "Designing Data-Intensive Applications"
     }
 }
