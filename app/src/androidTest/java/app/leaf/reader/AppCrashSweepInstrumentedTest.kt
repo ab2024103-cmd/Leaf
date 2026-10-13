@@ -86,25 +86,39 @@ class AppCrashSweepInstrumentedTest {
     }
 
     /**
-     * A real background/foreground cycle: HOME stops the app, and relaunching its singleTask
-     * activity brings it back to the front. This replaces ActivityScenario.moveToState, which
-     * covers the activity with the test library's EmptyActivity and waits on its broadcast
-     * handshake. That handshake is the step that stalled on API 23 (run 38364775419).
+     * A real background/foreground cycle: HOME stops the app and the launcher takes the front,
+     * then relaunching the singleTask activity brings it back. Each side waits for the window
+     * manager's resumed activity, not only for the lifecycle callbacks: a launcher that resumes
+     * after the relaunch would push the app back to the background, and the next teardown would
+     * find it STOPPED. This replaces ActivityScenario.moveToState, which covers the activity with
+     * the test library's EmptyActivity and waits on its broadcast handshake (run 38364775419).
      */
     private fun backgroundOnce(step: String) {
         diagnose(step) {
+            val context = InstrumentationRegistry.getInstrumentation().targetContext
+            val appPrefix = "${context.packageName}/"
             shell("input keyevent KEYCODE_HOME")
             composeRule.waitUntil(timeoutMillis = LIFECYCLE_TIMEOUT_MS) {
-                composeRule.activityRule.scenario.state == Lifecycle.State.CREATED
+                composeRule.activityRule.scenario.state == Lifecycle.State.CREATED &&
+                    !resumedActivity().contains(appPrefix)
             }
-            val context = InstrumentationRegistry.getInstrumentation().targetContext
             shell("am start -n ${context.packageName}/${MainActivity::class.java.name}")
             composeRule.waitUntil(timeoutMillis = LIFECYCLE_TIMEOUT_MS) {
-                composeRule.activityRule.scenario.state == Lifecycle.State.RESUMED
+                composeRule.activityRule.scenario.state == Lifecycle.State.RESUMED &&
+                    resumedActivity().contains(appPrefix)
             }
             composeRule.waitForIdle()
+            val until = System.currentTimeMillis() + STABILITY_WINDOW_MS
+            while (System.currentTimeMillis() < until) {
+                Thread.sleep(200)
+                check(resumedActivity().contains(appPrefix)) { "Left the front after relaunch: ${resumedActivity()}" }
+            }
         }
     }
+
+    /** The window manager's resumed activity line, which names the package in front. */
+    private fun resumedActivity(): String = shell("dumpsys activity activities").lines()
+        .firstOrNull { "mResumedActivity" in it }.orEmpty().trim()
 
     /** Runs one step; on failure, rethrows with the scenario state, resumed activity and logcat. */
     private fun diagnose(step: String, block: () -> Unit) {
@@ -112,8 +126,7 @@ class AppCrashSweepInstrumentedTest {
             block()
         } catch (error: Throwable) {
             val state = runCatching { composeRule.activityRule.scenario.state }.getOrNull()
-            val resumed = shell("dumpsys activity activities").lines()
-                .firstOrNull { "mResumedActivity" in it }.orEmpty().trim().takeLast(150)
+            val resumed = resumedActivity().takeLast(150)
             throw AssertionError(
                 "Step '$step' failed on API ${android.os.Build.VERSION.SDK_INT}; scenario state=$state.\n" +
                     "Resumed: $resumed\n" +
@@ -166,6 +179,7 @@ class AppCrashSweepInstrumentedTest {
         const val SEED_TIMEOUT_MS = 30_000L
         const val READER_TIMEOUT_MS = 15_000L
         const val LIFECYCLE_TIMEOUT_MS = 20_000L
+        const val STABILITY_WINDOW_MS = 2_000L
         const val DEMO_DOCUMENT = "Designing Data-Intensive Applications"
     }
 }
