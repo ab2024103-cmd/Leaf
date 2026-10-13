@@ -1,19 +1,19 @@
 package app.leaf.reader
 
 import android.content.pm.ActivityInfo
+import android.os.ParcelFileDescriptor
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
-import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -25,6 +25,10 @@ import org.junit.runner.RunWith
  * An uncaught exception fails a test. Covered: rotation, background/foreground, and visits to
  * Search and Settings. Not yet covered: opening a document (see the ignored test below),
  * annotate, and share.
+ *
+ * The diagnose_* tests isolate the API 23 background/foreground failure: background only,
+ * rotation only, and rotation followed by background. Failure messages carry the scenario
+ * state and recent logcat, because CI artifacts are not readable from outside GitHub.
  */
 @RunWith(AndroidJUnit4::class)
 class AppCrashSweepInstrumentedTest {
@@ -36,21 +40,35 @@ class AppCrashSweepInstrumentedTest {
     fun twenty_rounds_of_rotate_background_and_destinations_do_not_crash() {
         waitForLibrary()
         repeat(ROUNDS) {
-            composeRule.activityRule.scenario.onActivity { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE }
-            composeRule.waitForIdle()
-            composeRule.activityRule.scenario.onActivity { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT }
-            composeRule.waitForIdle()
-
-            composeRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
-            composeRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
-            composeRule.waitForIdle()
-
+            rotateOnce(step = "round $it rotate")
+            backgroundOnce(step = "round $it background")
             composeRule.onAllNodesWithText("Search").onFirst().performClick()
             composeRule.waitForIdle()
             composeRule.onAllNodesWithText("Settings").onFirst().performClick()
             composeRule.waitForIdle()
             composeRule.onAllNodesWithText("Library").onFirst().performClick()
             composeRule.waitForIdle()
+        }
+    }
+
+    @Test
+    fun diagnose_background_only() {
+        waitForLibrary()
+        repeat(DIAGNOSTIC_ROUNDS) { backgroundOnce(step = "background-only round $it") }
+    }
+
+    @Test
+    fun diagnose_rotation_only() {
+        waitForLibrary()
+        repeat(DIAGNOSTIC_ROUNDS) { rotateOnce(step = "rotation-only round $it") }
+    }
+
+    @Test
+    fun diagnose_rotation_then_background() {
+        waitForLibrary()
+        repeat(DIAGNOSTIC_ROUNDS) {
+            rotateOnce(step = "rotation round $it")
+            backgroundOnce(step = "background after rotation round $it")
         }
     }
 
@@ -73,6 +91,45 @@ class AppCrashSweepInstrumentedTest {
             composeRule.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
             composeRule.waitUntil(timeoutMillis = READER_TIMEOUT_MS) { libraryVisible() }
         }
+    }
+
+    private fun rotateOnce(step: String) {
+        diagnose(step) {
+            composeRule.activityRule.scenario.onActivity { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE }
+            composeRule.waitForIdle()
+            composeRule.activityRule.scenario.onActivity { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT }
+            composeRule.waitForIdle()
+        }
+    }
+
+    private fun backgroundOnce(step: String) {
+        diagnose(step) {
+            composeRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
+            composeRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+            composeRule.waitForIdle()
+        }
+    }
+
+    /** Runs one step; on failure, rethrows with the scenario state and recent app logcat. */
+    private fun diagnose(step: String, block: () -> Unit) {
+        try {
+            block()
+        } catch (error: Throwable) {
+            val state = composeRule.activityRule.scenario.state
+            throw AssertionError(
+                "Step '$step' failed on API ${android.os.Build.VERSION.SDK_INT}; scenario state=$state.\n" +
+                    "Recent app logcat:\n" + recentLogcat(),
+                error
+            )
+        }
+    }
+
+    private fun recentLogcat(): String {
+        val descriptor: ParcelFileDescriptor = InstrumentationRegistry.getInstrumentation().uiAutomation
+            .executeShellCommand("logcat -d -t 800")
+        val text = ParcelFileDescriptor.AutoCloseInputStream(descriptor).bufferedReader().use { it.readText() }
+        val keep = Regex("leaf|AndroidRuntime|ActivityManager|ActivityThread|Lifecycle|FATAL|Exception|WindowManager|ViewRootImpl")
+        return text.lines().filter { keep.containsMatchIn(it) }.takeLast(80).joinToString("\n")
     }
 
     /** The demo library is seeded in the background at app start, so wait for its first rows. */
@@ -101,6 +158,7 @@ class AppCrashSweepInstrumentedTest {
 
     private companion object {
         const val ROUNDS = 20
+        const val DIAGNOSTIC_ROUNDS = 3
         const val SEED_TIMEOUT_MS = 30_000L
         const val READER_TIMEOUT_MS = 15_000L
         const val DEMO_DOCUMENT = "Designing Data-Intensive Applications"
