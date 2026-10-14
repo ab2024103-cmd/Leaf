@@ -39,10 +39,16 @@ of scope rather than appearing as stubs.
   defaults, including the §8.13 migration that turns a legacy *File type* sort field into the
   grouped view.
 - **No built-in documents** — the mockup seed was removed from the app. A fresh install starts with an
-  empty library, and the user opens real files from device storage with the library's **+** button
-  (Storage Access Framework picker, imported through the same intake path as Open-with). The seed data
-  now lives in `app/src/test` as fixtures for unit and screenshot tests; Settings → Clear library
-  empties the library.
+  empty library. The seed data now lives in `app/src/test` as fixtures for unit and screenshot tests;
+  Settings → Clear library empties the library.
+- **On this device** — the library's **+** button opens a list of the supported documents found on the
+  phone (PDF, EPUB, DOCX, XLSX, PPTX, TXT). Leaf asks for storage access the first time: runtime
+  `READ_EXTERNAL_STORAGE` on Android 6–10, and All files access (`MANAGE_EXTERNAL_STORAGE`) on Android 11
+  and later. Tapping a file copies it into app storage and opens it. A file already in the library with the
+  same name and size is reopened instead of copied again, so two different files with identical names and
+  sizes are treated as one. The system picker remains available for files the list does not show. Google
+  Play restricts `MANAGE_EXTERNAL_STORAGE`, so a Play release may need a policy declaration or a
+  picker-only build.
 - **Library rows (§4.6)** — name and file icon, pages / size / bookmark / last-opened metadata, tag
   chips, reading progress, star toggle, and the 470 ms long-press actions sheet.
 - **Filter rails and sort** — folders with subtree counts, smart collections, multi-select AND tags,
@@ -59,7 +65,8 @@ of scope rather than appearing as stubs.
   confirmed delete and Undo that restores attached data.
 - **M3 PDF reader** — Library PDF row taps and the PDF-only Open action open a real paged reader;
   vertical continuous scroll, horizontal page snapping, pinch/double-tap zoom, drag-pan, progress and
-  jump-to-page, per-document reading themes, full-screen mode, and persisted Page Stay state.
+  jump-to-page, per-document reading themes, reading mode, and persisted Page Stay state. Reading mode
+  hides the header, toolbar and footer and shows an on-screen exit control.
 - **PDF engine** — `PdfRenderer` serialized per open document, progressive preview + 512 px tiles with
   one-tile overdraw, a memory-bounded/recycling LRU and trim-memory cleanup. API 35+ platform text
   extraction and API 23–34 PDFBox fallback cache extracted page text in Room.
@@ -84,7 +91,7 @@ of scope rather than appearing as stubs.
   common page-anchor contract. Reflow uses the same page text and keeps the page anchor.
 - **M6 sharing** — document, visible page image and selected text use Android’s system share sheet;
   file path and page text copy to the clipboard. The library long-press Share action shares the
-  document directly. Seeded non-PDF demo entries have no original package, so they share their
+  document directly. Documents that have no original package share their
   extracted text as `.txt`; imported documents share their original URI. No export-highlights list,
   share-a-link or Duplicate action was added.
 
@@ -157,7 +164,7 @@ by running it.
 | 18 | Scroll modes — vertical, horizontal with snap+page-turn | §6.6 | 🟨 implemented — continuous vertical list and snapping horizontal pager; reader screenshot matrix and API 23/36 PDF tests pass in M3 CI |
 | 19 | Zoom & pan — pinch, double-tap, buttons, ctrl-wheel, drag-pan, 70–250 % | §6.6 | 🟨 implemented — pinch, double-tap, toolbar/sheet zoom, ctrl-wheel and drag-pan; M3 CI passes |
 | 20 | Text reflow — all formats, anchored to pages | §7.2 | ☐ — M6 implementation; awaiting CI/UI verification |
-| 21 | Full screen — hides all chrome, dim footer, Esc/tap exit | §6.6 | 🟨 implemented — system bars/app bar/toolbar hide; dim footer, Escape/back and tap exit; M3 CI passes |
+| 21 | Reading mode — hides header, toolbar and footer; on-screen exit control, page tap, back or Esc | §6.6 | 🟨 implemented — system bars/app bar/toolbar hide; dim footer, Escape/back and tap exit; M3 CI passes |
 | 22 | Rotate — auto toggle, per-document lock (auto/portrait/landscape) | §5 | ☐ |
 | 23 | Settings — appearance, reading, device, data, about | §6.5 | 🟨 implemented — all five groups, confirmations with §11 copy, live counts, Spec coverage sheet; Robolectric screenshot (360/412/700 light/dark, Arabic RTL) and semantics tests pending CI; TalkBack pass on a device pending |
 | 24 | Responsive + platform — bar/rail, 2/3-col, foldable, toolbar priority ladder, API 23 → 36, i18n, a11y | §5, §9, §10 | 🟨 partial — bar/rail, 2-col grid metrics and API 23 → 36 support are in; M7 adds the in-app 9-language switch, RTL plumbing (`supportsRtl`), plurals, motion and haptics switches and content descriptions. Non-English string tables are **not yet shipped**; the toolbar ladder and 2-col *lists* remain open |

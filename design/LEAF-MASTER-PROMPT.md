@@ -5,6 +5,14 @@
 > (Claude Code / Cursor / Codex / Gemini CLI). Then paste `LEAF-KICKOFF-PROMPT.md` to start Milestone 1.
 > Keep `LEAF-SPEC.md`, `leaf-mockup-v2.html` and `design/leaf_tokens.json` in the repo — this prompt
 > refers to them as the source of truth. Work through `LEAF-BUILD-CHECKLIST.md` milestone by milestone.
+>
+> **Change log (2026-10-14)**
+> - The built-in demo library is removed. A fresh install starts empty. The seed data and demo PDFs now
+>   exist only as test fixtures under `app/src/test`. Settings → Reset demo library becomes **Clear library**.
+> - Storage access and the **On this device** list (§6.1) are added. This replaces the earlier rule that
+>   there is no Import screen and no storage access.
+> - **Reading mode** (§6.6) hides the header, toolbar and footer. It has an on-screen exit control, and the
+>   page gap is tighter in vertical and horizontal modes.
 
 ---
 
@@ -40,7 +48,7 @@ viewer, from a finished, interactive HTML mockup. Your job is to ship the **real
 | 2 | **Support range:** `minSdk = 23` (Android 6.0) · `targetSdk = 36` · `compileSdk = 36`. Google Play requires API 36 for new apps and updates from 31 Aug 2026 — do not lower `targetSdk`. |
 | 3 | **API 23 safety:** every API above 23 must be guarded (`Build.VERSION.SDK_INT`) or handled by an androidx compat API. The app must never crash with `NoSuchMethodError` / `NoClassDefFoundError` on API 23. |
 | 4 | **No dynamic colour by default.** Material You dynamic colour would destroy brand parity. Ship the Leaf Green scheme below as the default; expose dynamic colour only as an optional "Match system colours (Android 12+)" switch. |
-| 5 | **Offline-first.** No network permission in the manifest for the core product. No accounts, no analytics SDKs. |
+| 5 | **Offline-first.** No network permission in the manifest for the core product. Storage access is requested only when the user opens **On this device** (§6.1). No accounts, no analytics SDKs. |
 | 6 | **Two independent theme axes:** *App theme* (light/dark/system) for chrome, and *Reading theme* (paper/sepia/night/oled/auto) for the document canvas. Never let one drive the other. |
 | 7 | **Persistence is mandatory.** Library, folders, tags, collections, favorites, highlights, bookmarks, recents, reading positions, open tabs and settings all survive process death and reboot. |
 | 8 | **Responsive by width class, not by device type.** Bottom navigation on compact, navigation rail on medium/expanded. Nothing may look stretched on a 900 dp tablet or cramped on a 360 dp phone. |
@@ -107,6 +115,9 @@ one foldable profile. Use `adb shell setprop debug.layout` / Compose layout insp
 **Manifest essentials for API 23 + edge-to-edge:**
 ```xml
 <uses-permission android:name="android.permission.VIBRATE"/><!-- haptics -->
+<!-- On this device (§6.1): READ_EXTERNAL_STORAGE on API 23–29 (runtime); All files access on API 30+ -->
+<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="29"/>
+<uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
 <application
     android:largeHeap="false"
     android:hardwareAccelerated="true"
@@ -120,7 +131,7 @@ one foldable profile. Use `adb shell setprop debug.layout` / Compose layout insp
             <action android:name="android.intent.action.MAIN"/>
             <category android:name="android.intent.category.LAUNCHER"/>
         </intent-filter>
-        <!-- document intake: open-with from other apps (no Import screen exists in this product) -->
+        <!-- document intake: open-with from other apps; device documents come from the On this device list -->
         <intent-filter>
             <action android:name="android.intent.action.VIEW"/>
             <category android:name="android.intent.category.DEFAULT"/>
@@ -142,9 +153,11 @@ one foldable profile. Use `adb shell setprop debug.layout` / Compose layout insp
 `configChanges` is set because rotation and resizing are handled in-app (per-document orientation lock,
 free-form resizing); do not let the framework recreate the reader mid-read.
 
-> Documents enter the library through the system **file picker (`ACTION_OPEN_DOCUMENT`)** and the
-> **share/open-with** intents above, then are persisted with `takePersistableUriPermission`.
-> There is deliberately **no Import screen** — it was removed from scope.
+> Documents enter the library through three routes: the **system file picker (`ACTION_OPEN_DOCUMENT`)**,
+> the **share/open-with** intents above, and the **On this device** list (§6.1). Picker and intent documents
+> are persisted with `takePersistableUriPermission` or copied into app storage. A document chosen from
+> **On this device** is always copied into app storage, so the library keeps working if the device file
+> moves. There is no batch import and no cloud import.
 
 ---
 
@@ -347,7 +360,7 @@ scattered in composables.
 Additional layout rules:
 - **Insets:** apply `WindowInsets.safeDrawing`; the reader's toolbar must sit above the gesture/navigation
   bar; the status bar stays visible in the shell but the reader is immersive-capable (hide system bars in
-  Full screen mode, restore on exit).
+  reading mode, restore on exit).
 - **The Library has three list states** — flat list · file-type overview · one open file-type group (§6.1).
   The header toggle switches the overview on and off; an open group is left with back, Esc or its crumb arrow.
 - **No in-reader tab strip.** Open documents live in an **Open documents** sheet reached from the tabs
@@ -358,14 +371,14 @@ Additional layout rules:
 - **Reader toolbar priority ladder** (drop the lowest-priority group first when the row cannot fit; never
   let the row scroll horizontally):
 
-  | Frame width | Highlight (label + swatch + caret) | undo/redo/find/view | zoom −/%/+ | highlights list | full screen + share |
+  | Frame width | Highlight (label + swatch + caret) | undo/redo/find/view | zoom −/%/+ | highlights list | reading mode + share |
   |---|---|---|---|---|---|
   | 360 dp | swatch + caret only (icon trigger, 56 dp) | shown | **hidden** (View & layout sheet + gestures only) | hidden | shown, pinned right |
   | 412 dp | swatch + caret only | shown | −/+ shown, `%` label hidden | hidden | shown, pinned right |
   | 480 dp | swatch + caret only | shown | −/%/+ shown | hidden | shown, pinned right |
   | ≥ 600 dp | full "Highlight" label | shown | −/%/+ shown | shown | shown, pinned right |
 
-  The right-hand group (full screen, share) is always visible; hide the others instead. The toolbar never
+  The right-hand group (reading mode, share) is always visible; hide the others instead. The toolbar never
   scrolls, so no control is ever half-off-screen.
 - **Foldable:** use `WindowLayoutInfo` to keep content out of the hinge; when the posture is `FLAT` in
   table-top mode, put the page above the fold and the toolbar below it.
@@ -454,6 +467,18 @@ Delete confirms: "N document(s) will move to 'Not filed'. They are not deleted."
 **Tag manager sheet** — every tag with usage count and inline rename / recolour / delete; rename cascades to
 all documents; deleting confirms and never touches documents.
 
+**On this device** — the `+` button in the app bar opens the On this device screen. It is the only place
+where Leaf reads the device's document storage, and it asks for access the first time:
+- **Android 6.0–10 (API 23–29):** the runtime permission `READ_EXTERNAL_STORAGE`.
+- **Android 11 and later (API 30+):** **All files access** (`MANAGE_EXTERNAL_STORAGE`). The button opens the
+  system page where the user turns it on. Leaf checks again when it returns to the foreground.
+
+Once access is granted, the screen lists every supported file on shared storage (PDF, EPUB, DOCX, XLSX,
+PPTX, TXT), newest first, with type, size and date. Tapping a row copies the file into app storage and opens
+it in the reader. A file already in the library with the same name and size is reopened, not copied again.
+The system picker stays available at the foot of the list and on the permission and empty states. Access is
+never requested at launch, nothing is uploaded, and Leaf never writes to device files.
+
 ### 6.2 Recents
 
 - Subtitle: "N documents opened recently".
@@ -503,7 +528,7 @@ Grouped `surfaceContainerLow` cards with `primary` uppercase group titles and ha
   shows %) · Reading typeface (Serif/Sans) · Remember last page · Page numbers on pages
 - **Device** — Auto-rotate · Lock orientation per document · Maximum open tabs (− n + stepper, 1–10)
 - **Data & storage** — Clear recents (shows count) · Clear search history (count) · Clear reading positions ·
-  Clear all highlights (total count) · Reset demo library — each with a confirmation dialog
+  Clear all highlights (total count) · Clear library (removes every document, folder, tag and highlight; device files are not deleted) — each with a confirmation dialog
 - **About** — Spec coverage (the §14 matrix rendered as a list — proof nothing was dropped) · version ·
   "Seed #2B7A5B · Android 6.0 (API 23) → latest · phone, foldable & tablet layouts" · live counts
 - Footer: "Leaf · Material 3 · v1.0.0".
@@ -526,6 +551,12 @@ Every row is a single tap target; toggles flip in place with a snackbar confirma
   **There is always a way to close the last tab** — every row in the Open documents sheet carries an × and
   Close all tabs is offered from one document upwards.
 
+**Reading mode** — the immersive reader. Enter it from the reading-mode button in the toolbar or from the ⋮
+menu. It hides the app bar, the find bar, the toolbar and the footer. Exit with the **on-screen exit control**
+(a 48 dp button at the bottom right, shown in reading mode), a tap on the page, the back gesture or Esc.
+System bars are hidden in reading mode and restored on exit. In vertical scrolling the gap between pages is
+4 dp, and the `Page N of M` caption sits 2 dp under each page. Horizontal paging uses a 4 dp gap.
+
 **App bar** — see the tab model above.
 
 **Find bar** (collapsible under the app bar) — magnifier, input "Find in document…", counter "3 of 17"
@@ -542,7 +573,7 @@ Reflow mode: no cards, a single column on `readSurfaceAlt`, hairline rules betwe
 **Toolbar** — one row, never horizontally scrolled, with the priority ladder of §5:
 **Highlight** trigger (pen glyph + live colour swatch; the caret and the "Highlight" label appear at
 ≥ 600 dp) · undo · redo · find · view & layout · zoom − / `100 %` / zoom + · highlights list (≥ 600 dp) ·
-right-anchored full screen + share.
+right-anchored reading mode + share.
 
 **Highlight colour menu** (expands from the trigger, replacing the old five always-visible dots) — a
 `surfaceContainerHigh` popover above the toolbar, 12 dp radius, 236 dp minimum width, elevation 3:
@@ -555,7 +586,7 @@ sits on a `secondaryContainer` pill; then a hint line:
 
 Picking a colour sets the default for the next selection (and recolours immediately if a highlight is
 selected), closes the menu and updates the trigger swatch. The menu closes on outside tap, Esc/back, on any
-sheet opening, on entering full screen and on leaving the reader. The trigger shows
+sheet opening, on entering reading mode and on leaving the reader. The trigger shows
 `state_expanded`/`state_collapsed` and `aria-expanded` equivalents.
 
 **Highlight context bar** — appears instead of the toolbar when a highlight is tapped: label "Highlight",
@@ -567,7 +598,7 @@ five swatches with the current colour ringed, **Remove** (red), Copy (icon), Don
 |---|---|
 | **Sort** | ascending/descending segmented + 5 fields with ✓ |
 | **Actions** (long-press) | Open · Open in new tab · Rename · Favorite toggle (✓) · Manage tags · Move to folder · Share · File info · **Delete document** (danger) |
-| **View & layout** | Reading theme chips · scroll direction · text reflow switch · typeface · page numbers switch · zoom slider + Reset · orientation lock cycle (auto → portrait → landscape, stored per document) · full screen · reset zoom |
+| **View & layout** | Reading theme chips · scroll direction · text reflow switch · typeface · page numbers switch · zoom slider + Reset · orientation lock cycle (auto → portrait → landscape, stored per document) · reading mode · reset zoom |
 | **Jump to page** | big page number, range slider, −/+ stepper, quick jumps (First/25 %/50 %/75 %/Last), filled "Go to page n" |
 | **Highlights** | colour chip + page + quoted text + timestamp per entry; tap to jump & select; per-entry delete; Clear all highlights (danger) |
 | **Bookmarks** | saved pages with label and age; jump · delete; "Bookmark current page" |
@@ -671,7 +702,7 @@ Page Stay behave identically regardless of file type.
    with **Undo** that restores the document *with* its highlights and bookmarks.
 8. **Move to folder** updates counts everywhere (library chips, folder manager, file info).
 9. **Long-press** anywhere on a row opens actions; the row shows a pressed state and a 18 ms haptic.
-10. **Back button order:** dialog → sheet → filters panel → find bar → full screen → close reader → previous
+10. **Back button order:** dialog → sheet → filters panel → find bar → reading mode → close reader → previous
     destination → exit. Implement with `BackHandler` per layer and never leave a dead back press.
 11. **Snackbars replace, never stack.** One at a time, newest wins.
 12. **Every toggle** persists immediately (DataStore) and re-renders dependent surfaces.
@@ -693,8 +724,10 @@ Page Stay behave identically regardless of file type.
   or approximate gradients with layered paths, as the mockup's gradients are decorative only).
 - **Multidex:** native multidex is available from API 21, so `multiDexEnabled = true` in `defaultConfig` is
   enough — do **not** add `MultiDexApplication` / `MultiDex.install()`.
-- **Storage:** no scoped-storage APIs; access files only through SAF URIs with persistable permissions, or
-  `content://` URIs your app created. Never assume `Environment.getExternalStorageDirectory()` paths work.
+- **Storage:** documents enter through SAF URIs with persistable permissions, `content://` URIs the app
+  created, or the **On this device** list. That list queries `MediaStore.Files` and needs the user's storage
+  access (`READ_EXTERNAL_STORAGE` on API 23–29; All files access on API 30+). Leaf never assumes raw
+  `Environment.getExternalStorageDirectory()` paths and never writes to shared storage.
 - **Notifications/background:** none required. Do all indexing in `Dispatchers.IO` coroutines scoped to the
   app process and re-run on next launch if interrupted.
 - **Fonts:** bundle the serif; `res/font` XML families with `android:fontVariationSettings` are not reliable
@@ -739,8 +772,8 @@ Page Stay behave identically regardless of file type.
 | Search scopes | `Everything` `Name` `Tag` `Folder` `Inside files` `Filters` |
 | Find bar | `Find in document…` · `{i} of {n}` · `No matches` |
 | Empty states | `Nothing here yet` · `No recents yet` · `No favorites yet` · `No results` · `No bookmarks yet` · `No highlights in this document yet` |
-| Snackbars | `Added to favorites` · `Removed from favorites` · `Document deleted` · `Document restored` · `Recents cleared` · `Search history cleared` · `Reading positions cleared` · `All highlights cleared` · `Folder created` · `Subfolder created` · `Folder renamed` · `Folder deleted` · `Tag created` · `Tag renamed` · `Tag deleted` · `Highlighted · yellow` · `Colour changed to orange` · `Highlight removed` · `Page 4 bookmarked` · `Bookmark removed from page 4` · `Jumped to page 12` · `Zoom 130%` · `Text reflow on` · `Vertical scrolling` · `Horizontal — swipe between pages` · `Reading theme: Sepia` · `App theme: dark` · `Tab limit reached (6)` · `Opened in new tab` · `Closed “Q3 Product Roadmap”` · `Orientation locked: landscape` · `Library reset to the sample data` |
-| Confirmations | `Delete this document?` · `Delete “Work”?` · `Delete tag “important”?` · `Clear all recents?` · `Clear search history?` · `Clear reading positions?` · `Clear every highlight?` · `Reset demo library?` |
+| Snackbars | `Added to favorites` · `Removed from favorites` · `Document deleted` · `Document restored` · `Recents cleared` · `Search history cleared` · `Reading positions cleared` · `All highlights cleared` · `Folder created` · `Subfolder created` · `Folder renamed` · `Folder deleted` · `Tag created` · `Tag renamed` · `Tag deleted` · `Highlighted · yellow` · `Colour changed to orange` · `Highlight removed` · `Page 4 bookmarked` · `Bookmark removed from page 4` · `Jumped to page 12` · `Zoom 130%` · `Text reflow on` · `Vertical scrolling` · `Horizontal — swipe between pages` · `Reading theme: Sepia` · `App theme: dark` · `Tab limit reached (6)` · `Opened in new tab` · `Closed “Q3 Product Roadmap”` · `Orientation locked: landscape` · `Library cleared` |
+| Confirmations | `Delete this document?` · `Delete “Work”?` · `Delete tag “important”?` · `Clear all recents?` · `Clear search history?` · `Clear reading positions?` · `Clear every highlight?` · `Clear library?` |
 | Undo affordance | button label `Undo` (4 200 ms snackbar) |
 
 Sentence case for UI labels, Title Case never; use the typographic apostrophe (’) and the ellipsis character (…).
@@ -814,16 +847,19 @@ what deviates from the mockup and why, and what remains.
 | 18 | Scroll modes — vertical, horizontal with snap+page-turn | §6.6 | ☐ |
 | 19 | Zoom & pan — pinch, double-tap, buttons, ctrl-wheel, drag-pan, 70–250 % | §6.6 | ☐ |
 | 20 | Text reflow — all formats, anchored to pages | §7.2 | ☐ |
-| 21 | Full screen — hides all chrome, dim footer, Esc/tap exit | §6.6 | ☐ |
+| 21 | Reading mode — hides header, toolbar and footer; exit via on-screen control, page tap, back or Esc | §6.6 | ☐ |
 | 22 | Rotate — auto toggle, per-document lock (auto/portrait/landscape) | §5 | ☐ |
 | 23 | Settings — appearance, reading, device, data, about | §6.5 | ☐ |
 | 24 | Responsive + platform — bar/rail, 2/3-col, foldable, **toolbar priority ladder**, API 23 → 36, i18n, a11y | §5, §9, §10 | ☐ |
 | 25 | Highlight colour menu — expanding labelled palette, live swatch, selection-aware hint, dismiss rules | §6.6 | ☐ |
 | 26 | Excel `.xlsx` — sheet-per-page grid rendering, text, find, highlights, reflow | §7.3 | ☐ |
 | 27 | PowerPoint `.pptx` — slide-per-page card rendering, text, find, highlights, reflow | §7.3 | ☐ |
+| 28 | On this device — storage access prompt per API level, MediaStore listing, open from the list | §6.1 | ☐ |
+| 29 | Built-in demo library removed; app starts empty; Settings → Clear library | §6.5 | ☐ |
 
-**Explicitly out of scope — do not build:** Import screen (local storage, cloud services, recent downloads,
-batch import), Export highlights as a list, Share a link to the file, Duplicate.
+**Explicitly out of scope — do not build:** an Import screen for cloud services, recent downloads or batch
+import (the On this device list in §6.1 is in scope), Export highlights as a list, Share a link to the file,
+Duplicate.
 
 ---
 
