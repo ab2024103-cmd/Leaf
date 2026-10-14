@@ -1,5 +1,6 @@
 package app.leaf.reader.core.data.db
 
+import app.leaf.reader.core.model.ScrollDir
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
