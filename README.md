@@ -267,6 +267,20 @@ Every deviation is a decision, not an accident.
     pinned release preserves the required PDFBox fallback and passes the real-PDF matrix on API 23
     and API 36.
 
+**M8 open items (hardening, not yet closed).**
+
+- **API 23 background/foreground flake.** The crash sweep's background step uses
+  `ActivityScenario.moveToState(CREATED)`, which covers `MainActivity` with the test library's
+  `EmptyActivity` and waits on its broadcast to uncover it. On API 23 that handoff stalled in 2 of 4
+  CI runs with identical sweep code (`1bf6a2e` run `38364775419`, `62d3041` run `38433253817`; passing
+  runs include `020ef61` run `38436587569` and `56ee616` run `38440352007`). The cause is not confirmed.
+  A real HOME-press background did not stall in the body, but the test rule's teardown then found the
+  activity STOPPED or STARTED in every run tried, so that approach is not in the branch.
+- **Open-document sweep is ignored** (`twenty_rounds_of_open_document_and_back_do_not_crash`): tapping a
+  Library row does not open the reader on the CI emulators (runs `38298109977`, `38306305903`).
+- Release signing, cold-start and scroll timing, the memory/`onTrimMemory` check, and the annotate and
+  share automation are not yet done.
+
 ## What's next — M7 · Settings
 
 M6 formats, reflow and sharing are implemented in this branch. Continue with the next approved
