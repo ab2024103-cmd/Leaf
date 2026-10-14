@@ -457,6 +457,27 @@ private fun ReaderContent(
                         Text(state.warning, style = LeafType.supporting, modifier = Modifier.padding(12.dp))
                     }
                 }
+                if (state.isFullScreen) {
+                    // Reading mode hides the header, toolbar and footer, so this control is the visible way out.
+                    Surface(
+                        onClick = viewModel::toggleFullScreen,
+                        shape = RoundedCornerShape(24.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.92f),
+                        shadowElevation = 3.dp,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .navigationBarsPadding()
+                            .padding(16.dp)
+                            .size(48.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_fullscreen_exit),
+                            contentDescription = stringResource(R.string.reader_exit_fullscreen),
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
+                }
             }
             else -> ReaderLoading()
         }

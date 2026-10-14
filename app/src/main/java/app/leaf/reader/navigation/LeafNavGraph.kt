@@ -36,11 +36,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import app.leaf.reader.R
+import app.leaf.reader.core.data.device.DeviceDocument
 import app.leaf.reader.core.data.prefs.ClosedTab
 import app.leaf.reader.core.ui.components.LeafConfirmDialogOverlay
 import app.leaf.reader.core.ui.components.LeafNavBar
 import app.leaf.reader.core.ui.components.LeafNavRail
 import app.leaf.reader.core.ui.components.LeafSnackbar
+import app.leaf.reader.feature.device.DeviceDocumentsScreen
 import app.leaf.reader.feature.favorites.FavoritesScreen
 import app.leaf.reader.feature.library.LibraryScreen
 import app.leaf.reader.feature.reader.OpenDocumentsSheet
@@ -72,7 +74,9 @@ fun LeafShell(
     externalDocumentId: String? = null,
     onExternalDocumentConsumed: () -> Unit = {},
     /** Opens the system document picker; the picked file is imported like an Open-with intent. */
-    onOpenFromDevice: () -> Unit = {}
+    onPickWithSystemPicker: () -> Unit = {},
+    /** Imports a document chosen in the On this device list, then opens it in the reader. */
+    onOpenDeviceDocument: (DeviceDocument) -> Unit = {}
 ) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -95,6 +99,7 @@ fun LeafShell(
     var readerInitialFindQuery by rememberSaveable { mutableStateOf<String?>(null) }
     var tabsRestored by rememberSaveable { mutableStateOf(false) }
     var openDocumentsSheet by rememberSaveable { mutableStateOf(false) }
+    var deviceDocumentsVisible by rememberSaveable { mutableStateOf(false) }
     var confirmCloseAll by rememberSaveable { mutableStateOf(false) }
     var pickingNewDocument by rememberSaveable { mutableStateOf(false) }
     var returnToReaderAfterPick by rememberSaveable { mutableStateOf(false) }
@@ -255,7 +260,7 @@ fun LeafShell(
                             columns = libraryColumns,
                             openTabCount = activeTabCount,
                             onOpenDocuments = { openDocumentsSheet = true },
-                            onOpenFromDevice = onOpenFromDevice,
+                            onOpenFromDevice = { deviceDocumentsVisible = true },
                             pickingNewTab = pickingNewDocument,
                             tabsInUse = activeTabCount,
                             tabLimit = tabsState.tabLimit,
@@ -331,6 +336,18 @@ fun LeafShell(
                 onCloseTab = { documentId -> tabsViewModel?.closeTab(documentId) },
                 onPickNewDocument = ::pickNewTabFromSheet,
                 onCloseAll = { confirmCloseAll = true },
+                modifier = Modifier.fillMaxSize().zIndex(2f)
+            )
+        }
+
+        if (deviceDocumentsVisible) {
+            DeviceDocumentsScreen(
+                onBack = { deviceDocumentsVisible = false },
+                onOpenDocument = { document ->
+                    deviceDocumentsVisible = false
+                    onOpenDeviceDocument(document)
+                },
+                onPickWithSystemPicker = onPickWithSystemPicker,
                 modifier = Modifier.fillMaxSize().zIndex(2f)
             )
         }

@@ -236,7 +236,7 @@ class AppCrashSweepInstrumentedTest {
         const val LIBRARY_TIMEOUT_MS = 30_000L
         const val READER_TIMEOUT_MS = 15_000L
         const val FIXTURE_DOCUMENT = "Fixture document"
-        const val OPEN_FROM_DEVICE = "Open a document from this device"
+        const val OPEN_FROM_DEVICE = "Documents on this device"
         const val RESUME_ATTEMPTS = 5
         const val RESUME_WAIT_MS = 3_000L
         // Same action string as androidx.test's InstrumentationActivityInvoker.FINISH_EMPTY_ACTIVITIES.

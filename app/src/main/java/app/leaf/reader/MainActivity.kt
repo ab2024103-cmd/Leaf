@@ -71,7 +71,8 @@ class MainActivity : FragmentActivity() {
                         windowSizeClass = calculateWindowSizeClass(this),
                         externalDocumentId = externalDocumentId,
                         onExternalDocumentConsumed = { externalDocumentId = null },
-                        onOpenFromDevice = { openDocumentLauncher.launch(DOCUMENT_MIME_TYPES) }
+                        onPickWithSystemPicker = { openDocumentLauncher.launch(DOCUMENT_MIME_TYPES) },
+                        onOpenDeviceDocument = { document -> importAndOpen { documentIntakeHandler.receiveDevice(document) } }
                     )
                 }
             }
@@ -90,9 +91,14 @@ class MainActivity : FragmentActivity() {
         if (received.action != Intent.ACTION_VIEW && received.action != Intent.ACTION_SEND) return
         if (received.action == Intent.ACTION_VIEW && received.data == null) return
         if (received.action == Intent.ACTION_SEND && !received.hasExtra(Intent.EXTRA_STREAM) && received.clipData == null) return
+        importAndOpen { documentIntakeHandler.receive(received) }
+    }
+
+    /** Imports one document, then opens it in the reader; shared by Open-with, the picker and the device list. */
+    private fun importAndOpen(importer: suspend () -> String?) {
         lifecycleScope.launch {
             try {
-                val documentId = documentIntakeHandler.receive(received)
+                val documentId = importer()
                 if (documentId != null) externalDocumentId = documentId
                 else Toast.makeText(this@MainActivity, R.string.document_intake_missing, Toast.LENGTH_SHORT).show()
             } catch (error: CancellationException) {

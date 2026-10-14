@@ -54,6 +54,10 @@ class ReaderRepository(
         recents.keepNewest(60)
     }
 
+    /** The library id of a document already imported with this name and size, if any. */
+    suspend fun findDocumentIdByNameAndSize(name: String, sizeBytes: Long): String? =
+        documents.findIdByNameAndSize(name, sizeBytes)
+
     suspend fun registerPdf(uri: String, name: String, sizeBytes: Long, pageCount: Int, now: Long): String =
         registerDocument(uri, name, DocType.PDF, sizeBytes, pageCount, now)
 

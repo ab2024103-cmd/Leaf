@@ -373,8 +373,21 @@
     <!-- Empty states (exact mockup copy) -->
     <string name="empty_library_title">Nothing here yet</string>
     <string name="empty_library_none_title">No documents yet</string>
-    <string name="empty_library_none_message">Tap + to open a PDF, EPUB, Word, Excel, PowerPoint or text file from your device.</string>
-    <string name="action_open_from_device">Open a document from this device</string>
+    <string name="empty_library_none_message">Tap + to find the documents on this device, or choose one with the system picker.</string>
+    <string name="action_on_this_device">Documents on this device</string>
+    <string name="device_title">On this device</string>
+    <string name="device_permission_title">Allow access to your documents</string>
+    <string name="device_permission_body">Leaf lists the PDF, EPUB, Word, Excel, PowerPoint and text files stored on this device so you can open them. Leaf reads a file only when you open it, and nothing is uploaded.</string>
+    <string name="device_permission_settings_hint">On the next screen, turn on “Allow access to manage all files” for Leaf, then come back.</string>
+    <string name="device_permission_allow">Allow access</string>
+    <string name="device_empty_title">No documents found</string>
+    <string name="device_empty_message">Leaf did not find any supported files on this device.</string>
+    <string name="device_scan_failed_title">Could not list your documents</string>
+    <string name="device_scan_failed_message">Check that access is still allowed for Leaf, then try again.</string>
+    <string name="device_picker">Choose a file with the system picker</string>
+    <string name="device_document_meta">%1$s · %2$s · %3$s</string>
+    <string name="device_size_kb">%1$d KB</string>
+    <string name="cd_back">Back</string>
     <string name="empty_library_message">Change the folder, collection or tag filter — or clear your filters to see the whole library.</string>
     <string name="empty_recents_title">No recents yet</string>
     <string name="empty_recents_message">Documents you open appear here automatically — tap one to jump straight back to the exact page you left.</string>

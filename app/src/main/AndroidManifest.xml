@@ -1,8 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Haptics only. The core product needs no network permission. -->
+    <!-- Haptics. The core product needs no network permission. -->
     <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!--
+      "On this device" lists the documents stored on the phone. Access is requested only when the
+      user opens that screen. Android 6–10 use the runtime READ_EXTERNAL_STORAGE permission; Android
+      11 and later use All files access (MANAGE_EXTERNAL_STORAGE), which the user turns on in Settings.
+    -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
 
     <application
         android:name=".LeafApp"
@@ -32,7 +40,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Document intake: open-with/share from other apps. There is no Import screen. -->
+            <!-- Document intake: open-with/share from other apps. Device documents are listed in "On this device". -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />

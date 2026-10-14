@@ -34,6 +34,10 @@ interface DocumentDao {
     @Query("SELECT * FROM documents WHERE id = :id")
     suspend fun get(id: String): DocumentEntity?
 
+    /** A device file already imported under the same name and size is reopened, not copied again. */
+    @Query("SELECT id FROM documents WHERE name = :name AND sizeBytes = :sizeBytes LIMIT 1")
+    suspend fun findIdByNameAndSize(name: String, sizeBytes: Long): String?
+
     @Query("UPDATE documents SET favorite = :favorite, favoritedAt = :favoritedAt WHERE id = :id")
     suspend fun setFavorite(id: String, favorite: Boolean, favoritedAt: Long?)
 

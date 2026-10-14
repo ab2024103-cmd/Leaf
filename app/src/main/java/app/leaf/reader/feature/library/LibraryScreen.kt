@@ -119,7 +119,7 @@ fun LibraryContent(
                     OpenTabsButton(count = openTabCount, onClick = onOpenDocuments)
                     LeafIconButton(
                         icon = R.drawable.ic_plus,
-                        contentDescription = stringResource(R.string.action_open_from_device),
+                        contentDescription = stringResource(R.string.action_on_this_device),
                         onClick = onOpenFromDevice
                     )
                     LeafIconButton(

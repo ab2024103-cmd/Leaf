@@ -5,6 +5,7 @@ import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
 import android.provider.OpenableColumns
+import app.leaf.reader.core.data.device.DeviceDocument
 import app.leaf.reader.core.format.DocumentEngineFactory
 import app.leaf.reader.core.format.resolveDocType
 import app.leaf.reader.core.model.DocType
@@ -48,6 +49,16 @@ class DocumentIntakeHandler(
             ?.path?.let(::File)?.length()
         val sizeBytes = persistedFileSize?.takeIf { it > 0L } ?: sourceSize
         repository.registerDocument(persistedUri, name, type, sizeBytes, pages, clock.nowMillis())
+    }
+
+    /**
+     * Imports a file the user picked from the device list. A file already in the library
+     * (same name and size) is reopened instead of being copied again.
+     */
+    suspend fun receiveDevice(document: DeviceDocument): String? {
+        repository.findDocumentIdByNameAndSize(document.name, document.sizeBytes)?.let { return it }
+        val intent = Intent(Intent.ACTION_VIEW, document.uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        return receive(intent)
     }
 
     private fun Intent.documentUri(): Uri? = when (action) {
