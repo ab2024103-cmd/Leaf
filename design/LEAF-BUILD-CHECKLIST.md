@@ -36,7 +36,7 @@ Every behaviour below was implemented and tested in `leaf-mockup-v2.html` — th
 - [ ] Tab strip, app bar (back/title/subtitle/bookmark/overflow), footer (page · bar · % · bookmarks), toolbar
 - [ ] Jump-to-page sheet: slider, stepper, First/25/50/75/Last, "Go to page n"
 - [ ] Page Stay: page + offset + zoom + scroll direction + theme persist through close and process death
-- [ ] Full screen hides all chrome; footer dims and restores on touch; Esc/tap exits
+- [ ] Reading mode hides header, toolbar and footer; on-screen exit control, page tap, back or Esc exits
 
 ### M4 · Search
 - [ ] Scopes: Everything / Name / Tag / Folder / Inside files
@@ -122,7 +122,7 @@ Run this grid and initial each cell after verifying visually (screenshot compare
 
 Confirm these **do not** exist anywhere in the build:
 
-- [ ] No Import screen (no local-storage browser, no cloud service pickers, no "recent downloads", no batch import)
+- [ ] No Import screen beyond the On this device list (no cloud service pickers, no "recent downloads", no batch import)
 - [ ] No "Export highlights as a list"
 - [ ] No "Share a link to the file"
 - [ ] No "Duplicate" action
