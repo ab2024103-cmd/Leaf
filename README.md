@@ -271,9 +271,11 @@ Every deviation is a decision, not an accident.
 
 - **API 23 background/foreground flake.** The crash sweep's background step uses
   `ActivityScenario.moveToState(CREATED)`, which covers `MainActivity` with the test library's
-  `EmptyActivity` and waits on its broadcast to uncover it. On API 23 that handoff stalled in 2 of 4
-  CI runs with identical sweep code (`1bf6a2e` run `38364775419`, `62d3041` run `38433253817`; passing
-  runs include `020ef61` run `38436587569` and `56ee616` run `38440352007`). The cause is not confirmed.
+  `EmptyActivity` and waits on its broadcast to uncover it. On API 23 that handoff stalled in 3 of 7
+  CI runs with identical sweep code (`1bf6a2e` run `38364775419`, `62d3041` run `38433253817`,
+  `9f11ec1` run `38520460967`; passing runs include `020ef61` run `38436587569` and `bd34b14` run
+  `38472474528`). In the last failure the finish broadcast was never received, so the sweep now resends
+  it a bounded number of times. The cause is not confirmed.
   A real HOME-press background did not stall in the body, but the test rule's teardown then found the
   activity STOPPED or STARTED in every run tried, so that approach is not in the branch.
 - **Open-document sweep is ignored** (`twenty_rounds_of_open_document_and_back_do_not_crash`): tapping a

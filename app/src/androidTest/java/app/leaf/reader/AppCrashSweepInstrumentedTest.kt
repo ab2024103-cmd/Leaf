@@ -127,9 +127,38 @@ class AppCrashSweepInstrumentedTest {
     private fun backgroundOnce(step: String) {
         diagnose(step) {
             composeRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
-            composeRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+            resumeFromOverlay()
             composeRule.waitForIdle()
         }
+    }
+
+    /**
+     * Brings MainActivity back from the overlay. ActivityScenario.moveToState(RESUMED) sends the
+     * finish broadcast only once, and on API 23 that broadcast was sometimes lost: run 38520460967
+     * stalled for 20 seconds with no lifecycle events after the overlay stopped the app. So resend
+     * the broadcast until MainActivity is RESUMED, and fail after a bounded number of attempts.
+     */
+    private fun resumeFromOverlay() {
+        val overlayPackage = InstrumentationRegistry.getInstrumentation().context.packageName
+        repeat(RESUME_ATTEMPTS) {
+            shell("am broadcast -a $FINISH_OVERLAY_ACTION -p $overlayPackage")
+            val until = System.currentTimeMillis() + RESUME_WAIT_MS
+            while (System.currentTimeMillis() < until) {
+                if (scenarioState() == Lifecycle.State.RESUMED) return
+                Thread.sleep(100)
+            }
+        }
+        throw AssertionError("MainActivity did not resume after $RESUME_ATTEMPTS finish broadcasts; state=${scenarioState()}")
+    }
+
+    private fun scenarioState(): Lifecycle.State? =
+        runCatching { composeRule.activityRule.scenario.state }.getOrNull()
+
+    /** Runs one shell command and returns its stdout. */
+    private fun shell(command: String): String {
+        val descriptor: ParcelFileDescriptor = InstrumentationRegistry.getInstrumentation().uiAutomation
+            .executeShellCommand(command)
+        return ParcelFileDescriptor.AutoCloseInputStream(descriptor).bufferedReader().use { it.readText() }
     }
 
     /** Runs one step; on failure, rethrows with the scenario state and recent app logcat. */
@@ -147,9 +176,7 @@ class AppCrashSweepInstrumentedTest {
     }
 
     private fun recentLogcat(): String {
-        val descriptor: ParcelFileDescriptor = InstrumentationRegistry.getInstrumentation().uiAutomation
-            .executeShellCommand("logcat -d -t 1500")
-        val text = ParcelFileDescriptor.AutoCloseInputStream(descriptor).bufferedReader().use { it.readText() }
+        val text = shell("logcat -d -t 1500")
         val keep = Regex("FATAL|AndroidRuntime|leaf\\.reader|ActivityScenario|LifecycleMonitor|ActivityManager: START|Exception")
         // Keep only the newest matches and trim each to its end, so the CI annotation keeps them.
         return text.lines().filter { keep.containsMatchIn(it) }.takeLast(12).joinToString("\n") { it.takeLast(150) }
@@ -185,5 +212,9 @@ class AppCrashSweepInstrumentedTest {
         const val SEED_TIMEOUT_MS = 30_000L
         const val READER_TIMEOUT_MS = 15_000L
         const val DEMO_DOCUMENT = "Designing Data-Intensive Applications"
+        const val RESUME_ATTEMPTS = 5
+        const val RESUME_WAIT_MS = 3_000L
+        // Same action string as androidx.test's InstrumentationActivityInvoker.FINISH_EMPTY_ACTIVITIES.
+        const val FINISH_OVERLAY_ACTION = "androidx.test.core.app.InstrumentationActivityInvoker.FINISH_EMPTY_ACTIVITIES"
     }
 }
