@@ -275,7 +275,8 @@ Every deviation is a decision, not an accident.
   CI runs with identical sweep code (`1bf6a2e` run `38364775419`, `62d3041` run `38433253817`,
   `9f11ec1` run `38520460967`; passing runs include `020ef61` run `38436587569` and `bd34b14` run
   `38472474528`). In the last failure the finish broadcast was never received, so the sweep now resends
-  it a bounded number of times. The cause is not confirmed.
+  it a bounded number of times. Three consecutive CI runs on that change passed on API 23 (`38572610230`,
+  `38578398244`, `38582204674`). That is not enough to call the flake closed, and the cause is not confirmed.
   A real HOME-press background did not stall in the body, but the test rule's teardown then found the
   activity STOPPED or STARTED in every run tried, so that approach is not in the branch.
 - **Open-document sweep is ignored** (`twenty_rounds_of_open_document_and_back_do_not_crash`): tapping a
