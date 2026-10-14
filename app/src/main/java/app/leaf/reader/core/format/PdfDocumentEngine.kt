@@ -18,8 +18,6 @@ import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.text.PDFTextStripper
 import com.tom_roush.pdfbox.text.TextPosition
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock as withReentrantLock
@@ -36,18 +34,12 @@ class PdfDocumentEngineFactory(
     private val bitmaps: PdfBitmapCache
 ) : DocumentEngineFactory {
     private val appContext = context.applicationContext
-    private val demoMutex = Mutex()
 
     override suspend fun open(uri: String): DocumentEngine = withContext(Dispatchers.IO) {
         val parsed = Uri.parse(uri)
         val descriptor: ParcelFileDescriptor
         val textInput: () -> InputStream
         when (parsed.scheme) {
-            "leaf-demo" -> {
-                val demoFile = demoMutex.withLock { materializeDemoPdf(parsed) }
-                descriptor = ParcelFileDescriptor.open(demoFile, ParcelFileDescriptor.MODE_READ_ONLY)
-                textInput = { demoFile.inputStream() }
-            }
             "content" -> {
                 descriptor = appContext.contentResolver.openFileDescriptor(parsed, "r")
                     ?: throw IOException("The document provider did not return a file descriptor")
@@ -70,22 +62,6 @@ class PdfDocumentEngineFactory(
             descriptor.close()
             throw error
         }
-    }
-
-    private fun materializeDemoPdf(uri: Uri): File {
-        val id = uri.lastPathSegment?.takeIf { it.matches(Regex("d[0-9]+")) }
-            ?: throw IOException("Unknown demo PDF")
-        val targetDir = File(appContext.cacheDir, "demo-pdf").apply { mkdirs() }
-        val target = File(targetDir, "$id.pdf")
-        if (!target.exists() || target.length() == 0L) {
-            val temp = File(targetDir, "$id.pdf.tmp")
-            appContext.assets.open("demo-pdf/$id.pdf").use { input -> temp.outputStream().use(input::copyTo) }
-            if (!temp.renameTo(target)) {
-                temp.delete()
-                throw IOException("Could not prepare the demo PDF")
-            }
-        }
-        return target
     }
 }
 

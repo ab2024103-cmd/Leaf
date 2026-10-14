@@ -372,6 +372,9 @@
 
     <!-- Empty states (exact mockup copy) -->
     <string name="empty_library_title">Nothing here yet</string>
+    <string name="empty_library_none_title">No documents yet</string>
+    <string name="empty_library_none_message">Tap + to open a PDF, EPUB, Word, Excel, PowerPoint or text file from your device.</string>
+    <string name="action_open_from_device">Open a document from this device</string>
     <string name="empty_library_message">Change the folder, collection or tag filter — or clear your filters to see the whole library.</string>
     <string name="empty_recents_title">No recents yet</string>
     <string name="empty_recents_message">Documents you open appear here automatically — tap one to jump straight back to the exact page you left.</string>
@@ -441,8 +444,8 @@
     <string name="reader_zoom_value">%1$d%%</string>
     <string name="reader_zoom_in">Zoom in</string>
     <string name="reader_zoom_out">Zoom out</string>
-    <string name="reader_fullscreen">Full screen</string>
-    <string name="reader_exit_fullscreen">Exit full screen</string>
+    <string name="reader_fullscreen">Reading mode</string>
+    <string name="reader_exit_fullscreen">Exit reading mode</string>
     <string name="reader_theme_paper">Paper</string>
     <string name="reader_theme_sepia">Sepia</string>
     <string name="reader_theme_night">Night</string>
@@ -577,7 +580,7 @@
     <string name="settings_haptics_desc">Vibrate on highlight and long-press</string>
     <string name="settings_language">Language</string>
     <string name="settings_language_desc">Interface language</string>
-    <string name="settings_language_sheet_sub">Interface language — the sample documents stay in English.</string>
+    <string name="settings_language_sheet_sub">Changes the interface language only.</string>
     <string name="settings_scroll_direction">Default scroll direction</string>
     <string name="settings_scroll_vertical_desc">Continuous scroll down the page</string>
     <string name="settings_scroll_horizontal_desc">Swipe left / right like a book</string>
@@ -604,8 +607,8 @@
     <string name="settings_clear_positions">Clear reading positions</string>
     <string name="settings_clear_positions_desc">Every document reopens at page 1</string>
     <string name="settings_clear_highlights">Clear all highlights</string>
-    <string name="settings_reset_library">Reset demo library</string>
-    <string name="settings_reset_library_desc">Restore the sample documents</string>
+    <string name="settings_reset_library">Clear library</string>
+    <string name="settings_reset_library_desc">Remove every document, folder, tag and highlight</string>
     <string name="settings_action_clear">Clear</string>
     <string name="settings_action_reset">Reset</string>
     <string name="settings_spec_coverage">Spec coverage</string>
@@ -622,12 +625,12 @@
     <string name="settings_dialog_clear_positions_confirm">Clear positions</string>
     <string name="settings_dialog_clear_highlights_title">Clear every highlight?</string>
     <string name="settings_dialog_clear_highlights_confirm">Clear highlights</string>
-    <string name="settings_dialog_reset_title">Reset demo library?</string>
-    <string name="settings_dialog_reset_body">Your library, folders, tags and highlights are replaced with the sample data.</string>
-    <string name="settings_dialog_reset_confirm">Reset everything</string>
+    <string name="settings_dialog_reset_title">Clear library?</string>
+    <string name="settings_dialog_reset_body">Every document, folder, tag and highlight is removed from Leaf. Files on your device are not deleted.</string>
+    <string name="settings_dialog_reset_confirm">Clear library</string>
     <string name="snack_recents_cleared">Recents cleared</string>
     <string name="snack_reading_positions_cleared">Reading positions cleared</string>
-    <string name="snack_library_reset">Library reset to the sample data</string>
+    <string name="snack_library_reset">Library cleared</string>
     <plurals name="settings_recents_count">
         <item quantity="one">%1$d entry in your history</item>
         <item quantity="other">%1$d entries in your history</item>

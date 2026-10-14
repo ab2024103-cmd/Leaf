@@ -38,9 +38,11 @@ of scope rather than appearing as stubs.
   highlights, cached page text, reading positions) and DataStore settings with the mockup's
   defaults, including the §8.13 migration that turns a legacy *File type* sort field into the
   grouped view.
-- **Demo library** — the mockup's seed, generated from `design/leaf-mockup-v2.html`: 10 documents
-  (including the `.xlsx` and the `.pptx`), 5 folders, 7 tags, 6 smart collections, recents,
-  bookmarks, highlights and the text of all 40 pages.
+- **No built-in documents** — the mockup seed was removed from the app. A fresh install starts with an
+  empty library, and the user opens real files from device storage with the library's **+** button
+  (Storage Access Framework picker, imported through the same intake path as Open-with). The seed data
+  now lives in `app/src/test` as fixtures for unit and screenshot tests; Settings → Clear library
+  empties the library.
 - **Library rows (§4.6)** — name and file icon, pages / size / bookmark / last-opened metadata, tag
   chips, reading progress, star toggle, and the 470 ms long-press actions sheet.
 - **Filter rails and sort** — folders with subtree counts, smart collections, multi-select AND tags,
@@ -61,9 +63,8 @@ of scope rather than appearing as stubs.
 - **PDF engine** — `PdfRenderer` serialized per open document, progressive preview + 512 px tiles with
   one-tile overdraw, a memory-bounded/recycling LRU and trim-memory cleanup. API 35+ platform text
   extraction and API 23–34 PDFBox fallback cache extracted page text in Room.
-- **Demo and external documents** — five generated demo PDFs plus deterministic native fixtures for
-  the seeded text/Office records; `ACTION_VIEW` / `ACTION_SEND` intake resolves supported formats and
-  retains a durable URI grant or copies the file privately. There is no Import screen.
+- **External documents** — the device picker and `ACTION_VIEW` / `ACTION_SEND` intake resolve supported
+  formats and retain a durable URI grant or copy the file privately.
 - **M4 advanced Search** — five scopes, combined filters, history, cached-PDF-text excerpts and
   counts, and open-at-page handoff into Reader find. Full-text Search remains deliberately limited to
   cached Room PDF text; M6 Reader Find is format-neutral without broadening Search indexing.
@@ -106,7 +107,7 @@ their `values-xx` tables land. TalkBack has not been run on a device yet.
 ./gradlew verifyRoborazziDebug                   # verify recorded screenshot baselines
 python3 tools/gen_seed_content.py                # regenerate SeedContent.kt from the mockup
 python3 tools/gen_launcher_icon.py               # regenerate the legacy launcher PNGs
-python3 tools/generate_demo_pdfs.py               # regenerate demo PDF assets
+python3 tools/generate_demo_pdfs.py               # regenerate test fixture PDFs (src/test/resources/fixtures)
 ```
 
 The session's draft PR is pinned to `arena/ceade348-leaf`; its CI uploads `leaf-debug-<sha>` (an
@@ -232,7 +233,7 @@ Every deviation is a decision, not an accident.
 8. **Dynamic colour.** §1.4 requires an optional "Match system colours (Android 12+)" switch, which
    the mockup does not have. It exists in settings as `matchSystemColors`, default **off**, and is
    wired to `LeafTheme`; the Settings row that flips it lands in M7.
-9. **Demo documents keep their stable `leaf-demo://` URI.** M3 generates a real PDF asset for each
+9. ~~**Demo documents keep their stable `leaf-demo://` URI.**~~ Superseded: the built-in demo library was removed and the `leaf-demo://` scheme no longer exists in app code. Test fixtures use `file:` URIs under `src/test/resources/fixtures`. M3 generates a real PDF asset for each
    of the five seeded PDF rows and materializes it into app cache for `PdfRenderer`; M6 uses the
    seeded text/Office metadata for deterministic native reader fixtures. Imported files use their
    real source content. No Import screen or fake SAF result is added.

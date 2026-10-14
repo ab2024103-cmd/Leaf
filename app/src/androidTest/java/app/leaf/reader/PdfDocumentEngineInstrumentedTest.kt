@@ -5,6 +5,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import app.leaf.reader.core.format.PdfBitmapCache
 import app.leaf.reader.core.format.PdfDocumentEngineFactory
 import app.leaf.reader.core.format.RenderTile
+import android.net.Uri
+import java.io.File
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -12,15 +14,20 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Runs against a real PdfRenderer and bundled demo PDF on API 23 and current Android. */
+/** Runs against a real PdfRenderer and a test-only fixture PDF on API 23 and current Android. */
 @RunWith(AndroidJUnit4::class)
 class PdfDocumentEngineInstrumentedTest {
 
     @Test
-    fun real_demo_pdf_renders_extracts_text_and_respects_cache_limits() = runBlocking {
+    fun real_fixture_pdf_renders_extracts_text_and_respects_cache_limits() = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val cache = PdfBitmapCache()
-        val engine = PdfDocumentEngineFactory(context, cache).open("leaf-demo://document/d1")
+        val fixture = File(context.cacheDir, "fixtures/d1.pdf").apply {
+            parentFile?.mkdirs()
+            InstrumentationRegistry.getInstrumentation().context.assets.open("fixtures/d1.pdf")
+                .use { input -> outputStream().use(input::copyTo) }
+        }
+        val engine = PdfDocumentEngineFactory(context, cache).open(Uri.fromFile(fixture).toString())
         val leases = mutableListOf<android.graphics.Bitmap>()
         try {
             assertEquals(6, engine.pageCount)

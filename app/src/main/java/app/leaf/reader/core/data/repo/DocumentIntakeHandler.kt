@@ -5,7 +5,6 @@ import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
 import android.provider.OpenableColumns
-import app.leaf.reader.core.data.db.DatabaseSeeder
 import app.leaf.reader.core.format.DocumentEngineFactory
 import app.leaf.reader.core.format.resolveDocType
 import app.leaf.reader.core.model.DocType
@@ -22,7 +21,6 @@ import kotlinx.coroutines.withContext
 /** Retains supported open-with/share documents in the library; this is not an import-screen flow. */
 class DocumentIntakeHandler(
     context: Context,
-    private val seeder: DatabaseSeeder,
     private val repository: ReaderRepository,
     private val engines: DocumentEngineFactory,
     private val clock: LeafClock
@@ -37,8 +35,6 @@ class DocumentIntakeHandler(
             ?: throw IOException("Leaf could not determine the document format")
         val name = displayName.withExtension(type)
 
-        // Finish the seed transaction first; an incoming file must not prevent demo data from seeding.
-        seeder.seedIfEmpty(clock.nowMillis())
         val sourceSize = size(uri)
         val persistedUri = makeDurableUri(uri, intent, type)
         val engine = engines.open(persistedUri, type)

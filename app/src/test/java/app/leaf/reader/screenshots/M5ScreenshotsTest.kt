@@ -59,13 +59,13 @@ class M5ScreenshotsTest {
     fun open_documents_sheet_shows_order_active_position_and_close_controls() {
         val first = Document(
             id = "d1", name = "Q3 Product Roadmap.pdf", type = DocType.PDF,
-            sizeBytes = 2_400_000, uri = "leaf-demo://d1", pageCount = 8,
+            sizeBytes = 2_400_000, uri = "fixture://d1", pageCount = 8,
             dateAdded = now - 86_400_000, lastOpened = now - 7_200_000,
             favorite = false, favoritedAt = null, folderId = null,
             orientation = Orientation.AUTO, tags = emptyList()
         )
         val second = first.copy(
-            id = "d2", name = "Research Notes.pdf", uri = "leaf-demo://d2",
+            id = "d2", name = "Research Notes.pdf", uri = "fixture://d2",
             pageCount = 5, lastOpened = now - 86_400_000
         )
         val state = ReaderTabsUiState(

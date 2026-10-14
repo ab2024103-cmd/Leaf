@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate app/.../core/data/db/SeedContent.kt from design/leaf-mockup-v2.html.
+"""Generate app/src/test/.../core/data/db/SeedContent.kt (test fixtures only) from design/leaf-mockup-v2.html.
 
 The mockup's SEED_DOCS array is the source of truth for the demo library, so the
 Kotlin seed is generated from it rather than retyped. Timestamps keep the mockup's
@@ -13,7 +13,7 @@ import re
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HTML = os.path.join(ROOT, "design", "leaf-mockup-v2.html")
 OUT = os.path.join(
-    ROOT, "app", "src", "main", "java", "app", "leaf", "reader",
+    ROOT, "app", "src", "test", "java", "app", "leaf", "reader",
     "core", "data", "db", "SeedContent.kt",
 )
 

@@ -1,6 +1,8 @@
 package app.leaf.reader
 
+import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
@@ -14,10 +16,14 @@ import androidx.compose.ui.test.performClick
 import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import app.leaf.reader.core.data.repo.DocumentIntakeHandler
+import java.io.File
+import kotlinx.coroutines.runBlocking
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.koin.java.KoinJavaComponent
 
 /**
  * Crash sweep (M8), run on the API 23 and current emulators by the Real PDF job.
@@ -93,13 +99,14 @@ class AppCrashSweepInstrumentedTest {
     @Ignore("Known gap: tapping a Library row does not open the reader on the CI emulators yet.")
     @Test
     fun twenty_rounds_of_open_document_and_back_do_not_crash() {
+        importFixtureDocument()
         waitForLibrary()
         repeat(ROUNDS) {
-            composeRule.onNode(hasContentDescription(DEMO_DOCUMENT, substring = true) and hasClickAction()).performClick()
+            composeRule.onNode(hasContentDescription(FIXTURE_DOCUMENT, substring = true) and hasClickAction()).performClick()
             try {
                 composeRule.waitUntil(timeoutMillis = READER_TIMEOUT_MS) { readerVisible() }
             } catch (timeout: androidx.compose.ui.test.ComposeTimeoutException) {
-                throw AssertionError("Tapping '$DEMO_DOCUMENT' did not open the reader. Visible text:\n" + visibleText(), timeout)
+                throw AssertionError("Tapping '$FIXTURE_DOCUMENT' did not open the reader. Visible text:\n" + visibleText(), timeout)
             }
             composeRule.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
             composeRule.waitUntil(timeoutMillis = READER_TIMEOUT_MS) { libraryVisible() }
@@ -182,18 +189,35 @@ class AppCrashSweepInstrumentedTest {
         return text.lines().filter { keep.containsMatchIn(it) }.takeLast(12).joinToString("\n") { it.takeLast(150) }
     }
 
-    /** The demo library is seeded in the background at app start, so wait for its first rows. */
+    /**
+     * Leaf ships no built-in documents, so the library starts empty. It is ready once its
+     * list or its empty state is drawn, which always shows the Open-from-device button.
+     */
     private fun waitForLibrary() {
         composeRule.waitForIdle()
         try {
-            composeRule.waitUntil(timeoutMillis = SEED_TIMEOUT_MS) { libraryVisible() }
+            composeRule.waitUntil(timeoutMillis = LIBRARY_TIMEOUT_MS) { libraryVisible() }
         } catch (timeout: androidx.compose.ui.test.ComposeTimeoutException) {
             throw AssertionError("Library did not load. Visible text:\n" + visibleText(), timeout)
         }
     }
 
     private fun libraryVisible(): Boolean =
-        composeRule.onAllNodesWithText("DOCUMENTS", substring = true).fetchSemanticsNodes().isNotEmpty()
+        composeRule.onAllNodes(hasContentDescription(OPEN_FROM_DEVICE)).fetchSemanticsNodes().isNotEmpty()
+
+    /**
+     * Imports the test-only fixture PDF through the same intake path as Open-with, so the
+     * open-document flow has a real row to tap. The file is copied from the test APK's assets.
+     */
+    private fun importFixtureDocument() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val file = File(instrumentation.targetContext.cacheDir, "$FIXTURE_DOCUMENT.pdf")
+        instrumentation.context.assets.open("fixtures/d1.pdf").use { input ->
+            file.outputStream().use(input::copyTo)
+        }
+        val intake = KoinJavaComponent.get<DocumentIntakeHandler>(DocumentIntakeHandler::class.java)
+        runBlocking { intake.receive(Intent(Intent.ACTION_VIEW, Uri.fromFile(file))) }
+    }
 
     /** The reader's first page carries the content description "Page 1" (see SearchFlowTest). */
     private fun readerVisible(): Boolean =
@@ -209,9 +233,10 @@ class AppCrashSweepInstrumentedTest {
     private companion object {
         const val ROUNDS = 20
         const val DIAGNOSTIC_ROUNDS = 3
-        const val SEED_TIMEOUT_MS = 30_000L
+        const val LIBRARY_TIMEOUT_MS = 30_000L
         const val READER_TIMEOUT_MS = 15_000L
-        const val DEMO_DOCUMENT = "Designing Data-Intensive Applications"
+        const val FIXTURE_DOCUMENT = "Fixture document"
+        const val OPEN_FROM_DEVICE = "Open a document from this device"
         const val RESUME_ATTEMPTS = 5
         const val RESUME_WAIT_MS = 3_000L
         // Same action string as androidx.test's InstrumentationActivityInvoker.FINISH_EMPTY_ACTIVITIES.

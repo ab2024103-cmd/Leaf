@@ -23,7 +23,7 @@ from gen_seed_content import (  # noqa: E402
     unescape,
 )
 
-OUT_DIR = os.path.join(ROOT, "app", "src", "main", "assets", "demo-pdf")
+OUT_DIR = os.path.join(ROOT, "app", "src", "test", "resources", "fixtures")
 
 
 def seed_pdf_documents():

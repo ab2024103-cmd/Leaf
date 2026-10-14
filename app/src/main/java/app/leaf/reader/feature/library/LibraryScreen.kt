@@ -90,6 +90,7 @@ fun LibraryContent(
     columns: Int = 1,
     openTabCount: Int = 0,
     onOpenDocuments: () -> Unit = {},
+    onOpenFromDevice: () -> Unit = {},
     pickingNewTab: Boolean = false,
     tabsInUse: Int = 0,
     tabLimit: Int = 6,
@@ -116,6 +117,11 @@ fun LibraryContent(
                 scrolled = scrolled,
                 actions = {
                     OpenTabsButton(count = openTabCount, onClick = onOpenDocuments)
+                    LeafIconButton(
+                        icon = R.drawable.ic_plus,
+                        contentDescription = stringResource(R.string.action_open_from_device),
+                        onClick = onOpenFromDevice
+                    )
                     LeafIconButton(
                         icon = R.drawable.ic_folder,
                         contentDescription = stringResource(R.string.action_folders),
@@ -205,7 +211,7 @@ fun LibraryContent(
 
                 if (view.showGroups) {
                     if (view.groups.isEmpty()) {
-                        item { EmptyLibrary() }
+                        item { EmptyLibrary(noDocuments = state.docs.isEmpty()) }
                     } else {
                         // §6.1: one column when compact, two otherwise — never more.
                         view.groups.chunked(groupColumns).forEach { rowCards ->
@@ -225,7 +231,7 @@ fun LibraryContent(
                         }
                     }
                 } else if (view.rows.isEmpty()) {
-                    item { EmptyLibrary() }
+                    item { EmptyLibrary(noDocuments = state.docs.isEmpty()) }
                 } else {
                     items(view.rows, key = { "doc-${it.id}" }) { doc ->
                         LeafDocumentRow(
@@ -294,6 +300,7 @@ fun LibraryScreen(
     columns: Int = 1,
     openTabCount: Int = 0,
     onOpenDocuments: () -> Unit = {},
+    onOpenFromDevice: () -> Unit = {},
     pickingNewTab: Boolean = false,
     tabsInUse: Int = 0,
     tabLimit: Int = 6,
@@ -316,6 +323,7 @@ fun LibraryScreen(
         columns = columns,
         openTabCount = openTabCount,
         onOpenDocuments = onOpenDocuments,
+        onOpenFromDevice = onOpenFromDevice,
         pickingNewTab = pickingNewTab,
         tabsInUse = tabsInUse,
         tabLimit = tabLimit,
@@ -555,12 +563,20 @@ private fun GroupCardItem(
 }
 
 @Composable
-private fun EmptyLibrary() {
-    LeafEmptyState(
-        icon = R.drawable.ic_document,
-        title = stringResource(R.string.empty_library_title),
-        message = stringResource(R.string.empty_library_message)
-    )
+private fun EmptyLibrary(noDocuments: Boolean) {
+    if (noDocuments) {
+        LeafEmptyState(
+            icon = R.drawable.ic_document,
+            title = stringResource(R.string.empty_library_none_title),
+            message = stringResource(R.string.empty_library_none_message)
+        )
+    } else {
+        LeafEmptyState(
+            icon = R.drawable.ic_document,
+            title = stringResource(R.string.empty_library_title),
+            message = stringResource(R.string.empty_library_message)
+        )
+    }
 }
 
 // ── the sheet host ──────────────────────────────────────────────────────────────

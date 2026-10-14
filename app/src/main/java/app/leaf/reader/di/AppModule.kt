@@ -5,7 +5,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room.Room
-import app.leaf.reader.core.data.db.DatabaseSeeder
+import app.leaf.reader.core.data.db.LibraryReset
 import app.leaf.reader.core.data.db.LeafDatabase
 import app.leaf.reader.core.data.repo.AnnotationRepository
 import app.leaf.reader.core.data.repo.DocumentIntakeHandler
@@ -62,7 +62,7 @@ val appModule = module {
     singleOf(::ReaderRepository)
     singleOf(::AnnotationRepository)
     singleOf(::SearchRepository)
-    single { DocumentIntakeHandler(androidContext(), get(), get(), get(), get()) }
+    single { DocumentIntakeHandler(androidContext(), get(), get(), get()) }
     single { PdfBitmapCache() }
     single<DocumentEngineFactory> { MultiFormatDocumentEngineFactory(androidContext(), get()) }
 
@@ -74,7 +74,7 @@ val appModule = module {
     singleOf(::SettingsStore)
     singleOf(::SettingsDataController)
     singleOf(::ReaderTabsStore)
-    singleOf(::DatabaseSeeder)
+    singleOf(::LibraryReset)
     single<LeafClock> { SystemLeafClock }
 
     // AndroidViewModel: the application is needed for the resource strings the

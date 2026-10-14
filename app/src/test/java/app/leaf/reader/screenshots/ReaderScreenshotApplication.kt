@@ -1,5 +1,6 @@
 package app.leaf.reader.screenshots
 
+import app.leaf.reader.core.data.db.DatabaseSeeder
 import android.app.Application
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -29,6 +30,7 @@ class ReaderScreenshotApplication : Application() {
                 module {
                     single<DocumentEngineFactory> { ScreenshotPdfEngineFactory() }
                     single<LeafClock> { LeafClock { FIXED_NOW } }
+                    single { DatabaseSeeder(get()) }
                 }
             )
         }

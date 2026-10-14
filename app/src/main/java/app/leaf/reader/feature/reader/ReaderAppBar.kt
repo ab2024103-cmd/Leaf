@@ -42,7 +42,8 @@ internal fun ReaderAppBar(
     onJump: () -> Unit,
     onPickNewDocument: () -> Unit,
     onClearPageHighlights: () -> Unit,
-    onShare: () -> Unit
+    onShare: () -> Unit,
+    onReadingMode: () -> Unit
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     Row(
@@ -102,6 +103,10 @@ internal fun ReaderAppBar(
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.action_open_new_tab)) },
                     onClick = { menuExpanded = false; onPickNewDocument() }
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.reader_fullscreen)) },
+                    onClick = { menuExpanded = false; onReadingMode() }
                 )
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.action_share)) },

@@ -37,7 +37,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import app.leaf.reader.R
 import app.leaf.reader.core.data.prefs.ClosedTab
-import app.leaf.reader.core.format.DocumentEngineFactory
 import app.leaf.reader.core.ui.components.LeafConfirmDialogOverlay
 import app.leaf.reader.core.ui.components.LeafNavBar
 import app.leaf.reader.core.ui.components.LeafNavRail
@@ -56,7 +55,6 @@ import app.leaf.reader.feature.settings.SettingsScreen
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
-import org.koin.compose.koinInject
 import org.koin.androidx.compose.koinViewModel
 
 /**
@@ -72,7 +70,9 @@ fun LeafShell(
     /** Library is the default destination; the screenshot tests start on each one. */
     startDestination: LeafDestination = LeafDestination.LIBRARY,
     externalDocumentId: String? = null,
-    onExternalDocumentConsumed: () -> Unit = {}
+    onExternalDocumentConsumed: () -> Unit = {},
+    /** Opens the system document picker; the picked file is imported like an Open-with intent. */
+    onOpenFromDevice: () -> Unit = {}
 ) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -245,7 +245,6 @@ fun LeafShell(
                     modifier = Modifier.weight(1f)
                 ) {
                     composable(LeafDestination.LIBRARY.route) {
-                        val documentEngines: DocumentEngineFactory = koinInject()
                         val shareScope = rememberCoroutineScope()
                         LibraryScreen(
                             onOpenDocument = { documentId ->
@@ -256,6 +255,7 @@ fun LeafShell(
                             columns = libraryColumns,
                             openTabCount = activeTabCount,
                             onOpenDocuments = { openDocumentsSheet = true },
+                            onOpenFromDevice = onOpenFromDevice,
                             pickingNewTab = pickingNewDocument,
                             tabsInUse = activeTabCount,
                             tabLimit = tabsState.tabLimit,
@@ -268,7 +268,7 @@ fun LeafShell(
                             onShareDocument = { document ->
                                 shareScope.launch {
                                     try {
-                                        shareDocument(context, document, engineFactory = documentEngines)
+                                        shareDocument(context, document)
                                     } catch (error: CancellationException) {
                                         throw error
                                     } catch (_: Exception) {

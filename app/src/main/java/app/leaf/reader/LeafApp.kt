@@ -1,7 +1,6 @@
 package app.leaf.reader
 
 import android.app.Application
-import app.leaf.reader.core.data.db.DatabaseSeeder
 import app.leaf.reader.core.data.prefs.SettingsStore
 import app.leaf.reader.core.format.PdfBitmapCache
 import app.leaf.reader.core.util.LeafLocale
@@ -18,7 +17,7 @@ import org.koin.core.component.inject
 import org.koin.core.context.startKoin
 
 /**
- * Leaf application: builds the graph, migrates settings and seeds the demo library.
+ * Leaf application: builds the graph and migrates settings.
  *
  * No WorkManager and no network permission — indexing runs on IO coroutines scoped to
  * the process and simply re-runs on the next launch if it is interrupted (§9).
@@ -26,7 +25,6 @@ import org.koin.core.context.startKoin
 class LeafApp : Application(), KoinComponent {
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val seeder: DatabaseSeeder by inject()
     private val settings: SettingsStore by inject()
     private val pdfBitmapCache: PdfBitmapCache by inject()
 
@@ -43,9 +41,7 @@ class LeafApp : Application(), KoinComponent {
         }
         registerComponentCallbacks(pdfBitmapCache)
         appScope.launch {
-            // Idempotent: the seeder no-ops once the library is populated.
             settings.migrateLegacySortField()
-            seeder.seedIfEmpty()
         }
     }
 }

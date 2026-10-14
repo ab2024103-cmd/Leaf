@@ -9,10 +9,6 @@ import app.leaf.reader.core.model.ScrollDir
 import app.leaf.reader.core.model.SmartCollection
 import app.leaf.reader.core.model.SmartRule
 import app.leaf.reader.core.model.Tag
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.Dispatchers
 
 /**
  * The demo library: 10 documents (including the .xlsx and .pptx), 5 folders with one
@@ -89,96 +85,20 @@ object SeedData {
 
     internal fun documents(now: Long) = seedDocuments(now)
 
-    /** Demo documents never point at a real file; the reader reads their cached text. */
-    fun uriFor(id: String) = "leaf-demo://document/$id"
-}
-
-/**
- * Writes the demo library into the database. Idempotent: [seedIfEmpty] is safe to call
- * on every launch, and [seed] repopulates from scratch for "Reset demo library" (§6.5).
- */
-class DatabaseSeeder(private val db: LeafDatabase) {
-    private val seedMutex = Mutex()
-
-    suspend fun seedIfEmpty(now: Long = System.currentTimeMillis()): Boolean = seedMutex.withLock {
-        if (db.documentDao().count() > 0) return@withLock false
-        seed(now)
-        true
-    }
-
     /**
-     * Settings → Data & storage → Reset demo library (§6.5): wipes every table, then writes
-     * the sample data again. Settings-level keys in DataStore are not touched by this.
+     * Test fixture URI: the PDF bundled under `src/test/resources/fixtures/` when one exists.
+     * Documents without a fixture only carry text, which the reader never opens in tests.
      */
-    suspend fun reset(now: Long = System.currentTimeMillis()) = seedMutex.withLock {
-        // Room's clearAllTables() is blocking and must stay off the main thread.
-        withContext(Dispatchers.IO) { db.clearAllTables() }
-        seed(now)
-    }
-
-    suspend fun seed(now: Long = System.currentTimeMillis()) {
-        val documents = SeedData.documents(now)
-
-        db.folderDao().insertAll(SeedData.folders().map { it.toEntity() })
-        db.tagDao().insertAll(SeedData.tags().map { it.toEntity() })
-        db.smartCollectionDao().insertAll(SeedData.smartCollections().map { it.toEntity() })
-
-        db.documentDao().insertAll(documents.map { it.toEntity() })
-        db.documentTagDao().insertAll(documents.flatMap { doc -> doc.tags.map { tag -> DocumentTagEntity(doc.id, tag) } })
-
-        db.extractedTextDao().insertAll(documents.flatMap { doc ->
-            doc.pages.mapIndexed { index, paragraphs ->
-                ExtractedTextEntity(doc.id, index, paragraphs.joinToString("\n"))
-            }
-        })
-
-        db.progressDao().replaceAll(documents.map { doc ->
-            ProgressEntity(
-                docId = doc.id,
-                page = doc.page,
-                scrollFraction = 0f,
-                zoom = 1f,
-                scrollDir = ScrollDir.VERTICAL,
-                updatedAt = doc.lastOpened
-            )
-        })
-
-        db.bookmarkDao().insertAll(documents.flatMap { doc ->
-            doc.bookmarks.mapIndexed { index, bookmark ->
-                BookmarkEntity(
-                    id = "${doc.id}-b$index",
-                    docId = doc.id,
-                    page = bookmark.page,
-                    label = bookmark.label,
-                    createdAt = bookmark.createdAt
-                )
-            }
-        })
-
-        val pageText = documents.associate { doc ->
-            doc.id to doc.pages.map { it.joinToString("\n") }
-        }
-        db.highlightDao().insertAll(SeedData.highlights(now).map { highlight ->
-            val text = pageText[highlight.docId]?.getOrNull(highlight.page)
-            val start = text?.indexOf(highlight.text)?.takeIf { it >= 0 }
-            highlight.toEntity(
-                rangeStart = start,
-                rangeEnd = start?.let { it + highlight.text.length }
-            )
-        })
-
-        // Recents mirror the documents' last-opened times, newest first (§2.1).
-        db.recentDao().clear()
-        documents.forEach { doc -> db.recentDao().insert(RecentEntity(doc.id, doc.lastOpened)) }
-        db.recentDao().keepNewest(60)
-    }
+    fun uriFor(id: String): String =
+        SeedData::class.java.getResource("/fixtures/$id.pdf")?.let { java.io.File(it.toURI()).toURI().toString() }
+            ?: "fixture://document/$id"
 }
 
-private fun Folder.toEntity() = FolderEntity(id, name, colorHex, iconKey, parentId, isSystem)
+internal fun Folder.toEntity() = FolderEntity(id, name, colorHex, iconKey, parentId, isSystem)
 
-private fun Tag.toEntity() = TagEntity(name, colorHex)
+internal fun Tag.toEntity() = TagEntity(name, colorHex)
 
-private fun SmartCollection.toEntity() = SmartCollectionEntity(
+internal fun SmartCollection.toEntity() = SmartCollectionEntity(
     id = id,
     name = name,
     ruleKind = when (rule) {
@@ -195,7 +115,7 @@ private fun SmartCollection.toEntity() = SmartCollectionEntity(
     ruleTag = (rule as? SmartRule.WithTag)?.tag
 )
 
-private fun SeedDocument.toEntity() = DocumentEntity(
+internal fun SeedDocument.toEntity() = DocumentEntity(
     id = id,
     name = name,
     uri = SeedData.uriFor(id),
@@ -210,7 +130,7 @@ private fun SeedDocument.toEntity() = DocumentEntity(
     orientation = Orientation.AUTO
 )
 
-private fun Highlight.toEntity(rangeStart: Int?, rangeEnd: Int?) = HighlightEntity(
+internal fun Highlight.toEntity(rangeStart: Int?, rangeEnd: Int?) = HighlightEntity(
     id = id,
     docId = docId,
     page = page,

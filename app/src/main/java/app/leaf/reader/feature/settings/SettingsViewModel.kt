@@ -72,7 +72,7 @@ class SettingsViewModel(
                     R.string.snack_all_highlights_removed
                 }
                 SettingsClear.RESET -> {
-                    controller.resetDemoLibrary()
+                    controller.resetLibrary()
                     R.string.snack_library_reset
                 }
             }

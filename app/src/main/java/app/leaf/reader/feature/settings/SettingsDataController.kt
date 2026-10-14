@@ -2,7 +2,7 @@ package app.leaf.reader.feature.settings
 
 import app.leaf.reader.core.data.prefs.ReaderTabsStore
 import app.leaf.reader.core.data.prefs.SettingsStore
-import app.leaf.reader.core.data.db.DatabaseSeeder
+import app.leaf.reader.core.data.db.LibraryReset
 import app.leaf.reader.core.data.repo.AnnotationRepository
 import app.leaf.reader.core.data.repo.DocumentRepository
 import app.leaf.reader.core.data.repo.ReaderRepository
@@ -19,7 +19,7 @@ class SettingsDataController(
     private val annotations: AnnotationRepository,
     private val reader: ReaderRepository,
     private val tabs: ReaderTabsStore,
-    private val seeder: DatabaseSeeder,
+    private val libraryReset: LibraryReset,
     private val settings: SettingsStore
 ) {
     fun observeDocumentCount(): Flow<Int> = documents.observeCount()
@@ -45,9 +45,9 @@ class SettingsDataController(
 
     suspend fun clearAllHighlights() = annotations.clearAllHighlights()
 
-    /** Replaces the library with the sample data; open tabs are closed first (their documents may be gone). */
-    suspend fun resetDemoLibrary() {
+    /** Removes every document and annotation; open tabs are closed first (their documents may be gone). */
+    suspend fun resetLibrary() {
         tabs.closeAll()
-        seeder.reset()
+        libraryReset.reset()
     }
 }

@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.FragmentActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
@@ -14,6 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import app.leaf.reader.core.data.repo.DocumentIntakeHandler
+import app.leaf.reader.core.model.DocType
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import app.leaf.reader.core.data.prefs.SettingsStore
@@ -36,6 +38,17 @@ class MainActivity : FragmentActivity() {
     private val documentIntakeHandler: DocumentIntakeHandler by inject()
     private var externalDocumentId by mutableStateOf<String?>(null)
 
+    /** The system picker (Storage Access Framework): no storage permission is requested. */
+    private val openDocumentLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            handleExternalIntent(
+                Intent(Intent.ACTION_VIEW, uri).addFlags(
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+                )
+            )
+        }
+    }
+
     /** The saved interface language is applied before any string is resolved (§10). */
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LeafLocale.wrap(newBase))
@@ -57,7 +70,8 @@ class MainActivity : FragmentActivity() {
                     LeafShell(
                         windowSizeClass = calculateWindowSizeClass(this),
                         externalDocumentId = externalDocumentId,
-                        onExternalDocumentConsumed = { externalDocumentId = null }
+                        onExternalDocumentConsumed = { externalDocumentId = null },
+                        onOpenFromDevice = { openDocumentLauncher.launch(DOCUMENT_MIME_TYPES) }
                     )
                 }
             }
@@ -91,3 +105,7 @@ class MainActivity : FragmentActivity() {
         }
     }
 }
+
+/** Every format Leaf opens, plus generic bytes for providers that report no type; the format is then read from the file. */
+private val DOCUMENT_MIME_TYPES: Array<String> =
+    DocType.entries.map { it.mime }.toTypedArray() + "application/octet-stream"

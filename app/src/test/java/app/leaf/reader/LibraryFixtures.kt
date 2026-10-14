@@ -34,7 +34,7 @@ internal fun doc(
         name = name,
         type = type,
         sizeBytes = (sizeMb * 1024.0 * 1024.0).toLong(),
-        uri = "leaf-demo://document/$id",
+        uri = "fixture://document/$id",
         pageCount = pageCount,
         dateAdded = now - addedDaysAgo * DAY_MS,
         lastOpened = openedDaysAgo?.let { now - it * DAY_MS },

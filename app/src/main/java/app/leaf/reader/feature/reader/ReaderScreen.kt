@@ -25,7 +25,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.TransformableState
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -55,7 +54,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -80,7 +78,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
@@ -308,7 +305,7 @@ private fun ReaderContent(
         if (document != null && engine != null) {
             scope.launch {
                 try {
-                    shareDocument(context, document, currentEngine = engine)
+                    shareDocument(context, document)
                 } catch (error: kotlinx.coroutines.CancellationException) {
                     throw error
                 } catch (_: Exception) {
@@ -384,7 +381,8 @@ private fun ReaderContent(
                             onJump = { viewModel.setSheet(ReaderSheet.JUMP_TO_PAGE) },
                             onPickNewDocument = onPickNewTab,
                             onClearPageHighlights = viewModel::clearPageHighlights,
-                            onShare = { viewModel.setSheet(ReaderSheet.SHARE) }
+                            onShare = { viewModel.setSheet(ReaderSheet.SHARE) },
+                            onReadingMode = viewModel::toggleFullScreen
                         )
                     }
                     if (!state.isFullScreen && state.findBarVisible) {
@@ -409,16 +407,15 @@ private fun ReaderContent(
                         onLongPressText = viewModel::selectTextAt,
                         onSelectionHandleDrag = viewModel::moveSelectionHandle
                     )
-                    Column(Modifier.navigationBarsPadding()) {
-                        ReaderFooter(
-                            state = state,
-                            palette = palette,
-                            onJump = { viewModel.setSheet(ReaderSheet.JUMP_TO_PAGE) },
-                            onToggleBookmark = viewModel::toggleBookmarkCurrentPage,
-                            onWake = { if (state.isFullScreen) viewModel.toggleFullScreen() },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        if (!state.isFullScreen) {
+                    if (!state.isFullScreen) {
+                        Column(Modifier.navigationBarsPadding()) {
+                            ReaderFooter(
+                                state = state,
+                                palette = palette,
+                                onJump = { viewModel.setSheet(ReaderSheet.JUMP_TO_PAGE) },
+                                onToggleBookmark = viewModel::toggleBookmarkCurrentPage,
+                                modifier = Modifier.fillMaxWidth()
+                            )
                             val selectedHighlight = state.highlights.firstOrNull { it.id == state.selectedHighlightId }
                             if (selectedHighlight != null) {
                                 HighlightContextBar(
@@ -623,8 +620,8 @@ private fun ReaderViewport(
             }
             LazyColumn(
                 state = listState,
-                contentPadding = PaddingValues(vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(state.pageCount, key = { "pdf-page-$it" }) { page ->
@@ -668,7 +665,7 @@ private fun ReaderViewport(
                                 text = stringResource(R.string.reader_page_of, page + 1, state.pageCount),
                                 style = LeafType.supporting,
                                 color = palette.textMuted,
-                                modifier = Modifier.padding(top = 6.dp, bottom = 2.dp)
+                                modifier = Modifier.padding(top = 2.dp)
                             )
                         }
                     }
@@ -1165,7 +1162,7 @@ private fun HorizontalReaderPager(
     }
     HorizontalPager(
         state = pagerState,
-        pageSpacing = 12.dp,
+        pageSpacing = 4.dp,
         contentPadding = PaddingValues(horizontal = 16.dp),
         key = { it },
         modifier = Modifier.fillMaxSize()
@@ -1597,7 +1594,6 @@ private fun ReaderFooter(
     palette: ReadingPalette,
     onJump: () -> Unit,
     onToggleBookmark: () -> Unit,
-    onWake: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val progressDescription = stringResource(
@@ -1610,13 +1606,6 @@ private fun ReaderFooter(
         modifier = modifier
             .fillMaxWidth()
             .background(palette.surfaceAlt)
-            .alpha(if (state.isFullScreen) 0.68f else 1f)
-            .clickable(
-                enabled = state.isFullScreen,
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onWake
-            )
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp)
