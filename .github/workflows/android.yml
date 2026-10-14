@@ -487,6 +487,14 @@ jobs:
 
           timeout -k 10s 35m ./gradlew connectedDebugAndroidTest --stacktrace --console=plain 2>&1 | tee "$GRADLE_LOG"
 
+      # M8 timing on the emulator (not a device). Informational for now: a slow emulator run is
+      # recorded in the log but does not fail the job until the numbers are stable.
+      - name: Timing check on API 23 (cold start and library scroll)
+        if: matrix.api == 23
+        continue-on-error: true
+        run: |
+          ADB="$ANDROID_HOME/platform-tools/adb" ./scripts/measure-timing.sh emulator-5554
+
       - name: Upload emulator diagnostics on failure
         if: failure()
         uses: actions/upload-artifact@v4

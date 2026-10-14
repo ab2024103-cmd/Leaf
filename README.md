@@ -281,8 +281,10 @@ Every deviation is a decision, not an accident.
   activity STOPPED or STARTED in every run tried, so that approach is not in the branch.
 - **Open-document sweep is ignored** (`twenty_rounds_of_open_document_and_back_do_not_crash`): tapping a
   Library row does not open the reader on the CI emulators (runs `38298109977`, `38306305903`).
-- Release signing, cold-start and scroll timing, the memory/`onTrimMemory` check, and the annotate and
-  share automation are not yet done.
+- **Cold start and library scroll.** `scripts/measure-timing.sh` measures the median cold start (budget
+  800 ms) and the 90th-percentile frame time while scrolling (budget 16 ms, i.e. 60 fps). It runs on the API 23
+  emulator in CI after the tests, and does not fail the job yet. These are emulator numbers, not device numbers.
+- Release signing, the memory/`onTrimMemory` check, and the annotate and share automation are not yet done.
 
 ## What's next — M7 · Settings
 
