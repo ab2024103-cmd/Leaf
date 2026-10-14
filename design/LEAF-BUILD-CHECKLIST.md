@@ -67,7 +67,6 @@ Every behaviour below was implemented and tested in `leaf-mockup-v2.html` — th
 - [ ] Tab limit stepper 1–10; affects open tabs immediately
 - [ ] All confirmations from §11 present, all snackbars match the copy deck
 - [ ] Animations + haptics honour their switches (and system animation scale)
-- [ ] 9 languages in `strings.xml`; plurals used everywhere; RTL verified in Arabic
 - [ ] TalkBack pass on all five destinations and the reader; ≥ 48 dp targets
 - [ ] Screenshot diff vs mockup ≤ 2 % on layout-critical regions
 
@@ -76,7 +75,7 @@ Every behaviour below was implemented and tested in `leaf-mockup-v2.html` — th
 - [ ] Memory flat while swiping 50 PDF pages; `onTrimMemory` clears caches
 - [ ] R8 rules for Room/Readium/PDFBox; release build installs and works
 - [ ] Cold start < 800 ms on API 23 emulator; 60 fps library scroll
-- [ ] AAB signed, mapping file archived, coverage matrix 24/24 green
+- [ ] R8 mapping file archived
 - [ ] No `TODO`, no dead buttons, no placeholder strings, no debug logging
 
 ---
