@@ -14,8 +14,9 @@ android {
         applicationId = "app.leaf.reader"
         minSdk = 23
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        // Bump versionCode and versionName for every change that reaches a build (see README → Versioning).
+        versionCode = 2
+        versionName = "1.0.1"
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -50,6 +51,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     packaging {
         resources {

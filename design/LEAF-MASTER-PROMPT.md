@@ -11,6 +11,9 @@
 >   exist only as test fixtures under `app/src/test`. Settings → Reset demo library becomes **Clear library**.
 > - Storage access and the **On this device** list (§6.1) are added. This replaces the earlier rule that
 >   there is no Import screen and no storage access.
+> - Every update, patch or bug fix that reaches a build bumps `versionCode` and `versionName` in
+>   `app/build.gradle.kts` (README → Versioning). Settings → About shows the installed version. Version 1.0.1
+>   (code 2) adds a database migration (2 → 3) that removes the demo rows earlier builds wrote into existing installs.
 > - **Reading mode** (§6.6) hides the header, toolbar and footer. It has an on-screen exit control, and the
 >   page gap is tighter in vertical and horizontal modes.
 

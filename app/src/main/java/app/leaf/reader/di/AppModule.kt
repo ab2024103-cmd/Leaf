@@ -38,7 +38,7 @@ import org.koin.dsl.module
 val appModule = module {
     single {
         Room.databaseBuilder(androidContext(), LeafDatabase::class.java, "leaf.db")
-            .addMigrations(LeafDatabase.MIGRATION_1_2)
+            .addMigrations(LeafDatabase.MIGRATION_1_2, LeafDatabase.MIGRATION_2_3)
             .fallbackToDestructiveMigrationOnDowngrade()
             .build()
     }

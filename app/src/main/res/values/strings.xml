@@ -414,7 +414,6 @@
     <string name="settings_tab_limit_increase">Increase maximum open tabs</string>
     <string name="settings_group_about">About</string>
     <string name="settings_version">Version</string>
-    <string name="settings_version_value">1.0.0</string>
     <string name="settings_footer">Leaf · Material 3 · v1.0.0</string>
     <string name="settings_about_seed">Seed #2B7A5B · targets Android 6.0 (API 23) → latest · phone, foldable &amp; tablet layouts</string>
     <!-- Reader core (M3) -->

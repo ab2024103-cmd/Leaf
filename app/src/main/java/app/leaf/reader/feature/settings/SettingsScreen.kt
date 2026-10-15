@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.leaf.reader.BuildConfig
 import app.leaf.reader.R
 import app.leaf.reader.core.data.prefs.SettingsStore
 import app.leaf.reader.core.model.AppTheme
@@ -308,7 +309,7 @@ fun SettingsScreen(
                 SettingsRow(
                     icon = R.drawable.ic_settings_about,
                     label = stringResource(R.string.settings_version),
-                    value = stringResource(R.string.settings_version_value)
+                    value = BuildConfig.VERSION_NAME
                 )
             }
 

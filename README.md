@@ -105,6 +105,19 @@ their `values-xx` tables land. TalkBack has not been run on a device yet.
 
 **Not in this build** — the remaining M8 scope.
 
+## Versioning
+
+Every update, patch or bug fix that reaches a build bumps the version in `app/build.gradle.kts`:
+`versionCode` goes up by one and `versionName` follows semantic versioning (patch for fixes, minor for
+new features). Settings → About shows the installed `versionName`, so a tester can confirm which build is
+on the phone.
+
+- **1.0.1** (code 2) — On this device: the library's **+** button lists supported documents after storage
+  access. Reading mode has an on-screen exit control. The built-in demo library is removed, and a database
+  migration (2 → 3) deletes the demo rows that earlier builds wrote into existing installs. Settings → About
+  reads the version from the build.
+- **1.0.0** (code 1) — first build with the demo library.
+
 ## Build & verify
 
 ```bash
